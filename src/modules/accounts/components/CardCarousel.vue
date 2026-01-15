@@ -1,0 +1,191 @@
+<template>
+  <div class="carousel-wrapper">
+    <div
+      class="carousel"
+      :style="{ transform: `translateX(-${offset}px)` }"
+      :class="{ 'carousel--list': store.viewMode === AccountView.list }"
+    >
+      <div
+        v-for="account in store.filteredAccounts"
+        class="carousel__item"
+        v-touch="{ left: swipeLeft, right: swipeRight }"
+        ref="cardRefs"
+      >
+        <NormalCard
+          v-if="account.type === AccountTypes.normal"
+          :account="account"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="carousel__preview">
+    <AccountPreview />
+  </div>
+</template>
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+import { useAccountsStore } from '../accounts.store'
+import NormalCard from './NormalCard.vue'
+import { AccountTypes, AccountView } from '../accounts.constants'
+import AccountPreview from './AccountPreview.vue'
+
+const store = useAccountsStore()
+
+const currentIndex = ref(0)
+const offset = ref(0)
+const cardRefs = ref<HTMLElement[]>([] as HTMLElement[])
+
+const updateOffset: any = () => {
+  const el = cardRefs.value[currentIndex.value]
+  if (el) {
+    const wrapper = el.parentElement?.parentElement
+    const wrapperWidth = wrapper?.clientWidth ?? 0
+    const elOffset = el.offsetLeft
+    const elWidth = el.offsetWidth
+
+    if (currentIndex.value === 0) {
+      offset.value = 0
+    } else {
+      offset.value = elOffset - (wrapperWidth - elWidth) / 2
+    }
+  }
+  store.setCurrentIndexAccount(currentIndex.value)
+}
+
+const swipeLeft = () => {
+  if (currentIndex.value < store.accounts.length - 1) {
+    currentIndex.value = currentIndex.value + 1
+  } else {
+    currentIndex.value = 0
+  }
+  updateOffset()
+}
+
+const swipeRight = () => {
+  if (currentIndex.value === 0) {
+    currentIndex.value = store.accounts.length - 1
+  } else {
+    currentIndex.value--
+  }
+  updateOffset()
+}
+
+watch(
+  () => store.filteredAccounts,
+  () => {
+    currentIndex.value = 0
+    updateOffset()
+  },
+  { immediate: true, deep: true }
+)
+</script>
+<style scoped lang="scss">
+.carousel-wrapper {
+  overflow-x: hidden;
+  width: 100%;
+
+  @media (min-width: 600px) {
+    height: calc(100dvh - 220px);
+    overflow-y: auto;
+  }
+}
+
+.carousel {
+  display: flex;
+  gap: 10px;
+  transition: transform 0.3s ease;
+  padding-left: 15px;
+  padding-top: 10px;
+  background-color: $bg-primary !important;
+  min-height: 185px;
+
+  @media (min-width: 600px) {
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+    transform: none !important;
+  }
+
+  @media (min-width: 960px) {
+    padding-left: 0;
+  }
+
+  &__item {
+    height: 150px;
+    width: 90vw;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    background-color: transparent !important;
+    cursor: pointer;
+    min-width: 270px;
+    height: auto;
+
+    @media (min-width: 600px) {
+      flex: 0 1 calc((100% / 2) - 20px);
+      margin-bottom: 0;
+    }
+
+    @media (min-width: 1200px) {
+      flex: 0 1 calc((100% / 3) - 20px);
+    }
+
+    @media (min-width: 1264px) {
+      flex: 0 1 calc((100% / 4) - 20px);
+    }
+  }
+
+  &__preview {
+    display: block;
+    padding: 15px;
+    height: calc(100dvh - 385px);
+    overflow-y: auto;
+    padding-bottom: 65px;
+    position: relative;
+
+    @media (min-width: 600px) {
+      display: none;
+    }
+  }
+
+  &--list {
+    display: block;
+    overflow-y: auto;
+    height: calc(100dvh - 200px);
+    transform: none !important;
+
+    @media (min-width: 600px) {
+      display: flex;
+      height: auto;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: flex-start !important;
+      align-items: flex-start !important;
+      transform: none !important;
+    }
+
+    .carousel__item {
+      margin-bottom: 15px;
+      width: calc(100% - 15px);
+
+      @media (min-width: 600px) {
+        flex: 0 1 calc((100% / 2) - 20px);
+        margin-bottom: 0;
+      }
+
+      @media (min-width: 1200px) {
+        flex: 0 1 calc((100% / 3) - 20px);
+      }
+
+      @media (min-width: 1264px) {
+        flex: 0 1 calc((100% / 4) - 20px);
+      }
+    }
+
+    .carousel__preview {
+      display: none;
+    }
+  }
+}
+</style>

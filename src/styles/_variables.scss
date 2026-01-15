@@ -1,0 +1,92 @@
+// src/styles/_variables.scss
+
+$color-grey: #9e9e9e;
+$color-primary: #138ad3;
+$color-md-primary: #badbef;
+$color-lg-primary: #e7f3fa;
+
+$white: #ffffff;
+$green: #3ab35a;
+$green-md: #a3d7b3;
+$green-lg: #eaf7ee;
+$red: #ec4f2e;
+$red-md: #eac6c3;
+$red-lg: #fcede9;
+$blue: #0169e0;
+$blue-md: #abc8e4;
+$blue-lg: #e6effa;
+$purple: #a78bfa;
+
+$card-green: #248300;
+$card-green-lg: #e2f0de;
+$card-green-md: #b5dfa6;
+$card-green-bd: #bfd7b8;
+
+$bg-general: #f8f9fa;
+$bg-primary: #f8f9fa;
+$bg-input: #eff0f1;
+$bg-bar: #ebebeb;
+
+$text-dark: #1c1c1e;
+$text-gray-lg: #9e9e9e;
+$text-gray-md: #67707b;
+
+$border-general: #d0d0d0;
+
+// Colores base
+$color-secondary: #7e3ff2;
+
+$color-background: #ffffff;
+$color-white: #fff;
+$color-light-gray: #e0e0e0;
+$color-black: #000000;
+$color-red: #c50d00;
+$color-green: #30a133;
+$color-blue: #2196f3;
+$color-yellow: #edb947;
+
+// Background
+$color-bg-red: #fdecea;
+$color-bg-green: #eafbea;
+$color-bg-blue: #e7f3fd;
+$color-bg-yellow: #fff8e1;
+
+// Colores texto
+$gray-text: #5e5e5e;
+$text-gray: #5e5e5e;
+$text-light-gray: #959191;
+$text-gray-2: #757575;
+
+// Estados
+$color-error: #c50d00;
+$color-success: #30a133;
+$color-info: #2196f3;
+$color-warning: #edb947;
+
+$color-error-light: #fcebea;
+$color-success-light: #e8f5e9;
+$color-info-light: #e3f2fd;
+$color-warning-light: #fff8e1;
+
+// Icono activo (morado)
+$fab-shadow: rgba(103, 58, 183, 0.4);
+
+// Tipografía
+$label-font-size: 10px;
+$font: 'PoppinsRegular', serif;
+$font-light: 'PoppinsLight', serif;
+$font-medium: 'PoppinsMedium', serif;
+$font-bold: 'PoppinsBold', serif;
+
+// Padding seguro para iPhones (con notch)
+$padding-bottom-safe: calc(env(safe-area-inset-bottom) + 10px);
+
+// FAB
+$floating-action-size: 56px;
+$floating-action-radius: 50%;
+
+// Sombras
+$fab-box-shadow: 0 4px 12px $fab-shadow;
+
+// Transición
+$transition-duration: 0.3s;
