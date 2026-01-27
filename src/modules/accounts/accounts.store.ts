@@ -40,6 +40,10 @@ export const useAccountsStore = defineStore('accounts', {
 
     getCurrentAccount(state) {
       return state.accounts[state.currentIndexAccount]
+    },
+
+    getAccountById: state => (id: string) => {
+      return state.accounts.find(account => account.id === id)
     }
   },
 
@@ -54,7 +58,9 @@ export const useAccountsStore = defineStore('accounts', {
     },
 
     loadAccounts() {
+      const oldIndex = this.currentIndexAccount
       this.accounts = accountService.loadAccounts()
+      this.currentIndexAccount = Math.min(oldIndex, this.accounts.length - 1)
     },
 
     addAccount(account: Omit<Account, 'id'>) {
@@ -79,6 +85,14 @@ export const useAccountsStore = defineStore('accounts', {
     },
 
     updateAccount(account: Account) {
+      const exists = this.accounts.some(
+        (a: Account) =>
+          a.name.trim().toLowerCase() === account.name.trim().toLowerCase() &&
+          a.id !== account.id
+      )
+      if (exists) {
+        throw new Error('La cuenta ya existe')
+      }
       accountService.updateAccount(account)
       this.loadAccounts()
     },
@@ -92,8 +106,10 @@ export const useAccountsStore = defineStore('accounts', {
         ...expense,
         id: generateId()
       }
+      const currentIndex = this.currentIndexAccount
       accountService.addExpenseToAccount(accountId, newExpense)
       this.loadAccounts()
+      this.setCurrentIndexAccount(currentIndex)
     },
 
     updateExpense(accountId: string, updatedExpense: Expense) {

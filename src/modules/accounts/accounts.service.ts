@@ -75,11 +75,16 @@ export const accountService = {
     const updatedAccounts = accounts.map((acc: Account) => {
       if (acc.id === accountId) {
         const expenses = acc.expenses ?? []
-        return { ...acc, expenses: [...expenses, newExpense] }
+        const newExpenses = [...expenses, newExpense]
+
+        return {
+          ...acc,
+          expenses: newExpenses
+        }
       }
       return acc
     })
-    console.log('accounts', updatedAccounts)
+
     localStorage.setItem(
       `accounts_${userEmail}`,
       JSON.stringify(updatedAccounts)

@@ -3,7 +3,7 @@
     <div class="add-expense__bar">
       <div>
         <v-btn
-          :color="entry.type === 'ingreso' ? 'success' : 'error'"
+          :color="entry.type === 'ingreso' ? '#7ac07c' : '#cb4f47'"
           class="btn-circle add-expense__type"
           @click="selectType"
         >
@@ -54,11 +54,6 @@
         >
           <CheckIcon />
         </v-btn>
-        <AddAccountExpenseMore
-          :entryData="entry"
-          @updateData="changeEntryMore"
-          @save="saveEntry"
-        />
       </div>
     </div>
   </div>
@@ -68,12 +63,13 @@
 import { computed, ref, type Ref } from 'vue'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
 import type { EntryType } from '@/modules/budget/budget.interface'
-import AddAccountExpenseMore from './AddAccountExpenseMore.vue'
 import CheckIcon from '@/assets/icons/Check.icon.vue'
 import PlusIcon from '@/assets/icons/Plus.icon.vue'
 import MinusIcon from '@/assets/icons/Minus.icon.vue'
 import type { Expense } from '../accounts.interface'
 import { useAccountsStore } from '../accounts.store'
+
+const props = defineProps<{ accountId: string }>()
 
 const toast = useToastStore()
 const store = useAccountsStore()
@@ -85,7 +81,8 @@ const entry: Ref<Expense> = ref({
   type: 'gasto' as EntryType,
   isPending: false,
   comments: '',
-  date: new Date()
+  date: new Date(),
+  category: ''
 })
 const typeMenu = ref(false)
 
@@ -114,7 +111,7 @@ const goToValue = () => {
 const saveEntry = () => {
   if (!entry.value.description || !entry.value.value) return
   try {
-    store.addExpense(entry.value, store.getCurrentAccount.id)
+    store.addExpense(entry.value, props.accountId)
     toast.success('Movimiento agregado')
 
     entry.value = {
@@ -123,15 +120,12 @@ const saveEntry = () => {
       type: 'gasto' as EntryType,
       isPending: false,
       comments: '',
-      date: new Date()
+      date: new Date(),
+      category: ''
     }
   } catch (e: any) {
     toast.error(e.message)
   }
-}
-
-const changeEntryMore = (data: any) => {
-  console.log('data', data)
 }
 
 const scrollIntoView = (refEl: any) => {
@@ -175,9 +169,9 @@ const scrollIntoView = (refEl: any) => {
   }
 
   &__category {
-    border-radius: 100%;
-    width: 35px;
-    height: 35px;
+    border-radius: 8px !important;
+    width: 30px !important;
+    height: 30px !important;
     padding: 0;
   }
 
@@ -188,7 +182,7 @@ const scrollIntoView = (refEl: any) => {
   }
 
   &__value {
-    width: 140px;
+    width: 120px;
   }
 
   &__button {

@@ -1,27 +1,27 @@
 <template>
-  <div class="sort-filter">
-    <div class="sort-filter__search">
+  <div class="accounts-filter">
+    <div class="accounts-filter__search">
       <v-menu v-model="menu" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
-          <div class="sort-filter__icon" v-bind="props">
+          <div class="accounts-filter__icon" v-bind="props">
             <FilterIcon />
           </div>
         </template>
-        <div class="sort-filter__filters">
+        <div class="accounts-filter__filters">
           <v-select
-            v-model="store.selectedType"
-            :items="accountTypes"
+            v-model="selectedType"
+            :items="groupByOptions"
             item-title="label"
             item-value="type"
-            label="Filtro por tipo cuenta"
+            label="Agrupar por"
             :return-object="false"
             class="general-input"
             density="comfortable"
           ></v-select>
 
           <v-select
-            v-model="store.sortBy"
-            :items="ACCOUNTS_ORDER_BY"
+            v-model="sortBy"
+            :items="orderByOptions"
             item-title="label"
             item-value="filter"
             label="Ordenar por"
@@ -29,7 +29,7 @@
             density="comfortable"
           />
 
-          <div class="sort-filter__actions">
+          <div class="accounts-filter__actions">
             <v-btn @click="menu = false" type="button" class="btn-label">
               Cerrar
             </v-btn>
@@ -42,7 +42,7 @@
 
       <v-text-field
         class="search-input"
-        v-model="store.search"
+        v-model="search"
         label="Buscar por nombre"
         density="compact"
       >
@@ -56,41 +56,56 @@
 
 <script setup lang="ts">
 import FilterIcon from '@/assets/icons/Filter.icon.vue'
-import {
-  ACCOUNTS_ORDER_BY,
-  ACCOUNTS_TYPES
-} from '../accounts.constants'
-import { useAccountsStore } from '../accounts.store'
-import { onMounted, ref } from 'vue'
+import {  ref, watch } from 'vue'
 
-onMounted(() => {
-  store.clearFilters()
-})
-
-const store = useAccountsStore()
-const accountTypes = [
-  {
-    type: 'all',
-    label: 'Todos'
-  },
-  ...ACCOUNTS_TYPES
-]
 const menu = ref(false)
+const search = ref('')
+const selectedType = ref<string | null>('category')
+const sortBy = ref<string | null>(null)
+const emit = defineEmits<{
+  (e: 'filterChange', filter: { search: string; groupBy: string | null; orderBy: string | null }): void
+}>()
+
+const groupByOptions = [
+  { label: 'Ingreso/Gasto', type: 'type' },
+  { label: 'Categoría', type: 'category' },
+  { label: 'Fecha', type: 'date' },
+]
+
+const orderByOptions = [
+  { label: 'Más reciente', filter: 'newest' },
+  { label: 'Más antiguo', filter: 'oldest' },
+  { label: 'Mayor monto', filter: 'highest' },
+  { label: 'Menor monto', filter: 'lowest' },
+]
 
 const clearAll = () => {
-  store.clearFilters()
   menu.value = false
+  search.value = ''
+  selectedType.value = 'category'
+  sortBy.value = null
 }
+
+watch([search, selectedType, sortBy], () => {
+  // Emit filter change event
+  const filter = {
+    search: search.value,
+    groupBy: selectedType.value,
+    orderBy: sortBy.value,
+  }
+  emit('filterChange', filter)
+})
+
 </script>
 
 <style scoped lang="scss">
-.sort-filter {
-  padding: 0 15px;
+.accounts-filter {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
   margin-bottom: 10px;
+  width: 100%;
 
   @media (min-width: 960px) {
     padding-left: 0;

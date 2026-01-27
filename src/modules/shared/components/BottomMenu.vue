@@ -170,7 +170,12 @@ const isDesktop = computed(() => mdAndUp.value)
 const route = useRoute()
 const router = useRouter()
 
-const isActive = path => route.path === path
+const isActive = path => {
+  if (path === '/') {
+    return route.path === '/'
+  }
+  return route.path.startsWith(path)
+}
 
 const items = [
   { path: '/', icon: 'mdi-finance', label: 'Presupuesto' },

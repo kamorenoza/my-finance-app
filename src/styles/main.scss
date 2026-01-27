@@ -105,6 +105,10 @@ body {
   &:hover {
     box-shadow: none !important;
   }
+
+  .v-btn__content {
+    padding-top: 2px;
+  }
 }
 
 .btn-primary {

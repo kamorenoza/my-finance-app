@@ -1,7 +1,14 @@
 <template>
   <div class="carousel-wrapper">
     <div
-      class="carousel"
+      class="carousel carousel--list"
+      ref="carouselRef"
+      tabindex="0"
+      @pointerdown="onPointerDown"
+      @pointermove="onPointerMove"
+      @pointerup="onPointerUp"
+      @pointercancel="onPointerUp"
+      @keydown="onKeydown"
       :style="{ transform: `translateX(-${offset}px)` }"
       :class="{ 'carousel--list': store.viewMode === AccountView.list }"
     >
@@ -18,23 +25,67 @@
       </div>
     </div>
   </div>
-
-  <div class="carousel__preview">
-    <AccountPreview />
-  </div>
 </template>
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useAccountsStore } from '../accounts.store'
 import NormalCard from './NormalCard.vue'
 import { AccountTypes, AccountView } from '../accounts.constants'
-import AccountPreview from './AccountPreview.vue'
 
 const store = useAccountsStore()
 
 const currentIndex = ref(0)
 const offset = ref(0)
 const cardRefs = ref<HTMLElement[]>([] as HTMLElement[])
+
+// Pointer (mouse / trackpad / touch) drag support for desktop
+let isPointerDown = false
+let pointerStartX = 0
+const SWIPE_THRESHOLD = 50
+
+const onPointerDown = (e: PointerEvent) => {
+  isPointerDown = true
+  pointerStartX = e.clientX
+  try {
+    ;(e.target as Element)?.setPointerCapture?.(e.pointerId)
+  } catch {}
+}
+
+const onPointerMove = (e: PointerEvent) => {
+  if (!isPointerDown) return
+  const diff = pointerStartX - e.clientX
+  if (Math.abs(diff) >= SWIPE_THRESHOLD) {
+    if (diff > 0) swipeLeft()
+    else swipeRight()
+    isPointerDown = false
+    try {
+      ;(e.target as Element)?.releasePointerCapture?.(e.pointerId)
+    } catch {}
+  }
+}
+
+const onPointerUp = (e: PointerEvent) => {
+  if (!isPointerDown) return
+  isPointerDown = false
+  const diff = pointerStartX - e.clientX
+  try {
+    ;(e.target as Element)?.releasePointerCapture?.(e.pointerId)
+  } catch {}
+
+  // If the user dragged enough, trigger a swipe; otherwise snap to current index
+  if (Math.abs(diff) >= SWIPE_THRESHOLD) {
+    if (diff > 0) swipeLeft()
+    else swipeRight()
+  } else {
+    // No swipe: ensure offset/current index is recalculated (snap back)
+    updateOffset()
+  }
+}
+
+const onKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'ArrowLeft') swipeRight()
+  if (e.key === 'ArrowRight') swipeLeft()
+}
 
 const updateOffset: any = () => {
   const el = cardRefs.value[currentIndex.value]
@@ -74,7 +125,6 @@ const swipeRight = () => {
 watch(
   () => store.filteredAccounts,
   () => {
-    currentIndex.value = 0
     updateOffset()
   },
   { immediate: true, deep: true }
@@ -143,6 +193,7 @@ watch(
     overflow-y: auto;
     padding-bottom: 65px;
     position: relative;
+    padding-right: 0;
 
     @media (min-width: 600px) {
       display: none;

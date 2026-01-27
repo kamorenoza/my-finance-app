@@ -5,8 +5,6 @@ export interface Account {
   id?: string
   name: string
   type: AccountTypes
-  balance?: number
-  initialValue?: number
   expenses?: Expense[]
 }
 
@@ -18,4 +16,5 @@ export interface Expense {
   isPending: boolean
   comments?: string
   date: string | Date
+  category: any
 }
