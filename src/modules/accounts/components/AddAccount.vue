@@ -29,7 +29,7 @@
 
         <v-select
           v-model="type"
-          :items="ACCOUNTS_TYPES"
+          :items="filteredAccountTypes"
           item-title="label"
           item-value="type"
           label="Tipo de cuenta*"
@@ -38,6 +38,53 @@
           density="comfortable"
           :disabled="!!account"
         ></v-select>
+
+        <!-- Campos adicionales para tarjeta de crédito -->
+        <v-text-field
+          v-if="type === 'TC'"
+          ref="valueInput"
+          class="general-input mb-5"
+          density="comfortable"
+          label="Cupo*"
+          hide-details
+          type="text"
+          prefix="$"
+          @update:model-value="onInput"
+          :model-value="formattedValue"
+          maxlength="12"
+          inputmode="numeric"
+          pattern="[0-9]*"
+        />
+
+        <v-text-field
+          v-if="type === 'TC'"
+          ref="valueInput"
+          class="general-input mb-5"
+          density="comfortable"
+          label="Fecha de Corte (día del mes)*"
+          hide-details
+          type="text"
+          @update:model-value="onInputDate"
+          :model-value="cutoffDate"
+          maxlength="2"
+          inputmode="numeric"
+          pattern="[0-9]*"
+        />
+
+        <v-text-field
+          v-if="type === 'TC'"
+          ref="valueInput"
+          class="general-input mb-5"
+          density="comfortable"
+          label="Fecha de Pago (día del mes)*"
+          hide-details
+          type="text"
+          @update:model-value="onInputDueDate"
+          :model-value="dueDate"
+          maxlength="2"
+          inputmode="numeric"
+          pattern="[0-9]*"
+        />
       </v-card-text>
       <v-card-actions class="pr-4 mt-2">
         <v-spacer />
@@ -56,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, shallowRef, watch, type Ref } from 'vue'
+import { ref, shallowRef, watch, computed, type Ref } from 'vue'
 import { useAccountsStore } from '@/modules/accounts/accounts.store'
 import { type Account } from '../accounts.interface'
 import AddIcon from '@/assets/icons/Add.icon.vue'
@@ -78,6 +125,20 @@ const toast = useToastStore()
 const drawer = ref(false)
 const name = ref('')
 const type = shallowRef(AccountTypes.normal)
+const creditLimit = ref<number | null>(null)
+const cutoffDate = ref<number | null>(null)
+const dueDate = ref<number | null>(null)
+
+// Filtrar tipos excluyendo "loan"
+const filteredAccountTypes = computed(() => {
+  return ACCOUNTS_TYPES.filter(acc => acc.type !== AccountTypes.loan)
+})
+
+const formattedValue = computed(() => {
+  if (creditLimit.value === 0) return ''
+  if (!creditLimit.value && creditLimit.value !== 0) return ''
+  return creditLimit.value.toLocaleString('es-CO')
+})
 
 const saveAccount = () => {
   if (!props.account) {
@@ -89,11 +150,28 @@ const saveAccount = () => {
 
 const addAccount = () => {
   if (!name.value || !type.value) return
+
+  // Validar campos requeridos para tarjeta de crédito
+  if (
+    type.value === AccountTypes.TC &&
+    (!creditLimit.value || !cutoffDate.value || !dueDate.value)
+  ) {
+    toast.error('Completa todos los campos de tarjeta de crédito')
+    return
+  }
+
   try {
     const newAccount: Account = {
       name: name.value,
-      type: type.value
+      type: type.value as AccountTypes
     }
+
+    if (type.value === AccountTypes.TC) {
+      newAccount.creditLimit = creditLimit.value || undefined
+      newAccount.cutoffDate = cutoffDate.value || undefined
+      newAccount.dueDate = dueDate.value || undefined
+    }
+
     store.addAccount(newAccount)
     toast.success('Cuenta creada')
     close()
@@ -104,18 +182,58 @@ const addAccount = () => {
 
 const updateAccount = () => {
   if (!name.value || !type.value) return
+
+  // Validar campos requeridos para tarjeta de crédito
+  if (
+    type.value === AccountTypes.TC &&
+    (!creditLimit.value || !cutoffDate.value || !dueDate.value)
+  ) {
+    toast.error('Completa todos los campos de tarjeta de crédito')
+    return
+  }
+
   try {
     if (!props.account) return
-    const newAccount: any = {
+    const newAccount: Account = {
       ...props.account,
       name: name.value
     }
+
+    if (type.value === AccountTypes.TC) {
+      newAccount.creditLimit = creditLimit.value || undefined
+      newAccount.cutoffDate = cutoffDate.value || undefined
+      newAccount.dueDate = dueDate.value || undefined
+    }
+
     store.updateAccount(newAccount)
     toast.success('Cuenta editada')
     close()
   } catch (e: any) {
     toast.error(e.message)
   }
+}
+
+const onInput = (val: string) => {
+  const numeric = Number(val.replace(/[^\d]/g, ''))
+  creditLimit.value = isNaN(numeric) ? 0 : numeric
+}
+
+const onInputDate = (val: string) => {
+  const numeric = Number(val.replace(/[^\d]/g, ''))
+  if (numeric < 1 || numeric > 31) {
+    cutoffDate.value = null
+    return
+  }
+  cutoffDate.value = isNaN(numeric) ? null : numeric
+}
+
+const onInputDueDate = (val: string) => {
+  const numeric = Number(val.replace(/[^\d]/g, ''))
+  if (numeric < 1 || numeric > 31) {
+    dueDate.value = null
+    return
+  }
+  dueDate.value = isNaN(numeric) ? null : numeric
 }
 
 watch(
@@ -136,21 +254,31 @@ watch(
     if (newVal) {
       name.value = newVal.name
       type.value = newVal.type
+      creditLimit.value = newVal.creditLimit || null
+      cutoffDate.value = newVal.cutoffDate || null
+      dueDate.value = newVal.dueDate || null
     } else {
       name.value = ''
       type.value = AccountTypes.normal
+      creditLimit.value = null
+      cutoffDate.value = null
+      dueDate.value = null
     }
   },
   { immediate: true }
 )
 
 const close = () => {
-  name.value = ''
-  type.value = AccountTypes.normal
   drawer.value = false
 
   if (props.account) {
     emit('close')
+  } else {
+    name.value = ''
+    type.value = AccountTypes.normal
+    creditLimit.value = null
+    cutoffDate.value = null
+    dueDate.value = null
   }
 }
 </script>

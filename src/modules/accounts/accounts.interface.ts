@@ -6,6 +6,9 @@ export interface Account {
   name: string
   type: AccountTypes
   expenses?: Expense[]
+  creditLimit?: number
+  cutoffDate?: number
+  dueDate?: number
 }
 
 export interface Expense {

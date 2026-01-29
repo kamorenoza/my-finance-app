@@ -8,7 +8,7 @@
 
     <v-dialog v-model="dialog" width="auto">
       <v-card>
-        <v-date-picker @update:modelValue="onDateChange" />
+        <v-date-picker v-model="selected" @update:modelValue="onDateChange" />
       </v-card>
     </v-dialog>
   </div>
@@ -16,28 +16,38 @@
 
 <script setup lang="ts">
 import CalendarIcon from '@/assets/icons/Calendar.icon.vue'
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 
 const props = defineProps({
   modelValue: {
     type: Date,
-    default: ''
-  }
+    default: null
+  },
+  emptyDate: Boolean
 })
 const emit = defineEmits(['update:modelValue', 'onChange'])
 
 const dialog = ref(false)
 const today = new Date()
-const selected = ref(today)
+const selected = ref<any>(props.emptyDate ? null : today)
+
+onMounted(() => {
+  // Sincronizar el estado inicial con el modelValue
+  if (props.modelValue) {
+    selected.value = new Date(props.modelValue)
+  }
+})
 
 const onDateChange = (newDate: any) => {
   dialog.value = false
-  selected.value = newDate
+  selected.value = new Date(newDate)
   emit('update:modelValue', selected.value)
   emit('onChange', selected.value)
 }
 
 const formattedDate = computed(() => {
+  if (!selected.value) return 'Seleccionar fecha'
+
   const date = new Date(selected.value)
   const day = date.getDate().toString().padStart(2, '0')
   const month = date.toLocaleDateString('es-ES', { month: 'long' })
@@ -48,7 +58,9 @@ const formattedDate = computed(() => {
 watch(
   () => props.modelValue,
   newValue => {
-    selected.value = newValue || new Date().toISOString().split('T')[0]
+    if (newValue) {
+      selected.value = new Date(newValue)
+    }
   }
 )
 </script>

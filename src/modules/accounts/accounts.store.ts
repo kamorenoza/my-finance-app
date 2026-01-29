@@ -11,7 +11,8 @@ export const useAccountsStore = defineStore('accounts', {
     search: '',
     selectedType: 'all' as 'all' | Account['type'],
     sortBy: 'name' as 'name' | 'type',
-    currentIndexAccount: 0
+    currentIndexAccount: 0,
+    selectedExpense: null as Expense | null
   }),
 
   getters: {
@@ -55,6 +56,10 @@ export const useAccountsStore = defineStore('accounts', {
 
     setCurrentIndexAccount(index: number) {
       this.currentIndexAccount = index
+    },
+
+    setSelectedExpense(expense: Expense | null) {
+      this.selectedExpense = expense
     },
 
     loadAccounts() {

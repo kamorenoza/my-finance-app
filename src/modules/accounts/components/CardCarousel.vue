@@ -22,6 +22,10 @@
           v-if="account.type === AccountTypes.normal"
           :account="account"
         />
+        <CardCreditCard
+          v-else-if="account.type === AccountTypes.TC"
+          :account="account"
+        />
       </div>
     </div>
   </div>
@@ -31,6 +35,7 @@ import { ref, watch } from 'vue'
 import { useAccountsStore } from '../accounts.store'
 import NormalCard from './NormalCard.vue'
 import { AccountTypes, AccountView } from '../accounts.constants'
+import CardCreditCard from './CardCreditCard.vue'
 
 const store = useAccountsStore()
 

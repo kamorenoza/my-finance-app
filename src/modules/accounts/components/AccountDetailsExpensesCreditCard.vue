@@ -28,61 +28,6 @@
         </div>
       </transition>
     </template>
-
-    <div v-if="getCompletedExpensesGrouped.length > 0">
-      <div
-        class="account-preview__completed"
-        @click="showCompleted = !showCompleted"
-        :class="{
-          'not-pending': pendingExpenses.length === 0
-        }"
-        v-if="pendingExpenses.length > 0"
-      >
-        <span>Movimientos Completados</span>
-        <v-icon>{{
-          showCompleted ? 'mdi-chevron-up' : 'mdi-chevron-down'
-        }}</v-icon>
-      </div>
-      <transition name="slide">
-        <div v-show="showCompleted" class="completed-expenses">
-          <template
-            v-for="group in getCompletedExpensesGrouped"
-            :key="group.label"
-          >
-            <p
-              v-if="!group.hideHeader"
-              class="account-preview__group"
-              @click="toggleGroup(group.label)"
-            >
-              <span class="group-header-content">
-                {{ group.label }}
-                <v-icon v-if="expandedGroups[group.label] === false">
-                  mdi-chevron-down
-                </v-icon>
-              </span>
-              <span
-                v-currency-formatter="Math.abs(group.total)"
-                class="group-total"
-              ></span>
-            </p>
-            <transition name="slide">
-              <div
-                v-show="
-                  expandedGroups[group.label] !== false || group.hideHeader
-                "
-              >
-                <AccountExpense
-                  v-for="expense in group.expenses"
-                  :key="expense.id"
-                  :expense="expense"
-                  :account-id="accountId"
-                />
-              </div>
-            </transition>
-          </template>
-        </div>
-      </transition>
-    </div>
   </div>
 </template>
 
@@ -116,15 +61,11 @@ const showCompleted = ref(false)
 
 onMounted(() => {
   showCompleted.value = getPendingExpensesGrouped.value.length === 0
-  emit('updateExpenses', allFilteredExpenses.value)
+  emit('updateExpenses', pendingExpenses.value)
 })
 
-const pendingExpenses = computed(() =>
-  (store.getAccountById(accountId)?.expenses || []).filter(e => e.isPending)
-)
-
-const completedExpenses = computed(() =>
-  (store.getAccountById(accountId)?.expenses || []).filter(e => !e.isPending)
+const pendingExpenses = computed(
+  () => store.getAccountById(accountId)?.expenses || []
 )
 
 const toggleGroup = (groupLabel: string) => {
@@ -222,6 +163,15 @@ const applyFilters = (expenses: Expense[]) => {
   return filtered
 }
 
+// Watchers para emitir cambios
+watch(
+  () => applyFilters(pendingExpenses.value),
+  newExpenses => {
+    emit('updateExpenses', newExpenses)
+  },
+  { deep: true }
+)
+
 const addGroupHeaders = (expenses: Expense[]) => {
   const result: {
     type: 'group'
@@ -285,96 +235,8 @@ const addGroupHeaders = (expenses: Expense[]) => {
   return result
 }
 
-// Computed para obtener todos los movimientos filtrados (pendientes + completados)
-const allFilteredExpenses = computed(() => {
-  const pendingFiltered = applyFilters(pendingExpenses.value)
-  const completedFiltered = applyFilters(completedExpenses.value)
-  return [...pendingFiltered, ...completedFiltered]
-})
-
-// Watchers para emitir cambios
-watch(
-  () => allFilteredExpenses.value,
-  newExpenses => {
-    emit('updateExpenses', newExpenses)
-  },
-  { deep: true }
-)
-
 const getPendingExpensesGrouped = computed(() => {
   const filtered = applyFilters(pendingExpenses.value)
-
-  // Si es "none", agrupar internamente por categoría pero sin mostrar headers
-  if (props.filters.groupBy === 'none') {
-    const sorted = filtered.sort((a, b) =>
-      (a.category?.name || 'Sin categoría').localeCompare(
-        b.category?.name || 'Sin categoría'
-      )
-    )
-    return [
-      {
-        type: 'group',
-        label: 'All',
-        total: sorted.reduce(
-          (sum, e) => (e.type === 'ingreso' ? sum + e.value : sum - e.value),
-          0
-        ),
-        expenses: sorted,
-        hideHeader: true
-      }
-    ] as any
-  }
-
-  if (!props.filters.groupBy) {
-    return [
-      {
-        type: 'group',
-        label: 'All',
-        total: filtered.reduce(
-          (sum, e) => (e.type === 'ingreso' ? sum + e.value : sum - e.value),
-          0
-        ),
-        expenses: filtered
-      }
-    ] as any
-  }
-
-  if (props.filters.groupBy === 'category') {
-    const sorted = filtered.sort((a, b) =>
-      (a.category?.name || 'Sin categoría').localeCompare(
-        b.category?.name || 'Sin categoría'
-      )
-    )
-    return addGroupHeaders(sorted)
-  }
-
-  if (props.filters.groupBy === 'type') {
-    const sorted = filtered.sort((a, b) => a.type.localeCompare(b.type))
-    return addGroupHeaders(sorted)
-  }
-
-  if (props.filters.groupBy === 'date') {
-    const sorted = filtered.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    )
-    return addGroupHeaders(sorted)
-  }
-
-  return [
-    {
-      type: 'group',
-      label: 'All',
-      total: filtered.reduce(
-        (sum, e) => (e.type === 'ingreso' ? sum + e.value : sum - e.value),
-        0
-      ),
-      expenses: filtered
-    }
-  ] as any
-})
-
-const getCompletedExpensesGrouped = computed(() => {
-  const filtered = applyFilters(completedExpenses.value)
 
   // Si es "none", agrupar internamente por categoría pero sin mostrar headers
   if (props.filters.groupBy === 'none') {

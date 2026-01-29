@@ -23,8 +23,8 @@ const isDesktop = computed(() => mdAndUp.value)
 const layoutStyle = computed(() => {
   if (!isDesktop.value) return {}
 
-  const paddingLeft = layout.rail ? '72px' : '276px' // ajusta si usas otro ancho
-  const paddingTop = '80px' // navbar flotante (64px alto + margen)
+  const paddingLeft = layout.rail ? '72px' : '256px' // ajusta si usas otro ancho
+  const paddingTop = '65px' // navbar flotante (64px alto + margen)
 
   return {
     paddingLeft,

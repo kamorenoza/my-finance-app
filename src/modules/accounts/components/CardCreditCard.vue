@@ -1,52 +1,75 @@
 <template>
-  <div class="normal-card__container">
+  <div class="credit-card__container">
     <v-card
-      class="normal-card"
+      class="credit-card"
       @click="onCardClick"
       :class="{ 'no-click': fromPreview }"
     >
-      <div class="normal-card__header">
-        <div class="normal-card__icon">
-          <SuitcaseIcon />
+      <div class="credit-card__header">
+        <div class="credit-card__icon">
+          <CreditCardIcon />
         </div>
 
         <div>
-          <h3 class="normal-card__title">{{ account.name }}</h3>
-          <p class="normal-card__type">{{ type }}</p>
+          <h3 class="credit-card__title">{{ account.name }}</h3>
+          <p class="credit-card__type">{{ type }}</p>
         </div>
       </div>
 
-      <div class="normal-card__balance">
-        <div class="normal-card__label">Saldo</div>
-        <div class="normal-card__value">{{ calculateBalance }}</div>
-      </div>
+      <div class="d-flex mt-5 justify-space-between align-center">
+        <div>
+          <div class="credit-card__fixed">
+            <span class="credit-card__label">Saldo</span>
+            <span class="credit-card__saldo">{{ getLoanAmount }}</span>
+          </div>
+          <div class="credit-card__fixed">
+            <span class="credit-card__label">Cupo</span>
+            <span class="credit-card__fixed-label">{{ getCreditLimit }}</span>
+          </div>
+          <div class="credit-card__fixed">
+            <span class="credit-card__label">Libre</span>
+            <span class="credit-card__fixed-label">{{ getFreeCredit }}</span>
+          </div>
+        </div>
+        <div>
+          <div class="credit-card__dates">
+            <p class="credit-card__label">Corte</p>
+            <p class="credit-card__fixed-label">
+              {{ account.cutoffDate }} de cada mes
+            </p>
+          </div>
 
-      <div class="normal-card__fixed">
-        <span class="normal-card__label">Saldo real</span>
-        <span class="normal-card__fixed-label">{{ calculateRealBalance }}</span>
+          <div class="credit-card__dates mt-5">
+            <p class="credit-card__label">Pago</p>
+            <p class="credit-card__fixed-label">
+              {{ account.dueDate }} de cada mes
+            </p>
+          </div>
+        </div>
       </div>
     </v-card>
-    <div v-if="fromPreview" class="normal-card__actions">
+
+    <div v-if="fromPreview" class="credit-card__actions">
       <v-btn
-        class="btn-icon normal-card__action"
+        class="btn-icon credit-card__action"
         @click="editAccount"
         :ripple="false"
       >
-        <EditIcon />
+        <EditIcon :color="red" />
         <span class="label-display">Editar cuenta</span>
       </v-btn>
 
       <v-btn
-        class="btn-icon normal-card__action"
+        class="btn-icon credit-card__action"
         @click="deleteAccount"
         :ripple="false"
       >
-        <TrashIcon />
+        <TrashIcon :color="red" />
         <span class="label-display">Eliminar cuenta</span>
       </v-btn>
 
       <v-btn
-        class="btn-icon normal-card__action"
+        class="btn-icon credit-card__action"
         @click="backToAccounts"
         :ripple="false"
       >
@@ -63,7 +86,6 @@
 </template>
 
 <script setup lang="ts">
-import SuitcaseIcon from '@/assets/icons/Suitcase.icon.vue'
 import { type Account } from '../accounts.interface'
 import { computed, ref } from 'vue'
 import { AccountTypes } from '../accounts.constants'
@@ -75,6 +97,8 @@ import { useAccountsStore } from '../accounts.store'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
 import AddAccount from './AddAccount.vue'
 import { currencyFormatter } from '@/modules/shared/utils'
+import CreditCardIcon from '@/assets/icons/CreditCard.icon.vue'
+import { red } from '@/styles/variables.styles'
 
 interface Props {
   account: Account
@@ -89,36 +113,8 @@ const toast = useToastStore()
 
 const openEditAccount = ref(false)
 
-const calculateBalance = computed(() => {
-  let total = 0
-  const expenses = props.account.expenses ?? []
-
-  expenses.forEach(exp => {
-    if (!exp.isPending) {
-      if (exp.type === 'ingreso') {
-        total += exp.value
-      } else {
-        total -= exp.value
-      }
-    }
-  })
-
-  return currencyFormatter(total)
-})
-
-const calculateRealBalance = computed(() => {
-  let total = 0
-  const expenses = props.account.expenses ?? []
-
-  expenses.forEach(exp => {
-    if (exp.type === 'ingreso') {
-      total += exp.value
-    } else {
-      total -= exp.value
-    }
-  })
-
-  return currencyFormatter(total)
+const getCreditLimit = computed(() => {
+  return currencyFormatter(props.account.creditLimit || 0)
 })
 
 const type = computed(() => {
@@ -129,6 +125,36 @@ const type = computed(() => {
   } else {
     return 'Préstamo'
   }
+})
+
+const getLoanAmount = computed(() => {
+  if (!props.account.expenses || props.account.expenses.length === 0) {
+    return '$ 0'
+  }
+
+  const total = props.account.expenses.reduce((acc, exp) => {
+    const value = Number(exp.value) || 0
+    return exp.type === 'ingreso' ? acc + value : acc - value
+  }, 0)
+
+  const formatted = currencyFormatter(Math.abs(total))
+  return formatted || '$ 0'
+})
+
+const getFreeCredit = computed(() => {
+  const total = props.account.expenses?.reduce((total, exp) => {
+    if (exp.type === 'ingreso') {
+      return total + exp.value
+    } else {
+      return total - exp.value
+    }
+  }, 0)
+
+  const freeCredit = props.account.creditLimit
+    ? props.account.creditLimit + (total || 0)
+    : 0
+
+  return currencyFormatter(freeCredit)
 })
 
 const onCardClick = () => {
@@ -167,7 +193,7 @@ const backToAccounts = (event: Event) => {
 </script>
 
 <style scoped lang="scss">
-.normal-card {
+.credit-card {
   &__container {
     overflow: hidden;
     position: relative;
@@ -178,7 +204,7 @@ const backToAccounts = (event: Event) => {
     }
   }
 
-  background-color: $card-green-lg;
+  background-color: $card-red-lg;
   padding: 15px;
   border-radius: 16px;
   box-shadow: none;
@@ -206,7 +232,7 @@ const backToAccounts = (event: Event) => {
   }
 
   &__icon {
-    background-color: $card-green-md;
+    background-color: $card-red-md;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -234,6 +260,7 @@ const backToAccounts = (event: Event) => {
     font-size: 12px;
     color: $text-gray-md;
     line-height: 13px;
+    width: 40px;
   }
 
   &__value {
@@ -244,9 +271,8 @@ const backToAccounts = (event: Event) => {
   &__fixed {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 10px;
-    padding-top: 15px;
+    margin-bottom: 10px;
   }
 
   &__fixed-label {
@@ -260,7 +286,7 @@ const backToAccounts = (event: Event) => {
     font-size: 13px;
     line-height: 13px;
     font-family: $font-medium;
-    color: $card-green;
+    color: $card-red;
   }
 
   &__type {
@@ -285,7 +311,7 @@ const backToAccounts = (event: Event) => {
   }
 
   &__action {
-    background-color: $card-green-md;
+    background-color: $card-red-md;
     width: 35px !important;
     height: 35px !important;
     background-color: $white;
@@ -318,7 +344,7 @@ const backToAccounts = (event: Event) => {
   }
 
   &__dates {
-    .normal-card__label {
+    .credit-card__label {
       font-size: 11px;
       color: $text-dark;
     }

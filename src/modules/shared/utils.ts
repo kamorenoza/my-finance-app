@@ -4,11 +4,21 @@ export const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2, 8)
 }
 
-export const currencyFormatter = (value: number, locale = 'es-ES'): string => {
-  if (value === null || value === undefined || isNaN(value)) return '$ 0'
-  const formattedValue = new Intl.NumberFormat(locale).format(value)
-
-  return `$ ${formattedValue}`
+export const currencyFormatter = (value: number, locale = 'es-CO'): string => {
+  try {
+    if (value === null || value === undefined || isNaN(value)) return '$ 0'
+    const numValue = Number(value)
+    if (isNaN(numValue)) return '$ 0'
+    const formattedValue = new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(numValue)
+    return formattedValue
+  } catch (error) {
+    return '$ 0'
+  }
 }
 
 export const dateFormatter = (date: string | Date): string => {

@@ -29,6 +29,10 @@
             density="comfortable"
           />
 
+          <p>Filtrar por fechas</p>
+          <DateSelector v-model="initDate" :empty-date="true" />
+          <DateSelector v-model="endDate" :empty-date="true" />
+
           <div class="accounts-filter__actions">
             <v-btn @click="menu = false" type="button" class="btn-label">
               Cerrar
@@ -50,33 +54,73 @@
           <SearchIcon />
         </template>
       </v-text-field>
+
+      <AddAccountExpenseMore :account-id="accountId" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import FilterIcon from '@/assets/icons/Filter.icon.vue'
-import {  ref, watch } from 'vue'
+import SearchIcon from '@/assets/icons/Search.icon.vue'
+import { ref, watch, onMounted } from 'vue'
+import { configService } from '@/modules/accounts/config.service'
+import AddAccountExpenseMore from './AddAccountExpenseMore.vue'
+import DateSelector from '@/modules/shared/components/DateSelector.vue'
+
+interface Props {
+  accountId: string
+  initialGroupBy?: string | null
+  initialOrderBy?: string | null
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  initialGroupBy: 'category',
+  initialOrderBy: null
+})
 
 const menu = ref(false)
 const search = ref('')
-const selectedType = ref<string | null>('category')
-const sortBy = ref<string | null>(null)
+const selectedType = ref<string | null>(props.initialGroupBy)
+const sortBy = ref<string | null>(props.initialOrderBy)
+const initDate = ref<any>(null)
+const endDate = ref<any>(null)
+
+// Load configuration when component mounts
+onMounted(() => {
+  const savedConfig = configService.getAccountConfig(props.accountId)
+  if (savedConfig.groupBy !== undefined) {
+    selectedType.value = savedConfig.groupBy
+  }
+  if (savedConfig.orderBy !== undefined) {
+    sortBy.value = savedConfig.orderBy
+  }
+})
 const emit = defineEmits<{
-  (e: 'filterChange', filter: { search: string; groupBy: string | null; orderBy: string | null }): void
+  (
+    e: 'filterChange',
+    filter: {
+      search: string
+      groupBy: string | null
+      orderBy: string | null
+      initDate?: Date | null
+      endDate?: Date | null
+    }
+  ): void
 }>()
 
 const groupByOptions = [
+  { label: 'No agrupar', type: 'none' },
   { label: 'Ingreso/Gasto', type: 'type' },
   { label: 'Categoría', type: 'category' },
-  { label: 'Fecha', type: 'date' },
+  { label: 'Fecha', type: 'date' }
 ]
 
 const orderByOptions = [
   { label: 'Más reciente', filter: 'newest' },
   { label: 'Más antiguo', filter: 'oldest' },
   { label: 'Mayor monto', filter: 'highest' },
-  { label: 'Menor monto', filter: 'lowest' },
+  { label: 'Menor monto', filter: 'lowest' }
 ]
 
 const clearAll = () => {
@@ -84,18 +128,21 @@ const clearAll = () => {
   search.value = ''
   selectedType.value = 'category'
   sortBy.value = null
+  initDate.value = null
+  endDate.value = null
 }
 
-watch([search, selectedType, sortBy], () => {
+watch([search, selectedType, sortBy, initDate, endDate], () => {
   // Emit filter change event
   const filter = {
     search: search.value,
     groupBy: selectedType.value,
     orderBy: sortBy.value,
+    initDate: initDate.value,
+    endDate: endDate.value
   }
   emit('filterChange', filter)
 })
-
 </script>
 
 <style scoped lang="scss">

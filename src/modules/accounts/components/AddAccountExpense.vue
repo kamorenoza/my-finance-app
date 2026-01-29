@@ -2,14 +2,23 @@
   <div class="add-expense">
     <div class="add-expense__bar">
       <div>
-        <v-btn
-          :color="entry.type === 'ingreso' ? '#7ac07c' : '#cb4f47'"
-          class="btn-circle add-expense__type"
-          @click="selectType"
+        <v-tooltip
+          :model-value="showTypeTooltip"
+          location="top"
+          :text="tooltipText"
         >
-          <PlusIcon v-if="entry.type === 'ingreso'" />
-          <MinusIcon v-else />
-        </v-btn>
+          <template v-slot:activator="{ props }">
+            <v-btn
+              v-bind="props"
+              :color="entry.type === 'ingreso' ? '#7ac07c' : '#cb4f47'"
+              class="btn-circle add-expense__type"
+              @click="selectType"
+            >
+              <PlusIcon v-if="entry.type === 'ingreso'" />
+              <MinusIcon v-else />
+            </v-btn>
+          </template>
+        </v-tooltip>
       </div>
 
       <div class="add-expense__input">
@@ -75,6 +84,9 @@ const toast = useToastStore()
 const store = useAccountsStore()
 
 const valueInput = ref()
+const showTypeTooltip = ref(false)
+let tooltipTimeout: ReturnType<typeof setTimeout> | null = null
+
 const entry: Ref<Expense> = ref({
   description: '',
   value: 0,
@@ -86,9 +98,20 @@ const entry: Ref<Expense> = ref({
 })
 const typeMenu = ref(false)
 
+const tooltipText = computed(() => {
+  return entry.value.type === 'ingreso' ? 'Ingreso' : 'Gasto'
+})
+
 const selectType = () => {
   typeMenu.value = !typeMenu.value
   entry.value.type = typeMenu.value ? 'ingreso' : 'gasto'
+
+  // Show tooltip for 1 second
+  showTypeTooltip.value = true
+  if (tooltipTimeout) clearTimeout(tooltipTimeout)
+  tooltipTimeout = setTimeout(() => {
+    showTypeTooltip.value = false
+  }, 1000)
 }
 
 const formattedValue = computed(() => {
@@ -139,11 +162,16 @@ const scrollIntoView = (refEl: any) => {
 .add-expense {
   padding: 0;
   position: absolute;
-  bottom: 20px;
+  bottom: 40px;
   width: calc(100% - 30px);
   background-color: $bg-bar;
   padding: 10px 8px;
   border-radius: 16px;
+
+  @media (min-width: 960px) {
+    bottom: 20px;
+    max-width: 550px;
+  }
 
   &__title {
     font-family: $font-medium;
@@ -176,13 +204,13 @@ const scrollIntoView = (refEl: any) => {
   }
 
   &__input {
-    width: 45%;
+    width: 100%;
     font-size: 14px;
     scroll-margin-bottom: 200px;
   }
 
   &__value {
-    width: 120px;
+    width: 50%;
   }
 
   &__button {

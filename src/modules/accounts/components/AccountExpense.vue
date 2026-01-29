@@ -32,6 +32,12 @@
       </div>
     </div>
   </div>
+  <AddAccountExpenseMore
+    :accountId="accountId"
+    :edit-view="true"
+    @closeEditExpense="onCloseEdit"
+    :drawerOpen="drawer"
+  />
 </template>
 
 <script setup lang="ts">
@@ -40,6 +46,8 @@ import type { Expense } from '../accounts.interface'
 import { useConfirm } from '@/modules/shared/composables/useConfirm'
 import { useAccountsStore } from '../accounts.store'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
+import AddAccountExpenseMore from './AddAccountExpenseMore.vue'
+import { ref } from 'vue'
 
 interface Props {
   expense: Expense
@@ -50,6 +58,8 @@ const props = defineProps<Props>()
 const confirm = useConfirm()
 const accountStore = useAccountsStore()
 const toast = useToastStore()
+
+const drawer = ref(false)
 
 const itemMenu = [
   { label: 'Editar', id: 1 },
@@ -65,7 +75,8 @@ const handleMenuAction = (id: number) => {
 }
 
 const editExpense = () => {
-  console.log('Editar gasto')
+  drawer.value = true
+  accountStore.setSelectedExpense(props.expense)
 }
 
 const deleteExpense = async () => {
@@ -80,6 +91,10 @@ const deleteExpense = async () => {
     accountStore.deleteExpense(props.accountId, props.expense.id)
     toast.success('Movimiento eliminado')
   }
+}
+
+const onCloseEdit = () => {
+  drawer.value = false
 }
 </script>
 
