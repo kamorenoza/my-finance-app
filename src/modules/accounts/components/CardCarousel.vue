@@ -152,7 +152,6 @@ watch(
   transition: transform 0.3s ease;
   padding-left: 15px;
   padding-top: 10px;
-  background-color: $bg-primary !important;
   min-height: 185px;
 
   @media (min-width: 600px) {

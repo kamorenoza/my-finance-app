@@ -13,20 +13,23 @@
         :ripple="false"
         class="btn-label dot-menu__button"
       >
-        <v-icon>mdi-dots-vertical</v-icon>
+        <slot>
+          <v-icon>mdi-dots-vertical</v-icon>
+        </slot>
       </v-btn>
     </template>
 
-    <v-card class="dot-menu__card">
+    <div class="dot-menu__card">
       <div
         class="dot-menu__item"
         v-for="item in props.items"
         :key="item.label"
         @click="onClickItem(item)"
       >
+        <component :is="item.icon" v-if="item.icon" />
         {{ item.label }}
       </div>
-    </v-card>
+    </div>
   </v-menu>
 </template>
 
@@ -34,7 +37,7 @@
 import { ref } from 'vue'
 
 const props = defineProps<{
-  items?: Array<{ label: string; id: number }>
+  items?: Array<{ label: string; id: number; icon?: any }>
 }>()
 
 const emit = defineEmits<{
@@ -43,7 +46,7 @@ const emit = defineEmits<{
 
 const menu = ref(false)
 
-const onClickItem = (item: { label: string; id: number }) => {
+const onClickItem = (item: { label: string; id: number; icon?: any }) => {
   menu.value = false
   emit('onMenuClicked', item.id)
 }
@@ -58,14 +61,29 @@ const onClickItem = (item: { label: string; id: number }) => {
   }
 
   &__card {
-    padding: 8px;
     width: 200px;
+    background-color: $white;
+    padding: 10px;
+    box-shadow:
+      0px 12px 32px rgba(0, 0, 0, 0.12),
+      0px 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 24px;
   }
 
   &__item {
     padding: 6px 12px;
     font-size: 14px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    .icon {
+      width: 18px;
+      height: 18px;
+      margin-bottom: 1px;
+    }
 
     &:hover {
       background-color: $bg-general;

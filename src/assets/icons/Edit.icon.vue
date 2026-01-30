@@ -1,43 +1,36 @@
 <template>
   <svg
     class="icon"
+    viewBox="0 0 24 24"
+    fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    xmlns:xlink="http://www.w3.org/1999/xlink"
-    viewBox="0,0,256,256"
-    width="50px"
-    height="50px"
-    fill-rule="nonzero"
   >
+    <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
     <g
-      :fill="color"
-      fill-rule="nonzero"
-      stroke="none"
-      stroke-width="1"
-      stroke-linecap="butt"
-      stroke-linejoin="miter"
-      stroke-miterlimit="10"
-      stroke-dasharray=""
-      stroke-dashoffset="0"
-      font-family="none"
-      font-weight="none"
-      font-size="none"
-      text-anchor="none"
-      style="mix-blend-mode: normal"
-    >
-      <g transform="scale(5.12,5.12)">
+      id="SVGRepo_tracerCarrier"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    ></g>
+    <g id="SVGRepo_iconCarrier">
+      <g id="Edit / Edit_Pencil_01">
         <path
-          d="M43.125,2c-1.24609,0 -2.48828,0.48828 -3.4375,1.4375l-0.8125,0.8125l6.875,6.875c-0.00391,0.00391 0.8125,-0.8125 0.8125,-0.8125c1.90234,-1.90234 1.89844,-4.97656 0,-6.875c-0.95312,-0.94922 -2.19141,-1.4375 -3.4375,-1.4375zM37.34375,6.03125c-0.22656,0.03125 -0.4375,0.14453 -0.59375,0.3125l-32.4375,32.46875c-0.12891,0.11719 -0.22656,0.26953 -0.28125,0.4375l-2,7.5c-0.08984,0.34375 0.01172,0.70703 0.26172,0.95703c0.25,0.25 0.61328,0.35156 0.95703,0.26172l7.5,-2c0.16797,-0.05469 0.32031,-0.15234 0.4375,-0.28125l32.46875,-32.4375c0.39844,-0.38672 0.40234,-1.02344 0.01563,-1.42187c-0.38672,-0.39844 -1.02344,-0.40234 -1.42187,-0.01562l-32.28125,32.28125l-4.0625,-4.0625l32.28125,-32.28125c0.30078,-0.28906 0.39063,-0.73828 0.22266,-1.12109c-0.16797,-0.38281 -0.55469,-0.62109 -0.97266,-0.59766c-0.03125,0 -0.0625,0 -0.09375,0z"
+          id="Vector"
+          d="M12 8.00012L4 16.0001V20.0001L8 20.0001L16 12.0001M12 8.00012L14.8686 5.13146L14.8704 5.12976C15.2652 4.73488 15.463 4.53709 15.691 4.46301C15.8919 4.39775 16.1082 4.39775 16.3091 4.46301C16.5369 4.53704 16.7345 4.7346 17.1288 5.12892L18.8686 6.86872C19.2646 7.26474 19.4627 7.46284 19.5369 7.69117C19.6022 7.89201 19.6021 8.10835 19.5369 8.3092C19.4628 8.53736 19.265 8.73516 18.8695 9.13061L18.8686 9.13146L16 12.0001M12 8.00012L16 12.0001"
+          :stroke="color"
+          stroke-width="1.296"
+          stroke-linecap="round"
+          stroke-linejoin="round"
         ></path>
       </g>
     </g>
   </svg>
 </template>
 <script setup lang="ts">
-import { cardGreen } from '@/styles/variables.styles'
+import { colorPrimary } from '@/styles/variables.styles'
 
 interface Props {
   color?: string
 }
 
-const { color = cardGreen } = defineProps<Props>()
+const { color = colorPrimary } = defineProps<Props>()
 </script>

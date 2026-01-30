@@ -50,7 +50,7 @@ body {
 }
 
 .v-application {
-  background-color: $bg-primary;
+  background-color: $white;
 }
 
 .v-application__wrap {
@@ -91,7 +91,7 @@ body {
 }
 
 .btn-rounded {
-  border-radius: 8px !important;
+  border-radius: 14px !important;
   font-weight: 400 !important;
   text-transform: none !important;
   box-shadow: none !important;
@@ -314,14 +314,14 @@ body {
   }
 
   .v-field__overlay {
-    border-radius: 0 12px 12px 0;
+    border-radius: 0 14px 14px 0;
     opacity: 0.04 !important;
   }
 
   .v-input__prepend {
-    background: $bg-input;
+    background: $bg-general;
     margin-right: 0;
-    border-radius: 12px 0 0 12px;
+    border-radius: 14px 0 0 14px;
     padding: 5px 8px;
 
     .icon {

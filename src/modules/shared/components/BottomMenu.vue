@@ -8,7 +8,7 @@
       elevation="4"
       class="floating-navbar d-flex align-center"
     >
-      <v-btn icon color="primary" @click="toggleRail">
+      <v-btn icon color="#8971ad" @click="toggleRail">
         <v-icon>{{ layout.rail ? 'mdi-menu-open' : 'mdi-menu' }}</v-icon>
       </v-btn>
     </v-app-bar>
@@ -71,41 +71,37 @@
         no-gutters
         class="menu-items"
       >
-        <v-col
-          class="menu-btn"
-          cols="2"
-          :class="{ active: isActive('/cuentas') }"
-        >
-          <div class="menu-item" @click="router.push('/cuentas')">
-            <PurseIcon
-              class="menu-icon"
-              :color="isActive('/cuentas') ? colorPrimary : colorGrey"
-            />
+        <v-col cols="2">
+          <div class="menu-btn" :class="{ active: isActive('/cuentas') }">
+            <div class="menu-item" @click="router.push('/cuentas')">
+              <PurseIcon
+                class="menu-icon"
+                :color="isActive('/cuentas') ? colorPrimary : colorGrey"
+              />
+            </div>
+            <span :class="['menu-label', { active: isActive('/cuentas') }]">
+              Cuentas
+            </span>
           </div>
-          <span :class="['menu-label', { active: isActive('/cuentas') }]">
-            Cuentas
-          </span>
         </v-col>
 
-        <v-col
-          class="menu-btn"
-          cols="2"
-          :class="{ active: isActive('/gastos') }"
-        >
-          <div class="menu-item" @click="router.push('/gastos')">
-            <ExpenseHandIcon
-              class="menu-icon"
-              :color="isActive('/gastos') ? colorPrimary : colorGrey"
-            />
+        <v-col cols="2">
+          <div class="menu-btn" :class="{ active: isActive('/gastos') }">
+            <div class="menu-item" @click="router.push('/gastos')">
+              <ExpenseHandIcon
+                class="menu-icon"
+                :color="isActive('/gastos') ? colorPrimary : colorGrey"
+              />
+            </div>
+            <span :class="['menu-label', { active: isActive('/gastos') }]">
+              Gastos
+            </span>
           </div>
-          <span :class="['menu-label', { active: isActive('/gastos') }]">
-            Gastos
-          </span>
         </v-col>
 
         <v-col cols="2" class="fab-container">
           <v-btn
-            color="primary"
+            color="#8971ad"
             class="btn-fab fab-button"
             @click="router.push('/')"
           >
@@ -114,36 +110,32 @@
           <span class="fab-label">Presupuesto</span>
         </v-col>
 
-        <v-col
-          class="menu-btn"
-          cols="2"
-          :class="{ active: isActive('/notas') }"
-        >
-          <div class="menu-item" @click="router.push('/notas')">
-            <NotesIcon
-              class="menu-icon"
-              :color="isActive('/notas') ? colorPrimary : colorGrey"
-            />
+        <v-col cols="2">
+          <div class="menu-btn">
+            <div class="menu-item" @click="router.push('/notas')">
+              <NotesIcon
+                class="menu-icon"
+                :color="isActive('/notas') ? colorPrimary : colorGrey"
+              />
+            </div>
+            <span :class="['menu-label', { active: isActive('/notas') }]">
+              Notas
+            </span>
           </div>
-          <span :class="['menu-label', { active: isActive('/notas') }]">
-            Notas
-          </span>
         </v-col>
 
-        <v-col
-          class="menu-btn"
-          cols="2"
-          :class="{ active: isActive('/compras') }"
-        >
-          <div class="menu-item" @click="router.push('/compras')">
-            <ShoppingIcon
-              class="menu-icon"
-              :color="isActive('/compras') ? colorPrimary : colorGrey"
-            />
+        <v-col cols="2">
+          <div class="menu-btn" :class="{ active: isActive('/compras') }">
+            <div class="menu-item" @click="router.push('/compras')">
+              <ShoppingIcon
+                class="menu-icon"
+                :color="isActive('/compras') ? colorPrimary : colorGrey"
+              />
+            </div>
+            <span :class="['menu-label', { active: isActive('/compras') }]">
+              Compras
+            </span>
           </div>
-          <span :class="['menu-label', { active: isActive('/compras') }]">
-            Compras
-          </span>
         </v-col>
       </v-row>
     </div>
@@ -220,12 +212,26 @@ function toggleRail() {
   left: 0;
   right: 0;
   background: #ffffff;
-  height: 70px;
+  height: 80px;
   z-index: 1000;
   padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
   padding-left: 7px;
   padding-right: 7px;
-  //border-radius: 25px 25px 0 0;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      rgba($color-primary, 0) 0%,
+      rgba($color-primary, 0.25) 50%,
+      rgba($color-primary, 0) 100%
+    );
+  }
 }
 
 .menu-items {
@@ -245,10 +251,12 @@ function toggleRail() {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  width: 61px;
+  margin: auto;
 
   &.active {
     background-color: $color-lg-primary;
-    border-radius: 8px;
+    border-radius: 16px;
   }
 }
 
@@ -332,10 +340,17 @@ function toggleRail() {
   }
 }
 
+:deep(.v-list-item) {
+  &:has(.side-menu-label.active) {
+    background-color: $color-lg-primary;
+  }
+}
+
 .side-menu-label {
   font-size: 14px;
   color: $color-grey;
   transition: color 0.3s ease;
+  line-height: 1rem;
 
   &.active {
     color: $color-primary;

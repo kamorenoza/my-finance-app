@@ -17,6 +17,7 @@
     <div class="account-expense__content">
       <div class="account-expense__details">
         <p class="account-expense__desc">{{ expense.description }}</p>
+        <p v-date-formatter="expense.date" class="account-expense__date"></p>
         <p class="account-expense__comments">{{ expense.comments }}</p>
       </div>
       <div class="account-expense__info">
@@ -25,7 +26,6 @@
           class="account-expense__value"
           :class="expense.type === 'ingreso' ? 'positive' : 'negative'"
         ></p>
-        <p v-date-formatter="expense.date" class="account-expense__date"></p>
         <div class="account-expense__actions">
           <dot-menu :items="itemMenu" @onMenuClicked="handleMenuAction" />
         </div>
@@ -48,6 +48,8 @@ import { useAccountsStore } from '../accounts.store'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
 import AddAccountExpenseMore from './AddAccountExpenseMore.vue'
 import { ref } from 'vue'
+import EditIcon from '@/assets/icons/Edit.icon.vue'
+import TrashIcon from '@/assets/icons/Trash.icon.vue'
 
 interface Props {
   expense: Expense
@@ -62,8 +64,8 @@ const toast = useToastStore()
 const drawer = ref(false)
 
 const itemMenu = [
-  { label: 'Editar', id: 1 },
-  { label: 'Eliminar', id: 2 }
+  { label: 'Editar', id: 1, icon: EditIcon },
+  { label: 'Eliminar', id: 2, icon: TrashIcon }
 ]
 
 const handleMenuAction = (id: number) => {
@@ -100,9 +102,8 @@ const onCloseEdit = () => {
 
 <style scoped lang="scss">
 .account-expense {
-  margin-bottom: 12px;
+  margin-bottom: 20px;
   display: flex;
-  align-items: center;
   gap: 5px;
   width: 100%;
 
@@ -118,7 +119,6 @@ const onCloseEdit = () => {
 
   &__content {
     display: flex;
-    align-items: center;
     justify-content: space-between;
     flex-grow: 1;
     padding-right: 20px;
@@ -163,7 +163,7 @@ const onCloseEdit = () => {
 
   &__actions {
     position: absolute;
-    top: 0;
+    top: -7px;
     right: -5px;
   }
 }

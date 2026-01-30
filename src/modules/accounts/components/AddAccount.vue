@@ -290,7 +290,7 @@ const close = () => {
   height: 40px !important;
   display: flex;
   align-items: center;
-  border-radius: 12px !important;
+  border-radius: 14px !important;
 
   @media (min-width: 960px) {
     width: 48px !important;

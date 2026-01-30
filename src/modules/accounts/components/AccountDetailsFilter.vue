@@ -171,11 +171,11 @@ watch([search, selectedType, sortBy, initDate, endDate], () => {
   &__icon {
     height: 40px;
     width: 40px;
-    background-color: $bg-input;
+    background-color: $bg-general;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
+    border-radius: 12px;
     cursor: pointer;
 
     .icon {
@@ -198,10 +198,11 @@ watch([search, selectedType, sortBy, initDate, endDate], () => {
     background-color: $white;
     padding: 20px 20px 0;
     width: 300px;
-    border-radius: 16px;
     box-shadow:
-      rgba(9, 30, 66, 0.25) 0px 4px 8px -2px,
-      rgba(9, 30, 66, 0.08) 0px 0px 0px 1px;
+      0px 12px 32px rgba(0, 0, 0, 0.12),
+      0px 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 24px;
   }
 
   &__actions {
@@ -209,6 +210,11 @@ watch([search, selectedType, sortBy, initDate, endDate], () => {
     align-items: center;
     justify-content: end;
     margin-bottom: 10px;
+    margin-top: 20px;
   }
+}
+
+:deep(.search-input .v-input__prepend) {
+  background: $bg-general;
 }
 </style>

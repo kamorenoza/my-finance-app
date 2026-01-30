@@ -4,7 +4,7 @@
     viewBox="-2.4 -2.4 28.80 28.80"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    stroke="#b5dfa6"
+    stroke="#c0dedc"
     stroke-width="0.40800000000000003"
   >
     <g id="SVGRepo_bgCarrier" stroke-width="0"></g>

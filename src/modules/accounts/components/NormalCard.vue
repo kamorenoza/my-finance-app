@@ -25,35 +25,14 @@
         <span class="normal-card__label">Saldo real</span>
         <span class="normal-card__fixed-label">{{ calculateRealBalance }}</span>
       </div>
+      <div v-if="fromPreview" class="normal-card__actions">
+        <DotMenu :items="itemMenu" @onMenuClicked="handleMenuAction">
+          <div class="normal-card__menu">
+            <v-icon>mdi-dots-horizontal</v-icon>
+          </div>
+        </DotMenu>
+      </div>
     </v-card>
-    <div v-if="fromPreview" class="normal-card__actions">
-      <v-btn
-        class="btn-icon normal-card__action"
-        @click="editAccount"
-        :ripple="false"
-      >
-        <EditIcon />
-        <span class="label-display">Editar cuenta</span>
-      </v-btn>
-
-      <v-btn
-        class="btn-icon normal-card__action"
-        @click="deleteAccount"
-        :ripple="false"
-      >
-        <TrashIcon />
-        <span class="label-display">Eliminar cuenta</span>
-      </v-btn>
-
-      <v-btn
-        class="btn-icon normal-card__action"
-        @click="backToAccounts"
-        :ripple="false"
-      >
-        <v-icon left>mdi-arrow-left</v-icon>
-        <span class="label-display">Volver a cuentas</span>
-      </v-btn>
-    </div>
   </div>
   <AddAccount
     :account="account"
@@ -68,18 +47,24 @@ import { type Account } from '../accounts.interface'
 import { computed, ref } from 'vue'
 import { AccountTypes } from '../accounts.constants'
 import { useRouter } from 'vue-router'
-import TrashIcon from '@/assets/icons/Trash.icon.vue'
-import EditIcon from '@/assets/icons/Edit.icon.vue'
 import { useConfirm } from '@/modules/shared/composables/useConfirm'
 import { useAccountsStore } from '../accounts.store'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
 import AddAccount from './AddAccount.vue'
 import { currencyFormatter } from '@/modules/shared/utils'
+import EditIcon from '@/assets/icons/Edit.icon.vue'
+import TrashIcon from '@/assets/icons/Trash.icon.vue'
+import DotMenu from '@/modules/shared/components/DotMenu.vue'
 
 interface Props {
   account: Account
   fromPreview?: boolean
 }
+
+const itemMenu = [
+  { label: 'Editar', id: 1, icon: EditIcon },
+  { label: 'Eliminar', id: 2, icon: TrashIcon }
+]
 
 const props = defineProps<Props>()
 const router = useRouter()
@@ -136,8 +121,15 @@ const onCardClick = () => {
   router.push({ name: 'cuentas-detalle', params: { id: props.account.id } })
 }
 
-const editAccount = (event: Event) => {
-  event.stopPropagation()
+const handleMenuAction = (id: number) => {
+  if (id === 1) {
+    editAccount()
+  } else if (id === 2) {
+    deleteAccount()
+  }
+}
+
+const editAccount = () => {
   openEditAccount.value = true
 }
 
@@ -145,8 +137,7 @@ const onEditClose = () => {
   openEditAccount.value = false
 }
 
-const deleteAccount = async (event: Event) => {
-  event.stopPropagation()
+const deleteAccount = async () => {
   const confirmed = await confirm({
     title: 'Eliminar cuenta',
     message: `Se eliminará la cuenta <strong>${props.account.name}</strong> y toda su información, <strong>este proceso es IRREVERSIBLE</strong> ¿Está seguro?`,
@@ -159,28 +150,26 @@ const deleteAccount = async (event: Event) => {
     router.push({ name: 'cuentas' })
   }
 }
-
-const backToAccounts = (event: Event) => {
-  event.stopPropagation()
-  router.push({ name: 'cuentas' })
-}
 </script>
 
 <style scoped lang="scss">
 .normal-card {
   &__container {
-    overflow: hidden;
     position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     @media (min-width: 960px) {
-      overflow: visible;
-      width: 100%;
+      justify-content: flex-start;
+      max-width: 540px;
     }
   }
 
   background-color: $card-green-lg;
-  padding: 15px;
-  border-radius: 16px;
+  padding: 20px 25px 20px 23px;
+  padding-top: 17px;
+  border-radius: 40px;
   box-shadow: none;
   position: relative;
   height: 166px;
@@ -190,7 +179,6 @@ const backToAccounts = (event: Event) => {
   @media (min-width: 960px) {
     &.no-click {
       overflow: visible;
-      max-width: 400px;
     }
   }
 
@@ -210,14 +198,14 @@ const backToAccounts = (event: Event) => {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;
+    border-radius: 15px;
     width: 45px;
     height: 45px;
     margin-right: 3px;
 
     .icon {
-      width: 38px;
-      height: 38px;
+      width: 35px;
+      height: 35px;
     }
   }
 
@@ -246,7 +234,7 @@ const backToAccounts = (event: Event) => {
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    padding-top: 15px;
+    padding-top: 10px;
   }
 
   &__fixed-label {
@@ -274,47 +262,18 @@ const backToAccounts = (event: Event) => {
     position: absolute;
     z-index: 9;
     pointer-events: all;
-    top: 10px;
-    right: 10px;
-    display: flex;
-    gap: 8px;
-
-    @media (min-width: 960px) {
-      flex-direction: column;
-    }
+    top: 18px;
+    right: 35px;
   }
 
-  &__action {
-    background-color: $card-green-md;
-    width: 35px !important;
-    height: 35px !important;
+  &__menu {
     background-color: $white;
-    box-shadow: none;
-
-    .icon {
-      width: 20px;
-      height: 20px;
-      fill: $white;
-    }
-
-    .label-display {
-      display: none;
-    }
-
-    @media (min-width: 960px) {
-      width: auto !important;
-      text-align: start;
-      justify-content: start;
-      padding: 0 10px !important;
-      align-items: center;
-
-      .label-display {
-        margin-left: 5px;
-        display: inline;
-        text-transform: none;
-        letter-spacing: 1px;
-      }
-    }
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 100%;
   }
 
   &__dates {
@@ -323,5 +282,14 @@ const backToAccounts = (event: Event) => {
       color: $text-dark;
     }
   }
+}
+
+:deep(.normal-card__menu .v-icon) {
+  color: $text-gray !important;
+  opacity: 1 !important;
+}
+
+:deep(.normal-card__actions .v-btn) {
+  opacity: 1 !important;
 }
 </style>

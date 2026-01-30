@@ -1,6 +1,6 @@
 <!-- src/components/ConfirmDialog.vue -->
 <template>
-  <v-dialog v-model="visible" max-width="300">
+  <v-dialog v-model="visible" max-width="350">
     <v-card>
       <v-card-title class="general-title confirm-title">{{
         title

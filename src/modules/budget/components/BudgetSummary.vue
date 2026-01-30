@@ -37,7 +37,7 @@
         <v-card class="summary-card balance" flat>
           <div class="card-content">
             <div class="d-flex align-center">
-              <v-icon size="17" class="icon" color="#1976d2">
+              <v-icon size="17" class="icon" color="#8971ad">
                 mdi-scale-balance
               </v-icon>
               <div class="label">Balance</div>

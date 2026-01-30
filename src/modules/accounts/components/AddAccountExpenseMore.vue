@@ -272,12 +272,12 @@ watch(
   height: 40px !important;
   display: flex;
   align-items: center;
-  border-radius: 12px !important;
+  border-radius: 14px !important;
 
   @media (min-width: 960px) {
-    width: 48px !important;
-    height: 46px !important;
-    border-radius: 16px !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 14px !important;
   }
 }
 

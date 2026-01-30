@@ -7,10 +7,16 @@
         @click="toggleGroup(group.label)"
       >
         <span class="group-header-content">
-          {{ group.label }}
-          <v-icon v-if="expandedGroups[group.label] === false">
-            mdi-chevron-down
-          </v-icon>
+          <span>{{ group.label }}</span>
+          <span class="account-preview__chevron">
+            <v-icon size="17">
+              {{
+                expandedGroups[group.label] === false
+                  ? 'mdi-chevron-down'
+                  : 'mdi-chevron-up'
+              }}
+            </v-icon>
+          </span>
         </span>
         <span
           v-currency-formatter="Math.abs(group.total)"
@@ -313,7 +319,7 @@ const getPendingExpensesGrouped = computed(() => {
   &__expenses {
     overflow-y: auto;
     flex-grow: 1;
-    height: calc(100dvh - 516px);
+    height: calc(100dvh - 366px);
     padding-right: 15px;
 
     .expense-item {
@@ -355,12 +361,14 @@ const getPendingExpensesGrouped = computed(() => {
   &__group {
     font-weight: 600;
     font-size: 0.9rem;
-    margin: 20px 0 10px;
+    margin: 25px 0 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
     user-select: none;
+    border-bottom: 1px solid $bg-general;
+    padding-bottom: 5px;
 
     &:first-of-type {
       margin-top: 0;
@@ -380,6 +388,17 @@ const getPendingExpensesGrouped = computed(() => {
       font-size: 0.85rem;
       font-weight: 700;
     }
+  }
+
+  &__chevron {
+    background-color: $bg-general;
+    border-radius: 100%;
+    margin-left: 3px;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 

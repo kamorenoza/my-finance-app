@@ -1,5 +1,14 @@
 <template>
   <div class="account-preview">
+    <div>
+      <v-btn
+        class="account-preview__back"
+        @click="backToAccounts"
+        :ripple="false"
+      >
+        <v-icon left>mdi-arrow-left</v-icon>
+      </v-btn>
+    </div>
     <div class="account-preview__content">
       <div class="pr15">
         <NormalCard
@@ -39,43 +48,86 @@
       </div>
 
       <div class="account-preview__summary">
-        <div class="account-preview__summary-item">
-          <p>Total ingresos <span v-if="!hasActiveFilters">del mes</span></p>
-          <p class="value ingreso">{{ getTotalIngresos }}</p>
+        <div class="account-preview__pie">
+          <Pie :data="chartData" :options="options" />
         </div>
 
-        <div class="account-preview__summary-item">
+        <div class="account-preview__history">
+          <h3>Histórico últimos 6 meses</h3>
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Mes</th>
+                <th class="ingreso">Ingresos</th>
+                <th class="gasto">Gastos</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="month in getSixMonthsHistory"
+                :key="`${month.year}-${month.month}`"
+              >
+                <td>{{ month.monthYear }}</td>
+                <td class="ingreso">
+                  {{
+                    month.ingresos > 0
+                      ? currencyFormatter(month.ingresos)
+                      : '$ 0'
+                  }}
+                </td>
+                <td class="gasto">
+                  {{
+                    month.gastos > 0 ? currencyFormatter(month.gastos) : '$ 0'
+                  }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!--<div class="account-preview__summary-item ingreso">
+          <p>
+            Total ingresos
+            <span v-if="!hasActiveFilters">del mes</span>
+          </p>
+          <p class="value">{{ getTotalIngresos }}</p>
+        </div>
+
+        <div class="account-preview__summary-item gasto">
           <p>Total gastos <span v-if="!hasActiveFilters">del mes</span></p>
-          <p class="value gasto">{{ getTotalGastos }}</p>
+          <p class="value">{{ getTotalGastos }}</p>
         </div>
 
         <div class="account-preview__summary-item">
           <p>Total movimientos <span v-if="!hasActiveFilters">del mes</span></p>
           <p class="value">{{ getTotalMovimientos }}</p>
-        </div>
+        </div>-->
       </div>
-
-      <AddAccountExpense class="fixed-bottom" :accountId="accountId" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAccountsStore } from '@/modules/accounts/accounts.store'
 import { configService } from '@/modules/accounts/config.service'
 import type { Expense } from '@/modules/accounts/accounts.interface'
-import AddAccountExpense from './components/AddAccountExpense.vue'
 import NormalCard from './components/NormalCard.vue'
 import AccountDetailsFilter from './components/AccountDetailsFilter.vue'
 import AccountDetailsExpensesNormal from './components/AccountDetailsExpensesNormal.vue'
 import AccountDetailsExpensesCreditCard from './components/AccountDetailsExpensesCreditCard.vue'
 import CardCreditCard from './components/CardCreditCard.vue'
 import { currencyFormatter } from '../shared/utils'
+import { Pie } from 'vue-chartjs'
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
+
+ChartJS.register(ArcElement, Tooltip, Legend)
 
 const route = useRoute()
 const store = useAccountsStore()
+const router = useRouter()
+
 const accountId = route.params.id as string
 const account = computed(() => store.getAccountById(accountId)!)
 
@@ -85,6 +137,63 @@ const currentFilter = ref({
   orderBy: null as string | null,
   initDate: null as Date | null,
   endDate: null as Date | null
+})
+
+const options = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom' as const
+    }
+  }
+}
+
+// Agrupar gastos por categoría y calcular totales
+const expensesByCategory = computed(() => {
+  const categories: {
+    [key: string]: { total: number; color: string }
+  } = {}
+
+  expensesToConsider.value.forEach(expense => {
+    const categoryName = expense.category?.name || 'Sin categoría'
+
+    if (!categories[categoryName]) {
+      // Tomar el color de la primera categoría encontrada
+      categories[categoryName] = {
+        total: 0,
+        color: expense.category?.backgroundColor || '#999999'
+      }
+    }
+
+    // Solo sumar gastos (no ingresos)
+    if (expense.type === 'gasto') {
+      categories[categoryName].total += expense.value
+    }
+  })
+
+  return categories
+})
+
+// Generar datos dinámicos para la gráfica
+const chartData = computed(() => {
+  const labels = Object.keys(expensesByCategory.value)
+  const data = Object.values(expensesByCategory.value).map(cat => cat.total)
+  const backgroundColor = Object.values(expensesByCategory.value).map(
+    cat => cat.color
+  )
+
+  return {
+    labels,
+    datasets: [
+      {
+        backgroundColor,
+        data,
+        borderColor: '#ffffff',
+        borderWidth: 2
+      }
+    ]
+  }
 })
 
 // Load configuration when component mounts
@@ -101,6 +210,11 @@ onMounted(() => {
     currentFilter.value.orderBy = savedConfig.orderBy
   }
 })
+
+const backToAccounts = (event: Event) => {
+  event.stopPropagation()
+  router.push({ name: 'cuentas' })
+}
 
 // Save configuration when filter changes
 watch(
@@ -200,13 +314,82 @@ const getTotalGastos = computed(() => {
 const getTotalMovimientos = computed(() => {
   return expensesToConsider.value.length
 })
+
+// Obtener histórico de los últimos 6 meses
+const getSixMonthsHistory = computed(() => {
+  if (!account.value || !account.value.expenses) {
+    return []
+  }
+
+  const history: {
+    monthYear: string
+    month: number
+    year: number
+    ingresos: number
+    gastos: number
+  }[] = []
+
+  // Obtener los últimos 6 meses
+  const today = new Date()
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1)
+    const month = date.getMonth()
+    const year = date.getFullYear()
+
+    const monthName = new Intl.DateTimeFormat('es-ES', {
+      month: 'short',
+      year: 'numeric'
+    }).format(date)
+
+    // Calcular ingresos y gastos del mes usando todos los gastos sin filtros
+    const allExpenses = account.value.expenses || []
+
+    let ingresos = 0
+    let gastos = 0
+
+    allExpenses.forEach(expense => {
+      const expenseDate = new Date(expense.date)
+      if (
+        expenseDate.getMonth() === month &&
+        expenseDate.getFullYear() === year
+      ) {
+        if (expense.type === 'ingreso') {
+          ingresos += expense.value
+        } else {
+          gastos += expense.value
+        }
+      }
+    })
+
+    history.push({
+      monthYear: monthName.charAt(0).toUpperCase() + monthName.slice(1),
+      month,
+      year,
+      ingresos,
+      gastos
+    })
+  }
+
+  return history.reverse()
+})
 </script>
 
 <style scoped lang="scss">
 .account-preview {
+  position: relative;
+
   @media (min-width: 960px) {
     max-width: 960px;
     overflow: hidden;
+  }
+
+  &__back {
+    background: none;
+    border: none;
+    box-shadow: none;
+    position: absolute;
+    top: 0;
+    z-index: 9;
   }
 
   &__header {
@@ -237,9 +420,9 @@ const getTotalMovimientos = computed(() => {
     display: flex;
     flex-direction: column;
     padding-left: 15px;
-    padding-top: 20px;
+    padding-top: 40px;
     height: calc(100dvh - 60px);
-    padding-bottom: 90px;
+    padding-bottom: 10px;
   }
 
   &__expenses {
@@ -322,30 +505,35 @@ const getTotalMovimientos = computed(() => {
 
   &__summary {
     display: none;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    width: 100%;
+    height: calc(100dvh - 100px);
 
     @media (min-width: 960px) {
       display: flex;
       position: absolute;
       right: 0;
-      top: 200px;
+      top: 20px;
       width: calc(100% - 560px);
-      flex-direction: column;
-      gap: 10px;
-      align-items: center;
+      overflow-y: auto;
+      max-height: calc(100dvh - 100px);
     }
 
     &-item {
       width: calc(100% - 10px);
-      max-width: 250px;
+      max-width: 200px;
       background-color: $white;
-      border: 1px solid $border-general;
       color: $text-gray;
-      padding: 17px 10px 10px 15px;
+      padding: 10px;
+      padding-left: 15px;
       border-radius: 16px;
-      height: 90px;
+      height: 80px;
       display: flex;
       flex-direction: column;
-      text-align: center;
+      border: 1px solid $border-general;
+      border-top: 4px solid #8971ad;
 
       p {
         font-size: 0.7rem;
@@ -356,14 +544,99 @@ const getTotalMovimientos = computed(() => {
         color: $text-dark;
       }
 
-      .ingreso {
-        color: $color-green;
+      &.ingreso {
+        border-top: 4px solid $color-green;
+        .value {
+          color: $color-green;
+        }
       }
 
-      .gasto {
-        color: $color-red;
+      &.gasto {
+        border-top: 4px solid $color-red;
+        .value {
+          color: $color-red;
+        }
       }
     }
+  }
+
+  &__history {
+    width: 80%;
+    max-width: 400px;
+    background-color: #ece9ef;
+    border-radius: 16px;
+    padding: 15px;
+    margin-top: 14px;
+
+    h3 {
+      font-size: 0.9rem;
+      margin: 0 0 10px 0;
+      color: $text-dark;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+
+      thead {
+        tr {
+          border-bottom: 2px solid $border-general;
+
+          th {
+            padding: 8px 5px;
+            text-align: left;
+            color: $text-dark;
+
+            &.ingreso {
+              color: $color-green;
+              text-align: right;
+            }
+
+            &.gasto {
+              color: $color-red;
+              text-align: right;
+            }
+          }
+        }
+      }
+
+      tbody {
+        tr {
+          border-bottom: 1px solid $border-general;
+
+          &:hover {
+            background-color: #f9f9f9;
+          }
+
+          td {
+            padding: 10px 5px;
+            color: $text-gray;
+
+            &.ingreso {
+              color: $color-green;
+              font-family: $font-medium;
+              text-align: right;
+            }
+
+            &.gasto {
+              color: $color-red;
+              font-family: $font-medium;
+              text-align: right;
+            }
+
+            &:first-child {
+              text-align: left;
+              color: $text-dark;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  &__pie {
+    height: 170px;
   }
 }
 

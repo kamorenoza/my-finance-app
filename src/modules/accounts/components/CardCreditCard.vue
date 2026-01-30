@@ -16,67 +16,30 @@
         </div>
       </div>
 
-      <div class="d-flex mt-5 justify-space-between align-center">
-        <div>
-          <div class="credit-card__fixed">
-            <span class="credit-card__label">Saldo</span>
-            <span class="credit-card__saldo">{{ getLoanAmount }}</span>
-          </div>
-          <div class="credit-card__fixed">
-            <span class="credit-card__label">Cupo</span>
-            <span class="credit-card__fixed-label">{{ getCreditLimit }}</span>
-          </div>
-          <div class="credit-card__fixed">
-            <span class="credit-card__label">Libre</span>
-            <span class="credit-card__fixed-label">{{ getFreeCredit }}</span>
-          </div>
-        </div>
-        <div>
-          <div class="credit-card__dates">
-            <p class="credit-card__label">Corte</p>
-            <p class="credit-card__fixed-label">
-              {{ account.cutoffDate }} de cada mes
-            </p>
-          </div>
+      <div class="credit-card__balance">
+        <div class="credit-card__label">Saldo</div>
+        <div class="credit-card__value">{{ getLoanAmount }}</div>
+      </div>
 
-          <div class="credit-card__dates mt-5">
-            <p class="credit-card__label">Pago</p>
-            <p class="credit-card__fixed-label">
-              {{ account.dueDate }} de cada mes
-            </p>
-          </div>
+      <div class="credit-card__fixed">
+        <span class="credit-card__label">Libre</span>
+        <span class="credit-card__fixed-label">{{ getFreeCredit }}</span>
+      </div>
+
+      <div class="d-flex justify-end mt-1">
+        <div class="credit-card__fixed">
+          <span class="credit-card__label">Cupo</span>
+          <span class="credit-card__fixed-label">{{ getCreditLimit }}</span>
         </div>
       </div>
+      <div v-if="fromPreview" class="credit-card__actions">
+        <DotMenu :items="itemMenu" @onMenuClicked="handleMenuAction">
+          <div class="credit-card__menu">
+            <v-icon>mdi-dots-horizontal</v-icon>
+          </div>
+        </DotMenu>
+      </div>
     </v-card>
-
-    <div v-if="fromPreview" class="credit-card__actions">
-      <v-btn
-        class="btn-icon credit-card__action"
-        @click="editAccount"
-        :ripple="false"
-      >
-        <EditIcon :color="red" />
-        <span class="label-display">Editar cuenta</span>
-      </v-btn>
-
-      <v-btn
-        class="btn-icon credit-card__action"
-        @click="deleteAccount"
-        :ripple="false"
-      >
-        <TrashIcon :color="red" />
-        <span class="label-display">Eliminar cuenta</span>
-      </v-btn>
-
-      <v-btn
-        class="btn-icon credit-card__action"
-        @click="backToAccounts"
-        :ripple="false"
-      >
-        <v-icon left>mdi-arrow-left</v-icon>
-        <span class="label-display">Volver a cuentas</span>
-      </v-btn>
-    </div>
   </div>
   <AddAccount
     :account="account"
@@ -90,15 +53,15 @@ import { type Account } from '../accounts.interface'
 import { computed, ref } from 'vue'
 import { AccountTypes } from '../accounts.constants'
 import { useRouter } from 'vue-router'
-import TrashIcon from '@/assets/icons/Trash.icon.vue'
-import EditIcon from '@/assets/icons/Edit.icon.vue'
 import { useConfirm } from '@/modules/shared/composables/useConfirm'
 import { useAccountsStore } from '../accounts.store'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
 import AddAccount from './AddAccount.vue'
 import { currencyFormatter } from '@/modules/shared/utils'
 import CreditCardIcon from '@/assets/icons/CreditCard.icon.vue'
-import { red } from '@/styles/variables.styles'
+import DotMenu from '@/modules/shared/components/DotMenu.vue'
+import EditIcon from '@/assets/icons/Edit.icon.vue'
+import TrashIcon from '@/assets/icons/Trash.icon.vue'
 
 interface Props {
   account: Account
@@ -112,6 +75,10 @@ const accountStore = useAccountsStore()
 const toast = useToastStore()
 
 const openEditAccount = ref(false)
+const itemMenu = [
+  { label: 'Editar', id: 1, icon: EditIcon },
+  { label: 'Eliminar', id: 2, icon: TrashIcon }
+]
 
 const getCreditLimit = computed(() => {
   return currencyFormatter(props.account.creditLimit || 0)
@@ -162,8 +129,15 @@ const onCardClick = () => {
   router.push({ name: 'cuentas-detalle', params: { id: props.account.id } })
 }
 
-const editAccount = (event: Event) => {
-  event.stopPropagation()
+const handleMenuAction = (id: number) => {
+  if (id === 1) {
+    editAccount()
+  } else if (id === 2) {
+    deleteAccount()
+  }
+}
+
+const editAccount = () => {
   openEditAccount.value = true
 }
 
@@ -171,8 +145,7 @@ const onEditClose = () => {
   openEditAccount.value = false
 }
 
-const deleteAccount = async (event: Event) => {
-  event.stopPropagation()
+const deleteAccount = async () => {
   const confirmed = await confirm({
     title: 'Eliminar cuenta',
     message: `Se eliminará la cuenta <strong>${props.account.name}</strong> y toda su información, <strong>este proceso es IRREVERSIBLE</strong> ¿Está seguro?`,
@@ -185,28 +158,26 @@ const deleteAccount = async (event: Event) => {
     router.push({ name: 'cuentas' })
   }
 }
-
-const backToAccounts = (event: Event) => {
-  event.stopPropagation()
-  router.push({ name: 'cuentas' })
-}
 </script>
 
 <style scoped lang="scss">
 .credit-card {
   &__container {
-    overflow: hidden;
     position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     @media (min-width: 960px) {
-      overflow: visible;
-      width: 100%;
+      justify-content: flex-start;
+      max-width: 540px;
     }
   }
 
   background-color: $card-red-lg;
-  padding: 15px;
-  border-radius: 16px;
+  padding: 20px 25px 20px 23px;
+  padding-top: 17px;
+  border-radius: 40px;
   box-shadow: none;
   position: relative;
   height: 166px;
@@ -216,13 +187,14 @@ const backToAccounts = (event: Event) => {
   @media (min-width: 960px) {
     &.no-click {
       overflow: visible;
-      max-width: 400px;
+      //max-width: 400px;
     }
   }
 
   &.no-click {
     cursor: default;
     pointer-events: none;
+    //max-width: 400px;
   }
 
   &__header {
@@ -236,14 +208,14 @@ const backToAccounts = (event: Event) => {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;
+    border-radius: 15px;
     width: 45px;
     height: 45px;
     margin-right: 3px;
 
     .icon {
-      width: 38px;
-      height: 38px;
+      width: 35px;
+      height: 35px;
     }
   }
 
@@ -254,6 +226,10 @@ const backToAccounts = (event: Event) => {
 
   &__balance {
     margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 3px;
   }
 
   &__label {
@@ -266,6 +242,7 @@ const backToAccounts = (event: Event) => {
   &__value {
     font-size: 20px;
     font-family: $font-medium;
+    color: $card-red;
   }
 
   &__fixed {
@@ -277,9 +254,8 @@ const backToAccounts = (event: Event) => {
 
   &__fixed-label {
     font-size: 13px;
-    color: $text-gray-md;
+    color: $text-dark;
     line-height: 13px;
-    font-family: $font-medium;
   }
 
   &__saldo {
@@ -300,54 +276,33 @@ const backToAccounts = (event: Event) => {
     position: absolute;
     z-index: 9;
     pointer-events: all;
-    top: 10px;
-    right: 10px;
-    display: flex;
-    gap: 8px;
-
-    @media (min-width: 960px) {
-      flex-direction: column;
-    }
+    top: 18px;
+    right: 35px;
   }
 
-  &__action {
-    background-color: $card-red-md;
-    width: 35px !important;
-    height: 35px !important;
+  &__menu {
     background-color: $white;
-    box-shadow: none;
-
-    .icon {
-      width: 20px;
-      height: 20px;
-      fill: $white;
-    }
-
-    .label-display {
-      display: none;
-    }
-
-    @media (min-width: 960px) {
-      width: auto !important;
-      text-align: start;
-      justify-content: start;
-      padding: 0 10px !important;
-      align-items: center;
-
-      .label-display {
-        margin-left: 5px;
-        display: inline;
-        text-transform: none;
-        letter-spacing: 1px;
-      }
-    }
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 100%;
   }
 
   &__dates {
     .credit-card__label {
       font-size: 11px;
-      color: $text-dark;
     }
   }
+}
+
+:deep(.credit-card__menu .v-icon) {
+  color: $text-gray !important;
+  opacity: 1 !important;
+}
+
+:deep(.credit-card__actions .v-btn) {
+  opacity: 1 !important;
 }
 </style>

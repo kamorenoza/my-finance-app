@@ -47,11 +47,11 @@
   </svg>
 </template>
 <script setup lang="ts">
-import { red } from '@/styles/variables.styles'
+import { cardRed } from '@/styles/variables.styles'
 
 interface Props {
   color?: string
 }
 
-const { color = red } = defineProps<Props>()
+const { color = cardRed } = defineProps<Props>()
 </script>
