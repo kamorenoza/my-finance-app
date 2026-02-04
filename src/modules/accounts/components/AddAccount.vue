@@ -1,12 +1,29 @@
 <template>
-  <v-btn
-    :color="colorMdPrimary"
-    class="btn-fab fab-button"
-    @click="drawer = true"
-    v-if="!account"
+  <v-tooltip
+    v-model="tooltipVisible"
+    text="Agregar cuenta"
+    location="left"
+    :open-on-hover="false"
+    :open-on-focus="false"
+    :open-on-click="false"
   >
-    <AddIcon class="icon" />
-  </v-btn>
+    <template v-slot:activator="{ props }">
+      <v-btn
+        :color="colorMdPrimary"
+        class="btn-fab fab-button"
+        @click="handlePress"
+        @pointerdown="onPointerDown"
+        @pointerup="onPointerUp"
+        @pointercancel="onPointerUp"
+        @pointerleave="onPointerLeave"
+        @pointerenter="onPointerEnter"
+        v-if="!account"
+        v-bind="props"
+      >
+        <AddIcon class="icon" />
+      </v-btn>
+    </template>
+  </v-tooltip>
 
   <v-navigation-drawer
     v-model="drawer"
@@ -129,6 +146,12 @@ const type = shallowRef(AccountTypes.normal)
 const creditLimit = ref<number | null>(null)
 const cutoffDate = ref<number | null>(null)
 const dueDate = ref<number | null>(null)
+const tooltipVisible = ref(false)
+const isLongPress = ref(false)
+let longPressResetTimeout: ReturnType<typeof setTimeout> | null = null
+let longPressTimeout: ReturnType<typeof setTimeout> | null = null
+let tooltipAutoHideTimeout: ReturnType<typeof setTimeout> | null = null
+const lastPointerType = ref<'mouse' | 'touch' | 'pen' | ''>('') as any
 
 // Filtrar tipos excluyendo "loan"
 const filteredAccountTypes = computed(() => {
@@ -140,6 +163,90 @@ const formattedValue = computed(() => {
   if (!creditLimit.value && creditLimit.value !== 0) return ''
   return creditLimit.value.toLocaleString('es-CO')
 })
+
+const showTooltip = (fromTouch = false) => {
+  tooltipVisible.value = true
+  if (fromTouch) {
+    isLongPress.value = true
+    if (tooltipAutoHideTimeout) {
+      clearTimeout(tooltipAutoHideTimeout)
+    }
+    tooltipAutoHideTimeout = setTimeout(() => {
+      hideTooltip()
+    }, 1500)
+  } else if (tooltipAutoHideTimeout) {
+    clearTimeout(tooltipAutoHideTimeout)
+  }
+}
+
+const hideTooltip = () => {
+  tooltipVisible.value = false
+  if (tooltipAutoHideTimeout) {
+    clearTimeout(tooltipAutoHideTimeout)
+  }
+  if (longPressResetTimeout) {
+    clearTimeout(longPressResetTimeout)
+  }
+  longPressResetTimeout = setTimeout(() => {
+    isLongPress.value = false
+  }, 300)
+}
+
+const startLongPress = () => {
+  if (longPressTimeout) {
+    clearTimeout(longPressTimeout)
+  }
+  longPressTimeout = setTimeout(() => {
+    showTooltip(true)
+  }, 500)
+}
+
+const endLongPress = () => {
+  if (longPressTimeout) {
+    clearTimeout(longPressTimeout)
+  }
+  if (isLongPress.value) {
+    hideTooltip()
+  }
+}
+
+const onPointerDown = (event: PointerEvent) => {
+  lastPointerType.value = event.pointerType
+  if (event.pointerType === 'touch') {
+    startLongPress()
+  }
+}
+
+const onPointerEnter = (event: PointerEvent) => {
+  if (event.pointerType === 'mouse') {
+    showTooltip(false)
+  }
+}
+
+const onPointerUp = (event: PointerEvent) => {
+  if (event.pointerType === 'touch') {
+    endLongPress()
+  } else if (event.pointerType === 'mouse') {
+    hideTooltip()
+  }
+}
+
+const onPointerLeave = (event: PointerEvent) => {
+  if (event.pointerType === 'mouse') {
+    hideTooltip()
+  } else if (event.pointerType === 'touch') {
+    endLongPress()
+  }
+}
+
+const handlePress = () => {
+  if (isLongPress.value) {
+    isLongPress.value = false
+    return
+  }
+
+  drawer.value = true
+}
 
 const saveAccount = () => {
   if (!props.account) {

@@ -82,12 +82,12 @@ const clearAll = () => {
 
 <style scoped lang="scss">
 .sort-filter {
-  padding: 0 15px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
   margin-bottom: 10px;
+  flex-grow: 1;
 
   @media (min-width: 960px) {
     padding-left: 0;
@@ -112,6 +112,9 @@ const clearAll = () => {
     justify-content: center;
     border-radius: 12px;
     cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
 
     .icon {
       width: 25px;

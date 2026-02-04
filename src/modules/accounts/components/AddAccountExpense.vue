@@ -4,13 +4,30 @@
     ref="formContainer"
     :class="{ 'add-expense--focused': isFocused }"
   >
-    <v-btn
-      :color="colorMdPrimary"
-      class="btn-fab fab-button add-expense__button"
-      @click="isFocused = true"
+    <v-tooltip
+      v-model="tooltipVisible"
+      text="Agregar movimiento"
+      location="left"
+      :open-on-hover="false"
+      :open-on-focus="false"
+      :open-on-click="false"
     >
-      <AddIcon class="icon" />
-    </v-btn>
+      <template v-slot:activator="{ props }">
+        <v-btn
+          :color="colorMdPrimary"
+          class="btn-fab fab-button add-expense__button"
+          @click="handlePress"
+          @pointerdown="onPointerDown"
+          @pointerup="onPointerUp"
+          @pointercancel="onPointerUp"
+          @pointerleave="onPointerLeave"
+          @pointerenter="onPointerEnter"
+          v-bind="props"
+        >
+          <AddIcon class="icon" />
+        </v-btn>
+      </template>
+    </v-tooltip>
 
     <div class="add-expense">
       <div class="add-expense__header">
@@ -145,12 +162,16 @@
           Guardar
         </v-btn>
       </div>
+
+      <div class="add-expense__delete" v-if="store.selectedExpense">
+        <p @click="deleteExpense">Eliminar Movimiento</p>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch, type Ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
 import type { EntryType } from '@/modules/budget/budget.interface'
 import { useAccountsStore } from '../accounts.store'
@@ -158,17 +179,25 @@ import { useCategoryStore } from '@/modules/categories/categories.store'
 import DateSelector from '@/modules/shared/components/DateSelector.vue'
 import { colorMdPrimary } from '@/styles/variables.styles'
 import AddIcon from '@/assets/icons/Add.icon.vue'
+import { useConfirm } from '@/modules/shared/composables/useConfirm'
 
 const props = defineProps<{ accountId: string }>()
 
 const toast = useToastStore()
 const store = useAccountsStore()
 const categoryStore = useCategoryStore()
+const confirm = useConfirm()
 
 const valueInput = ref()
 const descriptionInput = ref()
 const isFocused = ref(false)
 const keyboard = ref(false)
+const tooltipVisible = ref(false)
+const isLongPress = ref(false)
+let longPressResetTimeout: ReturnType<typeof setTimeout> | null = null
+let longPressTimeout: ReturnType<typeof setTimeout> | null = null
+let tooltipAutoHideTimeout: ReturnType<typeof setTimeout> | null = null
+const lastPointerType = ref<'mouse' | 'touch' | 'pen' | ''>('')
 
 const entry = ref({
   description: '',
@@ -249,6 +278,22 @@ const saveEntry = () => {
   }
 }
 
+const deleteExpense = async () => {
+  const expense = store.selectedExpense
+  const confirmed = await confirm({
+    title: 'Eliminar movimiento',
+    message: `Se eliminará el movimiento ${expense?.description} ¿Está seguro?`,
+    confirmColor: 'red'
+  })
+
+  if (confirmed) {
+    if (!expense?.id) return
+    store.deleteExpense(props.accountId, expense?.id)
+    toast.success('Movimiento eliminado')
+    close()
+  }
+}
+
 const openForm = () => {
   isFocused.value = true
 
@@ -273,6 +318,89 @@ const fillData = () => {
       entry.value.id = selectedExpense.id || ''
     }
   }
+}
+
+const showTooltip = (fromTouch = false) => {
+  tooltipVisible.value = true
+  if (fromTouch) {
+    isLongPress.value = true
+    if (tooltipAutoHideTimeout) {
+      clearTimeout(tooltipAutoHideTimeout)
+    }
+    tooltipAutoHideTimeout = setTimeout(() => {
+      hideTooltip()
+    }, 1500)
+  } else if (tooltipAutoHideTimeout) {
+    clearTimeout(tooltipAutoHideTimeout)
+  }
+}
+
+const hideTooltip = () => {
+  tooltipVisible.value = false
+  if (tooltipAutoHideTimeout) {
+    clearTimeout(tooltipAutoHideTimeout)
+  }
+  if (longPressResetTimeout) {
+    clearTimeout(longPressResetTimeout)
+  }
+  longPressResetTimeout = setTimeout(() => {
+    isLongPress.value = false
+  }, 300)
+}
+
+const startLongPress = () => {
+  if (longPressTimeout) {
+    clearTimeout(longPressTimeout)
+  }
+  longPressTimeout = setTimeout(() => {
+    showTooltip(true)
+  }, 500)
+}
+
+const endLongPress = () => {
+  if (longPressTimeout) {
+    clearTimeout(longPressTimeout)
+  }
+  if (isLongPress.value) {
+    hideTooltip()
+  }
+}
+
+const onPointerDown = (event: PointerEvent) => {
+  lastPointerType.value = event.pointerType as 'mouse' | 'touch' | 'pen'
+  if (event.pointerType === 'touch') {
+    startLongPress()
+  }
+}
+
+const onPointerEnter = (event: PointerEvent) => {
+  if (event.pointerType === 'mouse') {
+    showTooltip(false)
+  }
+}
+
+const onPointerUp = (event: PointerEvent) => {
+  if (event.pointerType === 'touch') {
+    endLongPress()
+  } else if (event.pointerType === 'mouse') {
+    hideTooltip()
+  }
+}
+
+const onPointerLeave = (event: PointerEvent) => {
+  if (event.pointerType === 'mouse') {
+    hideTooltip()
+  } else if (event.pointerType === 'touch') {
+    endLongPress()
+  }
+}
+
+const handlePress = () => {
+  if (isLongPress.value) {
+    isLongPress.value = false
+    return
+  }
+  isFocused.value = true
 }
 
 watch(
@@ -304,7 +432,7 @@ watch(
     rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
   background: $white;
   left: 0;
-  z-index: 9;
+  z-index: 10;
 
   &--focused {
     .add-expense {
@@ -314,6 +442,17 @@ watch(
       .add-expense__button {
         display: none;
       }
+    }
+
+    &:after {
+      content: '';
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(#000000, 0.7);
+      z-index: 9;
     }
   }
 
@@ -456,6 +595,15 @@ watch(
     .btn-label:first-of-type {
       color: $text-gray-md;
     }
+  }
+
+  &__delete {
+    padding: 20px 20px 0;
+    font-size: 0.9rem;
+    color: $color-red;
+    text-align: right;
+    font-family: $font-medium;
+    cursor: pointer;
   }
 }
 

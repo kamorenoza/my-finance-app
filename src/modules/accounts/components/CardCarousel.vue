@@ -49,6 +49,7 @@ let pointerStartX = 0
 const SWIPE_THRESHOLD = 50
 
 const onPointerDown = (e: PointerEvent) => {
+  if (e.pointerType === 'touch') return
   isPointerDown = true
   pointerStartX = e.clientX
   try {
@@ -57,6 +58,7 @@ const onPointerDown = (e: PointerEvent) => {
 }
 
 const onPointerMove = (e: PointerEvent) => {
+  if (e.pointerType === 'touch') return
   if (!isPointerDown) return
   const diff = pointerStartX - e.clientX
   if (Math.abs(diff) >= SWIPE_THRESHOLD) {
@@ -70,6 +72,7 @@ const onPointerMove = (e: PointerEvent) => {
 }
 
 const onPointerUp = (e: PointerEvent) => {
+  if (e.pointerType === 'touch') return
   if (!isPointerDown) return
   isPointerDown = false
   const diff = pointerStartX - e.clientX
@@ -177,11 +180,11 @@ watch(
     height: auto;
 
     @media (min-width: 600px) {
-      flex: 0 1 calc((100% / 2) - 20px);
+      flex: 0 1 calc((100% / 3) - 20px);
       margin-bottom: 0;
     }
 
-    @media (min-width: 1200px) {
+    @media (min-width: 601px) {
       flex: 0 1 calc((100% / 3) - 20px);
     }
 
@@ -207,7 +210,7 @@ watch(
   &--list {
     display: block;
     overflow-y: auto;
-    height: calc(100dvh - 200px);
+    height: calc(100dvh - 183px);
     transform: none !important;
 
     @media (min-width: 600px) {
@@ -229,7 +232,7 @@ watch(
         margin-bottom: 0;
       }
 
-      @media (min-width: 1200px) {
+      @media (min-width: 1100px) {
         flex: 0 1 calc((100% / 3) - 20px);
       }
 

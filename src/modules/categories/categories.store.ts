@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { categoryService } from './categories.service'
 import type { Category } from './categories.interface'
 import { generateId } from '@/modules/shared/utils'
+import { backupService } from '@/modules/shared/services/backup.service'
 
 export const useCategoryStore = defineStore('category', {
   state: () => ({
@@ -28,16 +29,19 @@ export const useCategoryStore = defineStore('category', {
       }
       categoryService.addCategory(newCategory)
       this.loadCategories()
+      backupService.queueBackup()
     },
 
     deleteCategory(category: Category) {
       categoryService.deleteCategory(category)
       this.loadCategories()
+      backupService.queueBackup()
     },
 
     updateCategory(category: Category) {
       categoryService.updateCategory(category)
       this.loadCategories()
+      backupService.queueBackup()
     }
   }
 })

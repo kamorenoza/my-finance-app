@@ -1,12 +1,17 @@
 <template>
-  <v-btn
-    v-if="!editView"
-    :color="colorMdPrimary"
-    class="btn-fab fab-button"
-    @click="drawer = true"
-  >
-    <AddIcon class="icon" />
-  </v-btn>
+  <v-tooltip text="Agregar movimiento" location="left">
+    <template v-slot:activator="{ props }">
+      <v-btn
+        v-if="!editView"
+        :color="colorMdPrimary"
+        class="btn-fab fab-button"
+        @click="drawer = true"
+        v-bind="props"
+      >
+        <AddIcon class="icon" />
+      </v-btn>
+    </template>
+  </v-tooltip>
 
   <v-navigation-drawer
     v-model="drawer"
@@ -128,6 +133,10 @@
           Guardar
         </v-btn>
       </v-card-actions>
+
+      <div class="expense-more__delete" v-if="editView">
+        <p @click="deleteExpense">Eliminar Movimiento</p>
+      </div>
     </v-card>
   </v-navigation-drawer>
 </template>
@@ -142,6 +151,8 @@ import { accountService } from '../accounts.service'
 import type { Expense } from '../accounts.interface'
 import { generateId } from '../../shared/utils'
 import DateSelector from '@/modules/shared/components/DateSelector.vue'
+import { useConfirm } from '@/modules/shared/composables/useConfirm'
+import { useToastStore } from '@/modules/shared/toast/toast.store'
 
 interface Props {
   accountId: string
@@ -154,6 +165,9 @@ const emit = defineEmits(['closeEditExpense'])
 
 const store = useAccountsStore()
 const categoryStore = useCategoryStore()
+const confirm = useConfirm()
+const toast = useToastStore()
+
 const account = computed(() => store.getAccountById(props.accountId))
 
 const drawer = ref(false)
@@ -237,6 +251,21 @@ const saveExpense = () => {
   close()
 }
 
+const deleteExpense = async () => {
+  const expense = store.selectedExpense
+  const confirmed = await confirm({
+    title: 'Eliminar movimiento',
+    message: `Se eliminará el movimiento ${expense?.description} ¿Está seguro?`,
+    confirmColor: 'red'
+  })
+
+  if (confirmed) {
+    if (!expense?.id) return
+    store.deleteExpense(props.accountId, expense?.id)
+    toast.success('Movimiento eliminado')
+  }
+}
+
 const close = () => {
   if (props.editView) {
     store.setSelectedExpense(null)
@@ -298,6 +327,15 @@ watch(
     &.ingreso {
       background-color: $color-green;
     }
+  }
+
+  &__delete {
+    padding: 20px 20px 0;
+    font-size: 0.9rem;
+    color: $color-red;
+    text-align: right;
+    font-family: $font-medium;
+    cursor: pointer;
   }
 }
 </style>

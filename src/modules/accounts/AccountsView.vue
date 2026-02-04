@@ -2,11 +2,14 @@
   <div class="accounts">
     <div class="general-header">
       <p class="general-title">Mis cuentas</p>
-      <AddAccount />
     </div>
 
     <div>
-      <SortFilter />
+      <div class="accounts__bar">
+        <SortFilter />
+        <AddAccount />
+      </div>
+
       <CardCarousel />
     </div>
   </div>
@@ -31,6 +34,12 @@ usePreventBack()
 
   @media (min-width: 960px) {
     padding-left: 20px;
+  }
+
+  &__bar {
+    display: flex;
+    padding: 0 15px;
+    gap: 10px;
   }
 }
 </style>

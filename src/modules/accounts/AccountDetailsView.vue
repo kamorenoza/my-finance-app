@@ -247,8 +247,8 @@ const getSixMonthsHistory = computed(() => {
     border: none;
     box-shadow: none;
     position: absolute;
-    top: 0;
-    z-index: 9;
+    top: 6px;
+    z-index: 8;
   }
 
   &__header {
@@ -279,7 +279,7 @@ const getSixMonthsHistory = computed(() => {
     display: flex;
     flex-direction: column;
     padding-left: 15px;
-    padding-top: 40px;
+    padding-top: 50px;
     height: calc(100dvh - 60px);
     padding-bottom: 10px;
 

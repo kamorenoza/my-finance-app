@@ -4,14 +4,14 @@
       <p
         v-if="!group.hideHeader"
         class="account-preview__group"
-        @click="toggleGroup(group.label)"
+        @click="toggleGroup('pending', group.label)"
       >
         <span class="group-header-content">
           <span>{{ group.label }}</span>
           <span class="account-preview__chevron">
             <v-icon size="17">
               {{
-                expandedGroups[group.label] === false
+                expandedPendingGroups[group.label] === false
                   ? 'mdi-chevron-down'
                   : 'mdi-chevron-up'
               }}
@@ -24,7 +24,11 @@
         ></span>
       </p>
       <transition name="slide">
-        <div v-show="expandedGroups[group.label] !== false || group.hideHeader">
+        <div
+          v-show="
+            expandedPendingGroups[group.label] !== false || group.hideHeader
+          "
+        >
           <AccountExpense
             v-for="expense in group.expenses"
             :key="expense.id"
@@ -56,16 +60,16 @@
             :key="group.label"
           >
             <p
-              v-if="!group.hideHeader"
+              v-if="!group.hideHeader && pendingExpenses.length === 0"
               class="account-preview__group"
-              @click="toggleGroup(group.label)"
+              @click="toggleGroup('completed', group.label)"
             >
               <span class="group-header-content">
                 <span>{{ group.label }}</span>
                 <span class="account-preview__chevron">
                   <v-icon size="17">
                     {{
-                      expandedGroups[group.label] === false
+                      expandedCompletedGroups[group.label] === false
                         ? 'mdi-chevron-down'
                         : 'mdi-chevron-up'
                     }}
@@ -80,7 +84,9 @@
             <transition name="slide">
               <div
                 v-show="
-                  expandedGroups[group.label] !== false || group.hideHeader
+                  expandedCompletedGroups[group.label] !== false ||
+                  group.hideHeader ||
+                  pendingExpenses.length > 0
                 "
               >
                 <AccountExpense
@@ -105,6 +111,13 @@ import { useAccountsStore } from '../accounts.store'
 import type { Expense } from '../accounts.interface'
 import { dateFormatter } from '@/modules/shared/utils'
 
+interface ExpenseGroup {
+  label: string
+  total: number
+  expenses: Expense[]
+  hideHeader?: boolean
+}
+
 const props = defineProps<{
   accountId: string
   filters: {
@@ -123,7 +136,8 @@ const emit = defineEmits<{
 const store = useAccountsStore()
 
 const accountId = props.accountId
-const expandedGroups = ref<{ [key: string]: boolean }>({})
+const expandedPendingGroups = ref<{ [key: string]: boolean }>({})
+const expandedCompletedGroups = ref<{ [key: string]: boolean }>({})
 const showCompleted = ref(false)
 
 onMounted(() => {
@@ -139,12 +153,11 @@ const completedExpenses = computed(() =>
   (store.getAccountById(accountId)?.expenses || []).filter(e => !e.isPending)
 )
 
-const toggleGroup = (groupLabel: string) => {
-  if (expandedGroups.value[groupLabel] === undefined) {
-    expandedGroups.value[groupLabel] = false
-  } else {
-    expandedGroups.value[groupLabel] = !expandedGroups.value[groupLabel]
-  }
+const toggleGroup = (section: 'pending' | 'completed', groupLabel: string) => {
+  const groups =
+    section === 'pending' ? expandedPendingGroups : expandedCompletedGroups
+  groups.value[groupLabel] =
+    groups.value[groupLabel] === undefined ? false : !groups.value[groupLabel]
 }
 
 const applyFilters = (expenses: Expense[]) => {
@@ -209,7 +222,7 @@ const applyFilters = (expenses: Expense[]) => {
     })
   }
 
-  // Aplicar ordenamiento
+  // Aplicar ordenamiento (por defecto: más reciente a más antiguo)
   if (props.filters.orderBy) {
     switch (props.filters.orderBy) {
       case 'newest':
@@ -229,6 +242,10 @@ const applyFilters = (expenses: Expense[]) => {
         filtered.sort((a, b) => a.value - b.value)
         break
     }
+  } else {
+    filtered.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    )
   }
 
   return filtered
@@ -313,7 +330,7 @@ watch(
   { deep: true }
 )
 
-const getPendingExpensesGrouped = computed(() => {
+const getPendingExpensesGrouped = computed((): ExpenseGroup[] => {
   const filtered = applyFilters(pendingExpenses.value)
 
   // Si es "none", agrupar internamente por categoría pero sin mostrar headers
@@ -325,7 +342,6 @@ const getPendingExpensesGrouped = computed(() => {
     )
     return [
       {
-        type: 'group',
         label: 'All',
         total: sorted.reduce(
           (sum, e) => (e.type === 'ingreso' ? sum + e.value : sum - e.value),
@@ -334,13 +350,12 @@ const getPendingExpensesGrouped = computed(() => {
         expenses: sorted,
         hideHeader: true
       }
-    ] as any
+    ]
   }
 
   if (!props.filters.groupBy) {
     return [
       {
-        type: 'group',
         label: 'All',
         total: filtered.reduce(
           (sum, e) => (e.type === 'ingreso' ? sum + e.value : sum - e.value),
@@ -348,7 +363,7 @@ const getPendingExpensesGrouped = computed(() => {
         ),
         expenses: filtered
       }
-    ] as any
+    ]
   }
 
   if (props.filters.groupBy === 'category') {
@@ -366,15 +381,21 @@ const getPendingExpensesGrouped = computed(() => {
   }
 
   if (props.filters.groupBy === 'date') {
-    const sorted = filtered.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    )
+    const sorted = filtered.sort((a, b) => {
+      if (props.filters.orderBy === 'newest') {
+        return new Date(b.date).getTime() - new Date(a.date).getTime()
+      }
+      if (props.filters.orderBy === 'oldest') {
+        return new Date(a.date).getTime() - new Date(b.date).getTime()
+      }
+
+      return new Date(b.date).getTime() - new Date(a.date).getTime()
+    })
     return addGroupHeaders(sorted)
   }
 
   return [
     {
-      type: 'group',
       label: 'All',
       total: filtered.reduce(
         (sum, e) => (e.type === 'ingreso' ? sum + e.value : sum - e.value),
@@ -382,11 +403,15 @@ const getPendingExpensesGrouped = computed(() => {
       ),
       expenses: filtered
     }
-  ] as any
+  ]
 })
 
-const getCompletedExpensesGrouped = computed(() => {
+const getCompletedExpensesGrouped = computed((): ExpenseGroup[] => {
   const filtered = applyFilters(completedExpenses.value)
+
+  if (filtered.length === 0) {
+    return []
+  }
 
   // Si es "none", agrupar internamente por categoría pero sin mostrar headers
   if (props.filters.groupBy === 'none') {
@@ -397,7 +422,6 @@ const getCompletedExpensesGrouped = computed(() => {
     )
     return [
       {
-        type: 'group',
         label: 'All',
         total: sorted.reduce(
           (sum, e) => (e.type === 'ingreso' ? sum + e.value : sum - e.value),
@@ -406,13 +430,12 @@ const getCompletedExpensesGrouped = computed(() => {
         expenses: sorted,
         hideHeader: true
       }
-    ] as any
+    ]
   }
 
   if (!props.filters.groupBy) {
     return [
       {
-        type: 'group',
         label: 'All',
         total: filtered.reduce(
           (sum, e) => (e.type === 'ingreso' ? sum + e.value : sum - e.value),
@@ -420,7 +443,7 @@ const getCompletedExpensesGrouped = computed(() => {
         ),
         expenses: filtered
       }
-    ] as any
+    ]
   }
 
   if (props.filters.groupBy === 'category') {
@@ -438,15 +461,21 @@ const getCompletedExpensesGrouped = computed(() => {
   }
 
   if (props.filters.groupBy === 'date') {
-    const sorted = filtered.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    )
+    const sorted = filtered.sort((a, b) => {
+      if (props.filters.orderBy === 'newest') {
+        return new Date(b.date).getTime() - new Date(a.date).getTime()
+      }
+      if (props.filters.orderBy === 'oldest') {
+        return new Date(a.date).getTime() - new Date(b.date).getTime()
+      }
+
+      return new Date(b.date).getTime() - new Date(a.date).getTime()
+    })
     return addGroupHeaders(sorted)
   }
 
   return [
     {
-      type: 'group',
       label: 'All',
       total: filtered.reduce(
         (sum, e) => (e.type === 'ingreso' ? sum + e.value : sum - e.value),
@@ -454,7 +483,7 @@ const getCompletedExpensesGrouped = computed(() => {
       ),
       expenses: filtered
     }
-  ] as any
+  ]
 })
 </script>
 

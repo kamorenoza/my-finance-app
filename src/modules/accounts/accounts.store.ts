@@ -3,6 +3,7 @@ import { accountService } from './accounts.service'
 import type { Account, Expense } from './accounts.interface'
 import { generateId } from '@/modules/shared/utils'
 import { AccountView } from './accounts.constants'
+import { backupService } from '@/modules/shared/services/backup.service'
 
 export const useAccountsStore = defineStore('accounts', {
   state: () => ({
@@ -82,11 +83,13 @@ export const useAccountsStore = defineStore('accounts', {
       }
       accountService.addAccount(newAccount)
       this.loadAccounts()
+      backupService.queueBackup()
     },
 
     deleteAccount(account: Account) {
       accountService.deleteAccount(account)
       this.loadAccounts()
+      backupService.queueBackup()
     },
 
     updateAccount(account: Account) {
@@ -100,6 +103,7 @@ export const useAccountsStore = defineStore('accounts', {
       }
       accountService.updateAccount(account)
       this.loadAccounts()
+      backupService.queueBackup()
     },
 
     addExpense(expense: Expense, accountId?: string) {
@@ -115,16 +119,19 @@ export const useAccountsStore = defineStore('accounts', {
       accountService.addExpenseToAccount(accountId, newExpense)
       this.loadAccounts()
       this.setCurrentIndexAccount(currentIndex)
+      backupService.queueBackup()
     },
 
     updateExpense(accountId: string, updatedExpense: Expense) {
       accountService.updateExpenseInAccount(accountId, updatedExpense)
       this.loadAccounts()
+      backupService.queueBackup()
     },
 
     deleteExpense(accountId: string, expenseId: string) {
       accountService.deleteExpenseFromAccount(accountId, expenseId)
       this.loadAccounts()
+      backupService.queueBackup()
     },
 
     clearFilters() {

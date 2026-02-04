@@ -27,7 +27,18 @@
           :class="expense.type === 'ingreso' ? 'positive' : 'negative'"
         ></p>
         <div class="account-expense__actions">
-          <dot-menu :items="itemMenu" @onMenuClicked="handleMenuAction" />
+          <v-btn
+            icon
+            variant="plain"
+            v-bind="props"
+            :ripple="false"
+            class="btn-label account-expense__edit"
+            @click="editExpense"
+          >
+            <slot>
+              <v-icon size="24">mdi-chevron-right</v-icon>
+            </slot>
+          </v-btn>
         </div>
       </div>
     </div>
@@ -42,20 +53,10 @@
 </template>
 
 <script setup lang="ts">
-import DotMenu from '@/modules/shared/components/DotMenu.vue'
 import type { Expense } from '../accounts.interface'
-import { useConfirm } from '@/modules/shared/composables/useConfirm'
 import { useAccountsStore } from '../accounts.store'
-import { useToastStore } from '@/modules/shared/toast/toast.store'
 import AddAccountExpenseMore from './AddAccountExpenseMore.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import EditIcon from '@/assets/icons/Edit.icon.vue'
-import TrashIcon from '@/assets/icons/Trash.icon.vue'
-
-const itemMenu = [
-  { label: 'Editar', id: 1, icon: EditIcon },
-  { label: 'Eliminar', id: 2, icon: TrashIcon }
-]
 
 interface Props {
   expense: Expense
@@ -63,9 +64,7 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const confirm = useConfirm()
 const accountStore = useAccountsStore()
-const toast = useToastStore()
 
 const drawer = ref(false)
 const screenWidth = ref(window.innerWidth)
@@ -86,31 +85,9 @@ const updateSize = () => {
   screenWidth.value = window.innerWidth
 }
 
-const handleMenuAction = (id: number) => {
-  if (id === 1) {
-    editExpense()
-  } else if (id === 2) {
-    deleteExpense()
-  }
-}
-
 const editExpense = () => {
   drawer.value = true
   accountStore.setSelectedExpense(props.expense)
-}
-
-const deleteExpense = async () => {
-  const confirmed = await confirm({
-    title: 'Eliminar movimiento',
-    message: `Se eliminará el movimiento ${props.expense.description} ¿Está seguro?`,
-    confirmColor: 'red'
-  })
-
-  if (confirmed) {
-    if (!props.expense.id) return
-    accountStore.deleteExpense(props.accountId, props.expense.id)
-    toast.success('Movimiento eliminado')
-  }
 }
 
 const onCloseEdit = () => {
@@ -120,10 +97,14 @@ const onCloseEdit = () => {
 
 <style scoped lang="scss">
 .account-expense {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   display: flex;
   gap: 5px;
   width: 100%;
+  padding: 10px;
+  align-items: center;
+  border-radius: 16px;
+  background-color: rgba(#f7eded, 0.8);
 
   &__category {
     border-radius: 8px !important;
@@ -141,6 +122,7 @@ const onCloseEdit = () => {
     flex-grow: 1;
     padding-right: 20px;
     position: relative;
+    align-items: center;
   }
 
   &__info {
@@ -181,8 +163,9 @@ const onCloseEdit = () => {
 
   &__actions {
     position: absolute;
-    top: -7px;
-    right: -10px;
+    top: 48%;
+    right: -15px;
+    transform: translateY(-50%);
   }
 }
 </style>
