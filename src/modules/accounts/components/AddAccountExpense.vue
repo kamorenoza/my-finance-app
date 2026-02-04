@@ -1,67 +1,148 @@
 <template>
-  <div class="add-expense">
-    <div class="add-expense__bar">
-      <div>
-        <v-tooltip
-          :model-value="showTypeTooltip"
-          location="top"
-          :text="tooltipText"
+  <div
+    class="add-expense__container"
+    ref="formContainer"
+    :class="{ 'add-expense--focused': isFocused }"
+  >
+    <v-btn
+      :color="colorMdPrimary"
+      class="btn-fab fab-button add-expense__button"
+      @click="isFocused = true"
+    >
+      <AddIcon class="icon" />
+    </v-btn>
+
+    <div class="add-expense">
+      <div class="add-expense__header">
+        <div class="subtitle">Agregar movimiento</div>
+        <div
+          class="add-expense__pill"
+          :class="entry.type"
+          @click="onTypeChange"
         >
-          <template v-slot:activator="{ props }">
-            <v-btn
-              v-bind="props"
-              :color="entry.type === 'ingreso' ? '#7ac07c' : '#cb4f47'"
-              class="btn-circle add-expense__type"
-              @click="selectType"
-            >
-              <PlusIcon v-if="entry.type === 'ingreso'" />
-              <MinusIcon v-else />
-            </v-btn>
-          </template>
-        </v-tooltip>
+          {{ entry.type === 'gasto' ? 'Gasto' : 'Ingreso' }}
+        </div>
       </div>
 
-      <div class="add-expense__input">
-        <v-text-field
-          v-model="entry.description"
-          density="compact"
-          placeholder="Descripción"
-          hide-details
-          type="text"
-          maxlength="100"
-          @keyup.enter="goToValue"
-          @focus="scrollIntoView(valueInput)"
-          class="secondary-input"
-        />
-      </div>
+      <div class="add-expense__bar">
+        <div class="add-expense__input">
+          <v-text-field
+            ref="descriptionInput"
+            v-model="entry.description"
+            density="compact"
+            label="Descripción*"
+            hide-details
+            type="text"
+            maxlength="100"
+            @keydown.enter.prevent="goToValue"
+            @focus="onInputFocus"
+            class="secondary-input"
+            enterkeyhint="next"
+            :readonly="!isFocused"
+            @click="openForm"
+          />
+        </div>
 
-      <div class="add-expense__input add-expense__value">
-        <v-text-field
-          ref="valueInput"
-          class="secondary-input"
-          density="compact"
-          placeholder="Valor"
-          hide-details
-          type="text"
-          prefix="$"
-          @update:model-value="onInput"
-          :model-value="formattedValue"
-          maxlength="12"
-          @keyup.enter="saveEntry"
-          @focus="scrollIntoView(valueInput)"
-          inputmode="numeric"
-          pattern="[0-9]*"
-        />
+        <div class="add-expense__input add-expense__value">
+          <v-text-field
+            ref="valueInput"
+            class="secondary-input"
+            density="compact"
+            label="Valor*"
+            hide-details
+            prefix="$"
+            @update:model-value="onInput"
+            :model-value="formattedValue"
+            maxlength="12"
+            @keyup.enter="saveEntry"
+            @focus="onInputFocus"
+            pattern="[0-9]*"
+            enterkeyhint="done"
+          />
+        </div>
+      </div>
+      <div class="add-expense__more">
+        <div>
+          <v-select
+            class="secondary-input mt-3 mb-2"
+            v-model="entry.category"
+            :items="categories"
+            item-title="name"
+            return-object
+            label="Categoría"
+            density="compact"
+            hide-details
+          >
+            <template v-slot:item="{ props, item }">
+              <v-list-item
+                v-bind="props"
+                :title="undefined"
+                :prepend-avatar="undefined"
+              >
+                <template v-slot:prepend>
+                  <v-avatar
+                    size="24"
+                    :color="(item.raw as any).backgroundColor"
+                  >
+                    <v-icon size="14" :color="(item.raw as any).iconColor">
+                      {{ (item.raw as any).icon }}
+                    </v-icon>
+                  </v-avatar>
+                </template>
+                <v-list-item-title>{{
+                  (item.raw as any).name
+                }}</v-list-item-title>
+              </v-list-item>
+            </template>
+
+            <template v-slot:selection="{ item }">
+              <div class="d-flex align-center ga-2">
+                <v-avatar size="20" :color="(item.raw as any).backgroundColor">
+                  <v-icon size="12" :color="(item.raw as any).iconColor">
+                    {{ (item.raw as any).icon }}
+                  </v-icon>
+                </v-avatar>
+                {{ (item.raw as any).name }}
+              </div>
+            </template>
+          </v-select>
+        </div>
+        <div class="add-expense__date-category">
+          <v-switch
+            v-if="account?.type === 'normal'"
+            v-model="entry.isPending"
+            label="Pendiente"
+            inset
+            density="compact"
+            hide-details
+            :color="entry.isPending ? 'success' : undefined"
+            class="ma-0 pa-0 subtitle"
+          />
+          <DateSelector @on-change="onChangeDate" v-model="entry.date" />
+        </div>
+
+        <div>
+          <v-text-field
+            class="secondary-input mt-2"
+            v-model="entry.comments"
+            label="Comentarios"
+            density="compact"
+            rows="3"
+            multi-line
+            hide-details
+          />
+        </div>
       </div>
 
       <div class="add-expense__actions">
+        <v-btn type="button" class="btn-neutro" @click="close">Cancelar</v-btn>
         <v-btn
-          class="btn-icon add-expense__save"
+          type="button"
+          class="btn-primary"
           @click="saveEntry"
-          :ripple="false"
           :disabled="!entry.description || !entry.value"
         >
-          <CheckIcon />
+          Guardar
         </v-btn>
       </div>
     </div>
@@ -69,49 +150,41 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, type Ref } from 'vue'
+import { computed, nextTick, ref, watch, type Ref } from 'vue'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
 import type { EntryType } from '@/modules/budget/budget.interface'
-import CheckIcon from '@/assets/icons/Check.icon.vue'
-import PlusIcon from '@/assets/icons/Plus.icon.vue'
-import MinusIcon from '@/assets/icons/Minus.icon.vue'
-import type { Expense } from '../accounts.interface'
 import { useAccountsStore } from '../accounts.store'
+import { useCategoryStore } from '@/modules/categories/categories.store'
+import DateSelector from '@/modules/shared/components/DateSelector.vue'
+import { colorMdPrimary } from '@/styles/variables.styles'
+import AddIcon from '@/assets/icons/Add.icon.vue'
 
 const props = defineProps<{ accountId: string }>()
 
 const toast = useToastStore()
 const store = useAccountsStore()
+const categoryStore = useCategoryStore()
 
 const valueInput = ref()
-const showTypeTooltip = ref(false)
-let tooltipTimeout: ReturnType<typeof setTimeout> | null = null
+const descriptionInput = ref()
+const isFocused = ref(false)
+const keyboard = ref(false)
 
-const entry: Ref<Expense> = ref({
+const entry = ref({
   description: '',
   value: 0,
   type: 'gasto' as EntryType,
   isPending: false,
   comments: '',
   date: new Date(),
-  category: ''
-})
-const typeMenu = ref(false)
-
-const tooltipText = computed(() => {
-  return entry.value.type === 'ingreso' ? 'Ingreso' : 'Gasto'
+  category: null as any,
+  id: ''
 })
 
-const selectType = () => {
-  typeMenu.value = !typeMenu.value
-  entry.value.type = typeMenu.value ? 'ingreso' : 'gasto'
+const account = computed(() => store.getAccountById(props.accountId))
 
-  // Show tooltip for 1 second
-  showTypeTooltip.value = true
-  if (tooltipTimeout) clearTimeout(tooltipTimeout)
-  tooltipTimeout = setTimeout(() => {
-    showTypeTooltip.value = false
-  }, 1000)
+const onTypeChange = () => {
+  entry.value.type = entry.value.type === 'gasto' ? 'ingreso' : 'gasto'
 }
 
 const formattedValue = computed(() => {
@@ -120,9 +193,28 @@ const formattedValue = computed(() => {
   return entry.value.value.toLocaleString('es-CO')
 })
 
+const categories = computed(() => categoryStore.categories)
+
 const onInput = (val: string) => {
   const numeric = Number(val.replace(/[^\d]/g, ''))
   entry.value.value = isNaN(numeric) ? 0 : numeric
+}
+
+const close = () => {
+  isFocused.value = false
+
+  entry.value = {
+    description: '',
+    value: 0,
+    type: 'gasto' as EntryType,
+    isPending: false,
+    comments: '',
+    date: new Date(),
+    category: null as any,
+    id: ''
+  }
+  store.setSelectedExpense(null)
+  keyboard.value = false
 }
 
 const goToValue = () => {
@@ -131,46 +223,156 @@ const goToValue = () => {
   }
 }
 
+const onChangeDate = (newDate: Date) => {
+  entry.value.date = newDate
+}
+
+const onInputFocus = () => {
+  //isFocused.value = true
+}
+
 const saveEntry = () => {
   if (!entry.value.description || !entry.value.value) return
   try {
-    store.addExpense(entry.value, props.accountId)
-    toast.success('Movimiento agregado')
-
-    entry.value = {
-      description: '',
-      value: 0,
-      type: 'gasto' as EntryType,
-      isPending: false,
-      comments: '',
-      date: new Date(),
-      category: ''
+    if (store.selectedExpense) {
+      entry.value.id = store.selectedExpense?.id || ''
+      store.updateExpense(props.accountId, entry.value)
+      toast.success('Movimiento editado')
+    } else {
+      store.addExpense(entry.value, props.accountId)
+      toast.success('Movimiento agregado')
     }
+
+    close()
   } catch (e: any) {
     toast.error(e.message)
   }
 }
 
-const scrollIntoView = (refEl: any) => {
+const openForm = () => {
+  isFocused.value = true
+
   setTimeout(() => {
-    refEl?.$el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    descriptionInput.value.focus()
   }, 100)
 }
+
+const fillData = () => {
+  if (store.selectedExpense) {
+    const selectedExpense = store.selectedExpense
+    if (selectedExpense) {
+      entry.value.description = selectedExpense.description
+      entry.value.value = selectedExpense.value
+      entry.value.type = selectedExpense.type
+      if (selectedExpense.category) {
+        entry.value.category = selectedExpense.category
+      }
+      entry.value.date = new Date(selectedExpense.date)
+      entry.value.isPending = selectedExpense.isPending
+      entry.value.comments = selectedExpense.comments || ''
+      entry.value.id = selectedExpense.id || ''
+    }
+  }
+}
+
+watch(
+  () => store.selectedExpense,
+  newFilter => {
+    if (newFilter) {
+      isFocused.value = true
+      fillData()
+    }
+  },
+  { deep: true }
+)
 </script>
 
 <style scoped lang="scss">
 .add-expense {
   padding: 0;
   position: absolute;
-  bottom: 40px;
-  width: calc(100% - 30px);
-  background-color: $bg-bar;
-  padding: 10px 8px;
-  border-radius: 16px;
+  bottom: calc(110px - 100vh);
+  height: calc(100vh - 200px);
+  width: 100%;
+  padding: 20px 15px 30px;
+  border-radius: 32px 32px 0 0;
+  display: block;
+  transition: bottom 0.3s ease-in-out;
+  border: 1px solid $bg-general;
+  box-shadow:
+    rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
+    rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
+  background: $white;
+  left: 0;
+  z-index: 9;
+
+  &--focused {
+    .add-expense {
+      bottom: 0px;
+      border-bottom: none;
+
+      .add-expense__button {
+        display: none;
+      }
+    }
+  }
+
+  &__button {
+    height: 40px !important;
+    width: 40px !important;
+    border-radius: 14px !important;
+    display: flex;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 25px;
+  }
+
+  &__pill {
+    padding: 4px 12px;
+    border-radius: 16px;
+    background-color: #e0e0e0;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.85rem;
+    color: $white;
+
+    &.gasto {
+      background-color: $color-red;
+    }
+
+    &.ingreso {
+      background-color: $color-green;
+    }
+  }
+
+  &__container {
+    &:has(.add-expense--focused) {
+      position: absolute;
+      top: 0;
+      left: 0;
+      background-color: rgba(black, 0.6);
+      width: 100%;
+      height: 100%;
+      z-index: 1001;
+    }
+
+    @media (min-width: 960px) {
+      display: none;
+    }
+  }
 
   @media (min-width: 960px) {
     bottom: 20px;
     max-width: 550px;
+    display: none;
+
+    &--focused {
+      bottom: 20px;
+    }
   }
 
   &__title {
@@ -191,7 +393,7 @@ const scrollIntoView = (refEl: any) => {
 
   &__type {
     width: 20px;
-    height: 20px;
+    height: 45px;
     padding-top: 1px;
     margin-right: 2px;
   }
@@ -210,7 +412,7 @@ const scrollIntoView = (refEl: any) => {
   }
 
   &__value {
-    width: 50%;
+    width: 60%;
   }
 
   &__button {
@@ -229,6 +431,30 @@ const scrollIntoView = (refEl: any) => {
     @media (min-width: 960px) {
       width: 40px;
       margin-left: 0;
+    }
+  }
+
+  &__more {
+    padding-bottom: 20px;
+  }
+
+  &__date-category {
+    display: flex;
+    align-items: center;
+    gap: 60px;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 20px;
+
+    .btn-label:last-of-type {
+      color: $color-primary;
+    }
+
+    .btn-label:first-of-type {
+      color: $text-gray-md;
     }
   }
 }

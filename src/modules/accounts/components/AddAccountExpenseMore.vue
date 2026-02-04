@@ -107,7 +107,7 @@
         />
 
         <v-text-field
-          class="general-input"
+          class="general-input mt-4"
           v-model="formData.comments"
           label="Comentarios"
           density="comfortable"
@@ -133,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import AddIcon from '@/assets/icons/Add.icon.vue'
 import { colorMdPrimary } from '@/styles/variables.styles'
 import { useAccountsStore } from '../accounts.store'

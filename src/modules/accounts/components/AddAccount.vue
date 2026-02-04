@@ -14,6 +14,7 @@
     temporary
     width="350"
     persistent
+    :touchless="true"
   >
     <v-card flat>
       <div class="px-3 pt-3 subtitle">

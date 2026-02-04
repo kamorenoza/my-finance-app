@@ -12,8 +12,15 @@ import { useAuthListener } from '@/modules/auth/composables/useAuthListener'
 import { useAuthStore } from './modules/auth/auth.store'
 import LoadingScreen from './modules/shared/components/LoadingScreen.vue'
 
-useAuthListener()
+const user = localStorage.getItem('user')
 const authStore = useAuthStore()
+
+if (user) {
+  authStore.setUser(JSON.parse(user))
+  authStore.setLoading(false)
+} else {
+  useAuthListener()
+}
 </script>
 
 <style lang="scss">

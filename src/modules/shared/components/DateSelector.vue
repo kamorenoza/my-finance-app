@@ -1,5 +1,5 @@
 <template>
-  <div class="d-flex align-center ga-1 mt-3">
+  <div class="d-flex align-center ga-1">
     <CalendarIcon @click="dialog = true" />
 
     <span @click="dialog = true" class="date-span cursor-pointer">

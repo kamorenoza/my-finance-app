@@ -41,6 +41,16 @@
       </div>
     </v-card>
   </div>
+  <div class="credit-card__info" v-if="fromPreview">
+    <div>
+      <p>
+        Fecha de corte: <span>{{ account.cutoffDate }}</span>
+      </p>
+      <p>
+        Fecha de Pago: <span>{{ account.dueDate }}</span>
+      </p>
+    </div>
+  </div>
   <AddAccount
     :account="account"
     :drawer="openEditAccount"
@@ -187,14 +197,14 @@ const deleteAccount = async () => {
   @media (min-width: 960px) {
     &.no-click {
       overflow: visible;
-      //max-width: 400px;
     }
   }
 
   &.no-click {
     cursor: default;
     pointer-events: none;
-    //max-width: 400px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
   }
 
   &__header {
@@ -234,7 +244,7 @@ const deleteAccount = async () => {
 
   &__label {
     font-size: 12px;
-    color: $text-gray-md;
+    color: $text-gray;
     line-height: 13px;
     width: 40px;
   }
@@ -256,6 +266,7 @@ const deleteAccount = async () => {
     font-size: 13px;
     color: $text-dark;
     line-height: 13px;
+    font-family: $font-medium;
   }
 
   &__saldo {
@@ -268,7 +279,7 @@ const deleteAccount = async () => {
   &__type {
     font-size: 11px;
     line-height: 11px;
-    color: $text-gray-md;
+    color: $text-gray;
     margin-top: 4px;
   }
 
@@ -293,6 +304,24 @@ const deleteAccount = async () => {
   &__dates {
     .credit-card__label {
       font-size: 11px;
+    }
+  }
+
+  &__info {
+    background-color: rgba($card-red-lg, 0.5);
+    border-radius: 0 0 32px 32px;
+    display: flex;
+    justify-content: center;
+    padding-top: 5px;
+    padding-bottom: 7px;
+    max-width: 540px;
+
+    p {
+      font-size: 0.8rem;
+
+      span {
+        font-family: $font-medium;
+      }
     }
   }
 }

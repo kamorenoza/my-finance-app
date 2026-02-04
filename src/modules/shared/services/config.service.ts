@@ -10,7 +10,8 @@ export interface AccountConfig {
 }
 
 export interface UserConfig {
-  [accountId: string]: AccountConfig
+  accounts?: { [accountId: string]: AccountConfig }
+  lastPage?: string
 }
 
 export const configService = {
@@ -27,14 +28,18 @@ export const configService = {
     if (!userEmail) return
 
     const userConfig = configService.loadConfig()
-    userConfig[accountId] = config
+    const accounts = userConfig.accounts || {}
+    accounts[accountId] = config
+
+    userConfig.accounts = accounts
 
     localStorage.setItem(`config_${userEmail}`, JSON.stringify(userConfig))
   },
 
   getAccountConfig: (accountId: string): AccountConfig => {
     const userConfig = configService.loadConfig()
-    return userConfig[accountId] || {}
+    if (!userConfig.accounts) return {}
+    return userConfig?.accounts[accountId] || {}
   },
 
   clearAccountConfig: (accountId: string) => {
@@ -42,8 +47,25 @@ export const configService = {
     if (!userEmail) return
 
     const userConfig = configService.loadConfig()
-    delete userConfig[accountId]
+    if (userConfig.accounts) delete userConfig.accounts[accountId]
 
     localStorage.setItem(`config_${userEmail}`, JSON.stringify(userConfig))
+  },
+
+  saveLastPage: (page: string) => {
+    const userEmail = getUserEmail()
+    if (!userEmail) return
+
+    const userConfig = configService.loadConfig()
+    userConfig.lastPage = page
+
+    localStorage.setItem(`config_${userEmail}`, JSON.stringify(userConfig))
+  },
+
+  getLastPage: () => {
+    const userConfig = configService.loadConfig()
+    if (!userConfig.lastPage) return '/'
+
+    return userConfig.lastPage
   }
 }

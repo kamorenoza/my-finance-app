@@ -54,10 +54,10 @@ const onClickItem = (item: { label: string; id: number; icon?: any }) => {
 
 <style scoped lang="scss">
 .dot-menu {
-  width: 20px;
+  width: 30px;
 
   &__button {
-    max-width: 20px;
+    max-width: 30px;
   }
 
   &__card {

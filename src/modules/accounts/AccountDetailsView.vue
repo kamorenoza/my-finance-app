@@ -10,7 +10,7 @@
       </v-btn>
     </div>
     <div class="account-preview__content">
-      <div class="pr15">
+      <div class="pr15 account-preview__container">
         <NormalCard
           :account="account"
           :from-preview="true"
@@ -21,87 +21,67 @@
           :from-preview="true"
           v-if="account.type === 'TC'"
         />
+
+        <div class="account-preview__summary">
+          <div class="account-preview__history">
+            <h3>Histórico últimos 6 meses</h3>
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Mes</th>
+                  <th class="ingreso">Ingresos</th>
+                  <th class="gasto">Gastos</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="month in getSixMonthsHistory"
+                  :key="`${month.year}-${month.month}`"
+                >
+                  <td>{{ month.monthYear }}</td>
+                  <td class="ingreso">
+                    {{
+                      month.ingresos > 0
+                        ? currencyFormatter(month.ingresos)
+                        : '$ 0'
+                    }}
+                  </td>
+                  <td class="gasto">
+                    {{
+                      month.gastos > 0 ? currencyFormatter(month.gastos) : '$ 0'
+                    }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      <div class="account-preview__header pr15">
-        <AccountDetailsFilter
-          :account-id="accountId"
-          :initial-group-by="currentFilter.groupBy"
-          :initial-order-by="currentFilter.orderBy"
-          @filterChange="onFilterChange"
-        />
-      </div>
-      <div class="account-preview__body">
-        <AccountDetailsExpensesNormal
-          :account-id="accountId"
-          :filters="currentFilter"
-          v-if="account.type === 'normal'"
-          @updateExpenses="onExpensesUpdate"
-        />
-
-        <AccountDetailsExpensesCreditCard
-          :account-id="accountId"
-          :filters="currentFilter"
-          v-if="account.type === 'TC'"
-          @updateExpenses="onExpensesUpdate"
-        />
-      </div>
-
-      <div class="account-preview__summary">
-        <div class="account-preview__pie">
-          <Pie :data="chartData" :options="options" />
+      <div class="account-preview__container">
+        <div class="account-preview__header pr15">
+          <AccountDetailsFilter
+            :account-id="accountId"
+            :initial-group-by="currentFilter.groupBy"
+            :initial-order-by="currentFilter.orderBy"
+            @filterChange="onFilterChange"
+          />
         </div>
+        <div class="account-preview__body">
+          <AccountDetailsExpensesNormal
+            :account-id="accountId"
+            :filters="currentFilter"
+            v-if="account.type === 'normal'"
+            @updateExpenses="onExpensesUpdate"
+          />
 
-        <div class="account-preview__history">
-          <h3>Histórico últimos 6 meses</h3>
-          <table class="history-table">
-            <thead>
-              <tr>
-                <th>Mes</th>
-                <th class="ingreso">Ingresos</th>
-                <th class="gasto">Gastos</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="month in getSixMonthsHistory"
-                :key="`${month.year}-${month.month}`"
-              >
-                <td>{{ month.monthYear }}</td>
-                <td class="ingreso">
-                  {{
-                    month.ingresos > 0
-                      ? currencyFormatter(month.ingresos)
-                      : '$ 0'
-                  }}
-                </td>
-                <td class="gasto">
-                  {{
-                    month.gastos > 0 ? currencyFormatter(month.gastos) : '$ 0'
-                  }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <AccountDetailsExpensesCreditCard
+            :account-id="accountId"
+            :filters="currentFilter"
+            v-if="account.type === 'TC'"
+            @updateExpenses="onExpensesUpdate"
+          />
         </div>
-
-        <!--<div class="account-preview__summary-item ingreso">
-          <p>
-            Total ingresos
-            <span v-if="!hasActiveFilters">del mes</span>
-          </p>
-          <p class="value">{{ getTotalIngresos }}</p>
-        </div>
-
-        <div class="account-preview__summary-item gasto">
-          <p>Total gastos <span v-if="!hasActiveFilters">del mes</span></p>
-          <p class="value">{{ getTotalGastos }}</p>
-        </div>
-
-        <div class="account-preview__summary-item">
-          <p>Total movimientos <span v-if="!hasActiveFilters">del mes</span></p>
-          <p class="value">{{ getTotalMovimientos }}</p>
-        </div>-->
       </div>
     </div>
   </div>
@@ -111,7 +91,7 @@
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAccountsStore } from '@/modules/accounts/accounts.store'
-import { configService } from '@/modules/accounts/config.service'
+import { configService } from '@/modules/shared/services/config.service'
 import type { Expense } from '@/modules/accounts/accounts.interface'
 import NormalCard from './components/NormalCard.vue'
 import AccountDetailsFilter from './components/AccountDetailsFilter.vue'
@@ -119,7 +99,6 @@ import AccountDetailsExpensesNormal from './components/AccountDetailsExpensesNor
 import AccountDetailsExpensesCreditCard from './components/AccountDetailsExpensesCreditCard.vue'
 import CardCreditCard from './components/CardCreditCard.vue'
 import { currencyFormatter } from '../shared/utils'
-import { Pie } from 'vue-chartjs'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
@@ -137,63 +116,6 @@ const currentFilter = ref({
   orderBy: null as string | null,
   initDate: null as Date | null,
   endDate: null as Date | null
-})
-
-const options = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      position: 'bottom' as const
-    }
-  }
-}
-
-// Agrupar gastos por categoría y calcular totales
-const expensesByCategory = computed(() => {
-  const categories: {
-    [key: string]: { total: number; color: string }
-  } = {}
-
-  expensesToConsider.value.forEach(expense => {
-    const categoryName = expense.category?.name || 'Sin categoría'
-
-    if (!categories[categoryName]) {
-      // Tomar el color de la primera categoría encontrada
-      categories[categoryName] = {
-        total: 0,
-        color: expense.category?.backgroundColor || '#999999'
-      }
-    }
-
-    // Solo sumar gastos (no ingresos)
-    if (expense.type === 'gasto') {
-      categories[categoryName].total += expense.value
-    }
-  })
-
-  return categories
-})
-
-// Generar datos dinámicos para la gráfica
-const chartData = computed(() => {
-  const labels = Object.keys(expensesByCategory.value)
-  const data = Object.values(expensesByCategory.value).map(cat => cat.total)
-  const backgroundColor = Object.values(expensesByCategory.value).map(
-    cat => cat.color
-  )
-
-  return {
-    labels,
-    datasets: [
-      {
-        backgroundColor,
-        data,
-        borderColor: '#ffffff',
-        borderWidth: 2
-      }
-    ]
-  }
 })
 
 // Load configuration when component mounts
@@ -251,69 +173,6 @@ const filteredExpenses = ref<Expense[]>([])
 const onExpensesUpdate = (expenses: Expense[]) => {
   filteredExpenses.value = expenses
 }
-
-// Verificar si hay filtros activos (search o dates)
-const hasActiveFilters = computed(() => {
-  return (
-    currentFilter.value.search.trim() !== '' ||
-    currentFilter.value.initDate !== null ||
-    currentFilter.value.endDate !== null
-  )
-})
-
-// Obtener movimientos del mes actual
-const getExpensesOfCurrentMonth = (expenses: Expense[]): Expense[] => {
-  const today = new Date()
-  const currentMonth = today.getMonth()
-  const currentYear = today.getFullYear()
-
-  return expenses.filter(expense => {
-    const expenseDate = new Date(expense.date)
-    return (
-      expenseDate.getMonth() === currentMonth &&
-      expenseDate.getFullYear() === currentYear
-    )
-  })
-}
-
-// Gastos a considerar según los filtros
-const expensesToConsider = computed(() => {
-  // Si hay filtros activos, usar los movimientos filtrados del componente hijo
-  if (hasActiveFilters.value) {
-    return filteredExpenses.value
-  }
-  // Si no hay filtros, usar solo los del mes actual
-  return getExpensesOfCurrentMonth(filteredExpenses.value)
-})
-
-// Calcular total de ingresos
-const getTotalIngresos = computed(() => {
-  const total = expensesToConsider.value.reduce((total, expense) => {
-    if (expense.type === 'ingreso') {
-      return total + expense.value
-    }
-    return total
-  }, 0)
-
-  return total && total > 0 ? currencyFormatter(total) : '$ 0'
-})
-
-// Calcular total de gastos
-const getTotalGastos = computed(() => {
-  const total = expensesToConsider.value.reduce((total, expense) => {
-    if (expense.type === 'gasto') {
-      return total + expense.value
-    }
-    return total
-  }, 0)
-
-  return total && total > 0 ? currencyFormatter(total) : '$ 0'
-})
-
-// Calcular total de movimientos (cantidad)
-const getTotalMovimientos = computed(() => {
-  return expensesToConsider.value.length
-})
 
 // Obtener histórico de los últimos 6 meses
 const getSixMonthsHistory = computed(() => {
@@ -379,7 +238,7 @@ const getSixMonthsHistory = computed(() => {
   position: relative;
 
   @media (min-width: 960px) {
-    max-width: 960px;
+    //max-width: 960px;
     overflow: hidden;
   }
 
@@ -423,28 +282,11 @@ const getSixMonthsHistory = computed(() => {
     padding-top: 40px;
     height: calc(100dvh - 60px);
     padding-bottom: 10px;
-  }
 
-  &__expenses {
-    overflow-y: auto;
-    flex-grow: 1;
-    height: calc(100dvh - 516px);
-    padding-right: 15px;
-
-    .expense-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.5rem 0;
-      border-bottom: 1px solid $border-general;
-      padding-right: 10px;
-
-      &__value {
-        font-family: $font-medium;
-      }
-
-      &__description {
-        color: $gray-text;
-      }
+    @media (min-width: 960px) {
+      flex-direction: row;
+      padding-right: 0;
+      width: 100%;
     }
   }
 
@@ -507,16 +349,13 @@ const getSixMonthsHistory = computed(() => {
     display: none;
     flex-direction: column;
     gap: 15px;
-    align-items: center;
     width: 100%;
     height: calc(100dvh - 100px);
+    padding-top: 20px;
 
     @media (min-width: 960px) {
       display: flex;
-      position: absolute;
-      right: 0;
-      top: 20px;
-      width: calc(100% - 560px);
+      width: calc(100%);
       overflow-y: auto;
       max-height: calc(100dvh - 100px);
     }
@@ -561,12 +400,12 @@ const getSixMonthsHistory = computed(() => {
   }
 
   &__history {
-    width: 80%;
-    max-width: 400px;
+    width: 100%;
     background-color: #ece9ef;
-    border-radius: 16px;
-    padding: 15px;
+    border-radius: 32px;
+    padding: 20px;
     margin-top: 14px;
+    max-width: 540px;
 
     h3 {
       font-size: 0.9rem;
@@ -637,6 +476,18 @@ const getSixMonthsHistory = computed(() => {
 
   &__pie {
     height: 170px;
+  }
+
+  &__container {
+    @media (min-width: 960px) {
+      width: 60%;
+      padding-left: 25px;
+
+      &:first-child {
+        width: 40%;
+        padding-left: 0;
+      }
+    }
   }
 }
 

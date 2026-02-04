@@ -220,7 +220,7 @@ const deleteAccount = async () => {
 
   &__label {
     font-size: 12px;
-    color: $text-gray-md;
+    color: $text-gray;
     line-height: 13px;
   }
 
@@ -239,7 +239,6 @@ const deleteAccount = async () => {
 
   &__fixed-label {
     font-size: 13px;
-    color: $text-gray-md;
     line-height: 13px;
     font-family: $font-medium;
   }
@@ -254,7 +253,7 @@ const deleteAccount = async () => {
   &__type {
     font-size: 11px;
     line-height: 11px;
-    color: $text-gray-md;
+    color: $text-gray;
     margin-top: 4px;
   }
 

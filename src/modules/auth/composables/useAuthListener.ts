@@ -9,6 +9,7 @@ export const useAuthListener = () => {
   const authStore = useAuthStore()
 
   onAuthStateChanged(auth, user => {
+    localStorage.setItem('user', JSON.stringify(user))
     authStore.setUser(user)
     authStore.setLoading(false)
   })

@@ -18,6 +18,6 @@ export interface Expense {
   type: EntryType
   isPending: boolean
   comments?: string
-  date: string | Date
+  date: Date
   category: any
 }

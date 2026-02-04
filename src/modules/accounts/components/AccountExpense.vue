@@ -37,6 +37,7 @@
     :edit-view="true"
     @closeEditExpense="onCloseEdit"
     :drawerOpen="drawer"
+    v-if="!isMobile"
   />
 </template>
 
@@ -47,9 +48,14 @@ import { useConfirm } from '@/modules/shared/composables/useConfirm'
 import { useAccountsStore } from '../accounts.store'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
 import AddAccountExpenseMore from './AddAccountExpenseMore.vue'
-import { ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import EditIcon from '@/assets/icons/Edit.icon.vue'
 import TrashIcon from '@/assets/icons/Trash.icon.vue'
+
+const itemMenu = [
+  { label: 'Editar', id: 1, icon: EditIcon },
+  { label: 'Eliminar', id: 2, icon: TrashIcon }
+]
 
 interface Props {
   expense: Expense
@@ -62,11 +68,23 @@ const accountStore = useAccountsStore()
 const toast = useToastStore()
 
 const drawer = ref(false)
+const screenWidth = ref(window.innerWidth)
 
-const itemMenu = [
-  { label: 'Editar', id: 1, icon: EditIcon },
-  { label: 'Eliminar', id: 2, icon: TrashIcon }
-]
+onMounted(() => {
+  window.addEventListener('resize', updateSize)
+})
+
+onUnmounted(() => {
+  window.addEventListener('resize', updateSize)
+})
+
+const isMobile = computed(() => {
+  return screenWidth.value < 960
+})
+
+const updateSize = () => {
+  screenWidth.value = window.innerWidth
+}
 
 const handleMenuAction = (id: number) => {
   if (id === 1) {
@@ -164,7 +182,7 @@ const onCloseEdit = () => {
   &__actions {
     position: absolute;
     top: -7px;
-    right: -5px;
+    right: -10px;
   }
 }
 </style>

@@ -29,10 +29,6 @@ const auth = getAuth(firebaseApp)
 const router = useRouter()
 
 onMounted(() => {
-  const userLocal = localStorage.getItem('user')
-  if (!userLocal) {
-    router.push({ name: 'login' })
-  }
   /*onAuthStateChanged(auth, user => {
     if (!user) {
       router.push({ name: 'login' })

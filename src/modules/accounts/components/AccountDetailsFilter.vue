@@ -30,7 +30,10 @@
           />
 
           <p>Filtrar por fechas</p>
-          <DateSelector v-model="initDate" :empty-date="true" />
+          <div class="mt-3 mb-3">
+            <DateSelector v-model="initDate" :empty-date="true" />
+          </div>
+
           <DateSelector v-model="endDate" :empty-date="true" />
 
           <div class="accounts-filter__actions">
@@ -55,7 +58,8 @@
         </template>
       </v-text-field>
 
-      <AddAccountExpenseMore :account-id="accountId" />
+      <AddAccountExpense :account-id="accountId" v-if="isMobile" />
+      <AddAccountExpenseMore :account-id="accountId" v-if="!isMobile" />
     </div>
   </div>
 </template>
@@ -63,51 +67,11 @@
 <script setup lang="ts">
 import FilterIcon from '@/assets/icons/Filter.icon.vue'
 import SearchIcon from '@/assets/icons/Search.icon.vue'
-import { ref, watch, onMounted } from 'vue'
-import { configService } from '@/modules/accounts/config.service'
+import { ref, watch, onMounted, computed, onUnmounted } from 'vue'
+import { configService } from '@/modules/shared/services/config.service'
 import AddAccountExpenseMore from './AddAccountExpenseMore.vue'
 import DateSelector from '@/modules/shared/components/DateSelector.vue'
-
-interface Props {
-  accountId: string
-  initialGroupBy?: string | null
-  initialOrderBy?: string | null
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  initialGroupBy: 'category',
-  initialOrderBy: null
-})
-
-const menu = ref(false)
-const search = ref('')
-const selectedType = ref<string | null>(props.initialGroupBy)
-const sortBy = ref<string | null>(props.initialOrderBy)
-const initDate = ref<any>(null)
-const endDate = ref<any>(null)
-
-// Load configuration when component mounts
-onMounted(() => {
-  const savedConfig = configService.getAccountConfig(props.accountId)
-  if (savedConfig.groupBy !== undefined) {
-    selectedType.value = savedConfig.groupBy
-  }
-  if (savedConfig.orderBy !== undefined) {
-    sortBy.value = savedConfig.orderBy
-  }
-})
-const emit = defineEmits<{
-  (
-    e: 'filterChange',
-    filter: {
-      search: string
-      groupBy: string | null
-      orderBy: string | null
-      initDate?: Date | null
-      endDate?: Date | null
-    }
-  ): void
-}>()
+import AddAccountExpense from './AddAccountExpense.vue'
 
 const groupByOptions = [
   { label: 'No agrupar', type: 'none' },
@@ -122,6 +86,63 @@ const orderByOptions = [
   { label: 'Mayor monto', filter: 'highest' },
   { label: 'Menor monto', filter: 'lowest' }
 ]
+
+interface Props {
+  accountId: string
+  initialGroupBy?: string | null
+  initialOrderBy?: string | null
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  initialGroupBy: 'category',
+  initialOrderBy: null
+})
+
+const emit = defineEmits<{
+  (
+    e: 'filterChange',
+    filter: {
+      search: string
+      groupBy: string | null
+      orderBy: string | null
+      initDate?: Date | null
+      endDate?: Date | null
+    }
+  ): void
+}>()
+
+const menu = ref(false)
+const search = ref('')
+const selectedType = ref<string | null>(props.initialGroupBy)
+const sortBy = ref<string | null>(props.initialOrderBy)
+const initDate = ref<any>(null)
+const endDate = ref<any>(null)
+const screenWidth = ref(window.innerWidth)
+
+// Load configuration when component mounts
+onMounted(() => {
+  const savedConfig = configService.getAccountConfig(props.accountId)
+  if (savedConfig.groupBy !== undefined) {
+    selectedType.value = savedConfig.groupBy
+  }
+  if (savedConfig.orderBy !== undefined) {
+    sortBy.value = savedConfig.orderBy
+  }
+
+  window.addEventListener('resize', updateSize)
+})
+
+onUnmounted(() => {
+  window.addEventListener('resize', updateSize)
+})
+
+const isMobile = computed(() => {
+  return screenWidth.value < 960
+})
+
+const updateSize = () => {
+  screenWidth.value = window.innerWidth
+}
 
 const clearAll = () => {
   menu.value = false

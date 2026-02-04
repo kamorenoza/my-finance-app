@@ -13,10 +13,13 @@
 </template>
 
 <script setup lang="ts">
+import { configService } from '../shared/services/config.service'
 import AddAccount from './components/AddAccount.vue'
 import CardCarousel from './components/CardCarousel.vue'
 import SortFilter from './components/SortFilter.vue'
 import { usePreventBack } from '@/modules/shared/composables/usePreventBack'
+
+configService.saveLastPage('/cuentas')
 
 // Prevenir que el usuario pueda ir atrás desde esta ruta
 usePreventBack()

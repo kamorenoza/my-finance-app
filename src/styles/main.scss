@@ -40,6 +40,7 @@ body {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   overflow: hidden;
+  overflow: hidden;
 }
 
 body {
@@ -211,9 +212,9 @@ body {
 }
 
 .btn-circle {
-  border-radius: 100% !important;
-  height: 20px !important;
-  width: 20px !important;
+  border-radius: 12px !important;
+  height: 30px !important;
+  width: 30px !important;
   padding: 0 !important;
   min-width: 10px;
   min-height: 10px;
@@ -225,8 +226,8 @@ body {
   box-shadow: none !important;
 
   .icon {
-    width: 20px;
-    height: 20px;
+    width: 25px;
+    height: 25px;
   }
 }
 
@@ -335,6 +336,7 @@ body {
   }
 }
 
+.general-input,
 .secondary-input {
   font-size: 14px;
 
@@ -350,13 +352,17 @@ body {
 
   .v-field__input {
     font-size: 14px;
-    padding-left: 5px !important;
-    background-color: $color-white;
+    padding-left: 0px !important;
+    background-color: transparent;
     border-radius: 8px;
   }
 
   .v-field {
-    padding-right: 0;
+    padding-right: 10px;
+    padding-left: 10px;
+    padding-bottom: 2px;
+    background-color: $bg-general;
+    border-radius: 8px;
   }
 
   .v-text-field__prefix {

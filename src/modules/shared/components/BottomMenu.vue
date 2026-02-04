@@ -153,7 +153,6 @@ import PurseIcon from '@/assets/icons/Purse.icon.vue'
 import NotesIcon from '@/assets/icons/Notes.icon.vue'
 import ShoppingIcon from '@/assets/icons/Shopping.icon.vue'
 import BudgetIcon from '@/assets/icons/Budget.icon.vue'
-
 const layout = useLayoutStore()
 
 const { mdAndUp } = useDisplay()
@@ -188,6 +187,10 @@ function toggleRail() {
   layout.rail = !layout.rail
   localStorage.setItem('drawerRail', String(layout.rail))
 }
+
+const hideBottomMenu = computed(() => {
+  return hideMenu.value
+})
 </script>
 
 <style scoped lang="scss">
@@ -207,7 +210,7 @@ function toggleRail() {
 }
 
 .bottom-menu {
-  position: fixed;
+  position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
@@ -217,6 +220,11 @@ function toggleRail() {
   padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
   padding-left: 7px;
   padding-right: 7px;
+
+  &--hide {
+    opacity: 0;
+    padding-bottom: 0 !important;
+  }
 
   &::before {
     content: '';

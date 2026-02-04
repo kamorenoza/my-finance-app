@@ -18,6 +18,8 @@
 import router from '@/router'
 import { useAuthStore } from './auth.store'
 import { loginWithGoogle } from './firebaseAuth'
+import { onMounted } from 'vue'
+import { configService } from '../shared/services/config.service'
 
 const authStore = useAuthStore()
 
@@ -31,6 +33,14 @@ const handleLogin = async () => {
     alert('Error al iniciar sesión')
   }
 }
+
+onMounted(async () => {
+  const user = localStorage.getItem('user')
+  if (user) {
+    const page = configService.getLastPage()
+    router.push(page)
+  }
+})
 </script>
 
 <style lang="scss" scoped>
