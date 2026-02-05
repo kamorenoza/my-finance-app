@@ -154,8 +154,9 @@ watch(
   gap: 10px;
   transition: transform 0.3s ease;
   padding-left: 15px;
-  padding-top: 10px;
+  padding-top: 0px;
   min-height: 185px;
+  padding-bottom: 40px;
 
   @media (min-width: 600px) {
     flex-wrap: wrap;

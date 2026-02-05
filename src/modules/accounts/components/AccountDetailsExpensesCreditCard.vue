@@ -321,6 +321,7 @@ const getPendingExpensesGrouped = computed(() => {
     flex-grow: 1;
     height: calc(100dvh - 360px);
     padding-right: 15px;
+    padding-bottom: 60px;
 
     .expense-item {
       display: flex;

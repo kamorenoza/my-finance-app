@@ -13,34 +13,35 @@
     </div>
 
     <div class="category-item__actions">
-      <v-btn
-        class="category-item__btn"
-        icon
-        variant="text"
-        @click="$emit('delete', category)"
-      >
-        <v-icon class="category-icon">mdi-trash-can-outline</v-icon>
-      </v-btn>
-      <v-btn
-        class="category-item__btn"
-        icon
-        variant="text"
-        @click="$emit('edit', category)"
-      >
-        <v-icon class="category-icon">mdi-pencil-outline</v-icon>
-      </v-btn>
+      <DotMenu :items="itemMenu" @onMenuClicked="handleMenuAction" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import DotMenu from '@/modules/shared/components/DotMenu.vue'
 import type { Category } from '../categories.interface'
+import EditIcon from '@/assets/icons/Edit.icon.vue'
+import TrashIcon from '@/assets/icons/Trash.icon.vue'
 
-defineProps<{
+const itemMenu = [
+  { label: 'Editar', id: 1, icon: EditIcon },
+  { label: 'Eliminar', id: 2, icon: TrashIcon }
+]
+
+const props = defineProps<{
   category: Category
 }>()
 
-defineEmits(['edit', 'delete'])
+const emit = defineEmits(['edit', 'delete'])
+
+const handleMenuAction = (id: number) => {
+  if (id === 1) {
+    emit('edit', props.category)
+  } else if (id === 2) {
+    emit('delete', props.category)
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -48,10 +49,13 @@ defineEmits(['edit', 'delete'])
   display: flex;
   align-items: center;
   margin-bottom: 10px;
+  background-color: $bg-item;
+  padding: 10px;
+  border-radius: 20px;
 
   &__name {
     color: $gray-text;
-    width: 175px;
+    flex-grow: 1;
     text-decoration: none;
     margin-left: 10px;
     white-space: nowrap;
@@ -64,14 +68,6 @@ defineEmits(['edit', 'delete'])
     width: 35px;
     margin-left: 5px;
   }
-
-  &:hover {
-    background: none !important;
-  }
-}
-
-.category-icon {
-  color: $text-light-gray;
 }
 
 .v-list-item__prepend > .v-avatar {

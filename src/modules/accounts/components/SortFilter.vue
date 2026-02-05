@@ -86,7 +86,7 @@ const clearAll = () => {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
   flex-grow: 1;
 
   @media (min-width: 960px) {

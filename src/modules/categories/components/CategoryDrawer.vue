@@ -1,11 +1,19 @@
 <!-- CategoryDrawerContent.vue -->
 <template>
-  <div class="category-drawer-content pl-4 pr-2">
+  <div class="category-drawer">
     <div class="d-flex align-center justify-space-between">
-      <h2 class="category-title">Categorías</h2>
-      <v-btn icon class="button-secondary" @click="addCategory">
-        <v-icon>mdi-plus</v-icon>
-      </v-btn>
+      <h2 class="category-drawer__title">Categorías</h2>
+      <div>
+        <TooltipFabButton
+          tooltip="Categorias"
+          :color="colorMdPrimary"
+          @click="addCategory"
+        >
+          <template #icon>
+            <AddIcon class="icon" />
+          </template>
+        </TooltipFabButton>
+      </div>
     </div>
 
     <NewCategory
@@ -16,7 +24,7 @@
       class="mt-6"
     />
 
-    <div class="list-categories mt-5">
+    <div class="category-drawer__list">
       <template v-for="cat in categoryStore.categories">
         <CategoryItem
           v-if="editingCategory?.name !== cat.name"
@@ -48,6 +56,9 @@ import NewCategory from './NewCategory.vue'
 import type { Category } from '../categories.interface'
 import { useConfirm } from '@/modules/shared/composables/useConfirm'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
+import TooltipFabButton from '@/modules/shared/components/TooltipFabButton.vue'
+import { colorMdPrimary } from '@/styles/variables.styles'
+import AddIcon from '@/assets/icons/Add.icon.vue'
 
 const categoryStore = useCategoryStore()
 const confirm = useConfirm()
@@ -120,25 +131,29 @@ const handleDelete = async (category: any) => {
 </script>
 
 <style scoped lang="scss">
-.category-drawer-content {
+.category-drawer {
   min-width: 280px;
-  padding: 16px;
+  padding: 16px 15px;
   max-height: 100vh;
   overflow-y: auto;
-}
 
-.category-title {
-  font-size: 16px;
-  font-family: $font-medium;
-  font-weight: 400;
-}
+  &__title {
+    font-size: 16px;
+    font-family: $font-medium;
+    font-weight: 400;
+  }
 
-.category-item {
-  transition: background-color 0.2s;
-}
+  &__item {
+    transition: background-color 0.2s;
 
-.category-item:hover {
-  background-color: #f2f2f2;
+    &:hover {
+      background-color: #f2f2f2;
+    }
+  }
+
+  &__list {
+    margin-top: 20px;
+  }
 }
 
 :deep(

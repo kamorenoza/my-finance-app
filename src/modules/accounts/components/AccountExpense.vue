@@ -103,8 +103,8 @@ const onCloseEdit = () => {
   width: 100%;
   padding: 10px;
   align-items: center;
-  border-radius: 16px;
-  background-color: rgba(#f7eded, 0.8);
+  border-radius: 20px;
+  background-color: $bg-item;
 
   &__category {
     border-radius: 8px !important;

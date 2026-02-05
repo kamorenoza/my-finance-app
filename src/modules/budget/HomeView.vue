@@ -1,14 +1,20 @@
 <template>
-  <div class="home__header">
-    <div class="home__selector">
-      <MonthYearSelector v-model="currentDate" />
+  <div class="home">
+    <div class="general-header">
+      <p class="general-title">Mi presupuesto</p>
     </div>
 
-    <BudgetSummary />
-  </div>
+    <div class="home__header">
+      <div class="home__selector">
+        <MonthYearSelector v-model="currentDate" />
+      </div>
 
-  <div class="home__content"></div>
-  <AddBudget />
+      <BudgetSummary />
+    </div>
+
+    <div class="home__content"></div>
+    <AddBudget />
+  </div>
 
   <CategoryManager />
 </template>
@@ -17,16 +23,10 @@
 import { onMounted, ref } from 'vue'
 import MonthYearSelector from '@/modules/shared/components/MonthYearSelector.vue'
 import CategoryManager from '@/modules/categories/CategoryManager.vue'
-import { getAuth, onAuthStateChanged } from 'firebase/auth'
-import { firebaseApp } from '@/database/firebase'
-import { useRouter } from 'vue-router'
 import BudgetSummary from '@/modules/budget/components/BudgetSummary.vue'
 import AddBudget from '@/modules/budget/components/AddBudget.vue'
 
 const currentDate = ref(new Date())
-
-const auth = getAuth(firebaseApp)
-const router = useRouter()
 
 onMounted(() => {
   /*onAuthStateChanged(auth, user => {
@@ -46,7 +46,11 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  position: relative;
 
+  @media (min-width: 960px) {
+    padding-left: 20px;
+  }
   &__header {
     @media (min-width: 960px) {
       display: flex;
@@ -59,7 +63,7 @@ onMounted(() => {
     display: flex;
     align-items: center;
     gap: 15px;
-    background-color: $color-primary;
+    justify-content: center;
   }
 
   &__content {

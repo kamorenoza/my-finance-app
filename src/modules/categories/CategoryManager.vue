@@ -1,14 +1,17 @@
 <template>
-  <div class="fab-categories" :class="{ 'fab-categories--drawer': drawer }">
-    <v-btn icon class="fab-button" @click="drawer = !drawer">
-      <v-icon class="icon-cat">{{
-        drawer ? 'mdi-chevron-right' : 'mdi-shape-plus'
-      }}</v-icon>
-    </v-btn>
-    <span class="fab-label">Categorías</span>
+  <div class="fab-categories">
+    <TooltipFabButton
+      tooltip="Categorias"
+      :color="colorMdPrimary"
+      @click="handlePress"
+    >
+      <template #icon>
+        <CategoriesIcon />
+      </template>
+    </TooltipFabButton>
   </div>
   <!-- Drawer lateral -->
-  <v-navigation-drawer v-model="drawer" location="right" temporary width="320">
+  <v-navigation-drawer v-model="drawer" location="right" temporary width="350">
     <CategoryDrawer @done="drawer = false" />
   </v-navigation-drawer>
 </template>
@@ -16,38 +19,51 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import CategoryDrawer from '@/modules/categories/components/CategoryDrawer.vue'
+import { colorMdPrimary } from '@/styles/variables.styles'
+import CategoriesIcon from '@/assets/icons/Categories.icon.vue'
+import TooltipFabButton from '@/modules/shared/components/TooltipFabButton.vue'
 
 const drawer = ref(false)
+
+const handlePress = () => {
+  drawer.value = true
+}
 </script>
 
 <style scoped lang="scss">
 .fab-categories {
   position: absolute;
-  right: 12px;
+  right: 55px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  z-index: 1100;
-  top: 3px;
+  z-index: 9;
+  top: -5px;
   padding-top: 10px;
 
   @media (min-width: 960px) {
-    bottom: 24px;
-    right: 24px;
-    top: unset;
+    right: 10px;
+    top: 63px;
   }
 
   .fab-button {
-    box-shadow: 0 4px 12px rgba(103, 58, 183, 0.4);
-    background-color: $color-secondary;
-    color: $color-white;
+    z-index: 1;
+    width: 40px !important;
+    height: 40px !important;
+    display: flex;
+    align-items: center;
+    border-radius: 14px !important;
 
-    @media (max-width: 959px) {
-      width: 35px;
-      height: 35px;
+    @media (min-width: 960px) {
+      width: 48px !important;
+      height: 46px !important;
+      border-radius: 16px !important;
+    }
+
+    .icon {
+      width: 30px;
     }
   }
-
   .icon-cat {
     font-size: 18px;
   }

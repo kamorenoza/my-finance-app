@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="menu-general">
     <v-app-bar
       app
       flat
@@ -209,13 +209,23 @@ const hideBottomMenu = computed(() => {
     background-color 0.3s ease;
 }
 
+.menu-general {
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+
+  @media (min-width: 960px) {
+    position: unset;
+  }
+}
+
 .bottom-menu {
   position: absolute;
-  bottom: 0;
+  bottom: 0px;
   left: 0;
   right: 0;
   background: #ffffff;
-  height: 80px;
+  height: 95px;
   z-index: 1000;
   padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
   padding-left: 7px;
