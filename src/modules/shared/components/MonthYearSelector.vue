@@ -1,40 +1,27 @@
 <template>
-  <div class="month-year-selector" v-if="!isDesktop">
-    <v-row align="center" justify="space-between" class="navigation">
-      <v-btn icon @click="previousMonth" variant="text" color="white">
-        <v-icon>mdi-chevron-left</v-icon>
-      </v-btn>
-
-      <span @click="showPicker = true" class="month-title no-effects">
-        {{ formattedDate }}
-      </span>
-
-      <v-btn icon @click="nextMonth" variant="text" color="white">
-        <v-icon>mdi-chevron-right</v-icon>
-      </v-btn>
-    </v-row>
-  </div>
-
-  <v-btn-group
-    v-else
-    class="desktop-date-picker"
-    divided
-    variant="outlined"
-    color="white"
-  >
-    <v-btn icon @click="previousMonth">
-      <v-icon>mdi-chevron-left</v-icon>
+  <div class="date-selector">
+    <v-btn
+      class="date-selector__arrow"
+      @click="previousMonth"
+      variant="text"
+      :color="colorPrimary"
+    >
+      <v-icon size="24">mdi-chevron-left</v-icon>
     </v-btn>
 
-    <v-btn class="date-button" @click="showPicker = true">
-      <v-icon start size="18">mdi-calendar-month</v-icon>
+    <span @click="showPicker = true" class="date-selector__date no-effects">
       {{ formattedDate }}
-    </v-btn>
+    </span>
 
-    <v-btn icon @click="nextMonth">
-      <v-icon>mdi-chevron-right</v-icon>
+    <v-btn
+      class="date-selector__arrow"
+      @click="nextMonth"
+      variant="text"
+      :color="colorPrimary"
+    >
+      <v-icon size="24">mdi-chevron-right</v-icon>
     </v-btn>
-  </v-btn-group>
+  </div>
 
   <v-dialog v-model="showPicker" width="300">
     <v-card class="pa-4 pb-0">
@@ -91,6 +78,7 @@ import { ref, computed, watch } from 'vue'
 import { useDisplay } from 'vuetify'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
+import { colorPrimary } from '@/styles/variables.styles'
 
 const emit = defineEmits(['update:modelValue'])
 
@@ -168,6 +156,35 @@ const goToCurrentMonth = () => {
 </script>
 
 <style scoped lang="scss">
+.date-selector {
+  background-color: $color-md-primary;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  height: 40px;
+
+  &__date {
+    font-size: 0.9rem;
+    line-height: 0.9rem;
+    width: 85px;
+    display: flex;
+    justify-content: center;
+  }
+
+  &__arrow {
+    height: 40px;
+    padding: 0;
+    width: 40px !important;
+    min-width: 0;
+    border-radius: 100%;
+
+    &:visited,
+    &:active {
+      background: none !important;
+    }
+  }
+}
+
 .month-year-selector {
   background: $color-primary;
   padding: 20px 8px 15px;
@@ -183,6 +200,7 @@ const goToCurrentMonth = () => {
     color: $color-white;
   }
 }
+
 .picker-btn {
   text-transform: none;
   font-size: 15px;
@@ -217,5 +235,10 @@ const goToCurrentMonth = () => {
     min-width: 130px;
     justify-content: center;
   }
+}
+
+:deep(.v-ripple__container) {
+  display: none !important;
+  opacity: 0 !important;
 }
 </style>

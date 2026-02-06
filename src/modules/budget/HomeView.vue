@@ -8,6 +8,9 @@
       <div class="home__selector">
         <MonthYearSelector v-model="currentDate" />
       </div>
+      <div class="home__toggle">
+        <BudgetToggle v-model="budgetToggle" />
+      </div>
 
       <BudgetSummary />
     </div>
@@ -25,8 +28,10 @@ import MonthYearSelector from '@/modules/shared/components/MonthYearSelector.vue
 import CategoryManager from '@/modules/categories/CategoryManager.vue'
 import BudgetSummary from '@/modules/budget/components/BudgetSummary.vue'
 import AddBudget from '@/modules/budget/components/AddBudget.vue'
+import BudgetToggle from '../shared/components/BudgetToggle.vue'
 
 const currentDate = ref(new Date())
+const budgetToggle = ref('budget')
 
 onMounted(() => {
   /*onAuthStateChanged(auth, user => {
@@ -70,6 +75,13 @@ onMounted(() => {
     height: calc(100dvh - 300px);
     padding: 12px;
     padding-bottom: 280px;
+  }
+
+  &__toggle {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    padding-right: 4px;
   }
 }
 </style>
