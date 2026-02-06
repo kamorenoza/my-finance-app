@@ -96,7 +96,7 @@
           type="button"
           class="btn-primary"
           @click="saveAccount"
-          :disabled="!name"
+          :disabled="!name?.trim()"
         >
           Guardar
         </v-btn>

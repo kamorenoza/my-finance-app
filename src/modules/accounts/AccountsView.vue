@@ -2,6 +2,7 @@
   <div class="accounts">
     <div class="general-header">
       <p class="general-title">Mis cuentas</p>
+      <CategoryManager />
     </div>
 
     <div>
@@ -16,6 +17,7 @@
 </template>
 
 <script setup lang="ts">
+import CategoryManager from '../categories/CategoryManager.vue'
 import { configService } from '../shared/services/config.service'
 import AddAccount from './components/AddAccount.vue'
 import CardCarousel from './components/CardCarousel.vue'

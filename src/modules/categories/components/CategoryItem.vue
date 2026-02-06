@@ -1,11 +1,10 @@
 <template>
   <div class="category-item">
-    <div class="category-item__icon">
-      <v-avatar size="28" :color="category.backgroundColor">
-        <v-icon size="16" :color="category.iconColor">
-          {{ category.icon }}
-        </v-icon>
-      </v-avatar>
+    <div
+      class="category-item__icon"
+      :style="{ backgroundColor: category.backgroundColor }"
+    >
+      <component :is="getIconComponent" :color="colorWhite" />
     </div>
 
     <div class="category-item__name">
@@ -23,6 +22,9 @@ import DotMenu from '@/modules/shared/components/DotMenu.vue'
 import type { Category } from '../categories.interface'
 import EditIcon from '@/assets/icons/Edit.icon.vue'
 import TrashIcon from '@/assets/icons/Trash.icon.vue'
+import { colorWhite } from '@/styles/variables.styles'
+import { computed } from 'vue'
+import { getIcon } from '../categories.constants'
 
 const itemMenu = [
   { label: 'Editar', id: 1, icon: EditIcon },
@@ -34,6 +36,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['edit', 'delete'])
+
+const getIconComponent = computed(() => {
+  return getIcon(props.category.icon)
+})
 
 const handleMenuAction = (id: number) => {
   if (id === 1) {
@@ -49,7 +55,7 @@ const handleMenuAction = (id: number) => {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
-  background-color: $bg-item;
+  background-color: $bg-primary;
   padding: 10px;
   border-radius: 20px;
 
@@ -67,6 +73,20 @@ const handleMenuAction = (id: number) => {
     height: 35px;
     width: 35px;
     margin-left: 5px;
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+
+    .icon {
+      width: 30px !important;
+      height: 30px !important;
+    }
   }
 }
 

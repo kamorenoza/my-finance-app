@@ -12,7 +12,7 @@
   </div>
   <!-- Drawer lateral -->
   <v-navigation-drawer v-model="drawer" location="right" temporary width="350">
-    <CategoryDrawer @done="drawer = false" />
+    <CategoryDrawer @done="drawer = false" @close="drawer = false" />
   </v-navigation-drawer>
 </template>
 

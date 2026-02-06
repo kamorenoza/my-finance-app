@@ -1,32 +1,40 @@
 <!-- src/modules/categories/components/NewCategory.vue -->
 <template>
-  <div class="category-item d-flex align-center">
-    <IconColorSelector
-      :icon="icon"
-      :backgroundColor="backgroundColor"
-      :iconColor="iconColor"
-      @done="onIconColorSelected"
-    />
+  <div class="category-item">
+    <div v-if="!isEditing" class="category-item__header">
+      <p>Agregar categoría</p>
+      <v-btn @click="cancelEdit" class="btn-label category-item__close">
+        <CloseIcon />
+      </v-btn>
+    </div>
+    <div class="category-item__bar">
+      <IconColorSelector
+        :icon="icon"
+        :backgroundColor="backgroundColor"
+        @done="onIconColorSelected"
+      />
 
-    <!-- Input para el nombre de la categoría -->
-    <v-text-field
-      v-model="newCategory.name"
-      dense
-      autofocus
-      class="flex-grow-1 input-name"
-      placeholder="Categoria"
-      :maxlength="100"
-      @keydown.enter="saveCategory"
-      @keydown.escape="cancelEdit"
-    />
+      <!-- Input para el nombre de la categoría -->
+      <v-text-field
+        v-model="newCategory.name"
+        dense
+        autofocus
+        class="general-input"
+        placeholder="Categoria"
+        :maxlength="100"
+        @keydown.enter="saveCategory"
+        @keydown.escape="cancelEdit"
+      />
 
-    <!-- Botones de acción -->
-    <v-btn @click="saveCategory" class="btn-label edit-button">
-      <v-icon size="22" color="green">mdi-check</v-icon>
-    </v-btn>
-    <v-btn @click="cancelEdit" class="btn-label edit-button">
-      <v-icon size="22" color="gray">mdi-close</v-icon>
-    </v-btn>
+      <!-- Botones de acción -->
+      <v-btn
+        @click="saveCategory"
+        class="btn-fab category-item__check"
+        :disabled="!newCategory.name"
+      >
+        <CheckIcon :color="colorSecondary" />
+      </v-btn>
+    </div>
   </div>
 </template>
 
@@ -34,24 +42,27 @@
 import { ref } from 'vue'
 import IconColorSelector from './IconColorSelector.vue'
 import type { Category } from '../categories.interface'
+import { colorPrimary, colorSecondary } from '@/styles/variables.styles'
+import CheckIcon from '@/assets/icons/Check.icon.vue'
+import CloseIcon from '@/assets/icons/Close.icon.vue'
 
 interface Props {
   saveCategory: (i: any) => void
   cancelEdit: () => void
   newCategory: Category
+  isEditing?: boolean
 }
 
 const props = defineProps<Props>()
-const icon = ref(props.newCategory.icon || 'mdi-currency-usd')
-const backgroundColor = ref(props.newCategory.backgroundColor || '#9C27B0')
-const iconColor = ref(props.newCategory.iconColor || '#ffffff')
+const icon = ref(props.newCategory.icon || 'cat1')
+const backgroundColor = ref(props.newCategory.backgroundColor || colorPrimary)
 
 const newCategory = ref(
   props.newCategory || {
     name: '',
-    icon: 'mdi-currency-usd',
+    icon: 'cat1',
     iconColor: '#ffffff',
-    backgroundColor: '#9C27B0'
+    backgroundColor: colorPrimary
   }
 )
 
@@ -73,11 +84,56 @@ const cancelEdit = () => {
 
 <style scoped lang="scss">
 .category-item {
-  display: flex;
-  align-items: center;
+  background-color: rgba($bg-primary, 0.9);
+  padding: 10px;
+  border-radius: 20px;
+  margin-bottom: 20px;
 
   &:hover {
-    background: transparent !important;
+    background-color: $bg-primary;
+  }
+
+  &__bar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  &__check {
+    background: $color-lg-secondary;
+
+    &:disabled {
+      opacity: 0.6;
+    }
+  }
+
+  &__header {
+    padding-bottom: 10px;
+    font-size: 0.8rem;
+    font-family: $font-medium;
+    padding-left: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__close {
+    padding-right: 0;
+    margin-right: -8px;
+    margin-top: -2px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .btn-fab {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 12px !important;
+
+    .icon {
+      width: 30px;
+      height: 30px;
+    }
   }
 }
 
@@ -134,5 +190,10 @@ const cancelEdit = () => {
 
 :deep(.v-input__details) {
   display: none !important;
+}
+
+:deep(.category-item__close .v-btn__content) {
+  line-height: 16px !important;
+  font-size: 13px;
 }
 </style>

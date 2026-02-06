@@ -48,12 +48,14 @@ const getBackupPayload = (email: string) => {
   const accounts = localStorage.getItem(`accounts_${email}`)
   const config = localStorage.getItem(`config_${email}`)
   const budget = localStorage.getItem(`budget_${email}`)
+  const categories = localStorage.getItem(`categories_${email}`)
 
   return {
     device_id: deviceId,
     accounts_email: accounts ? JSON.parse(accounts) : null,
     config_email: config ? JSON.parse(config) : null,
-    budget_email: budget ? JSON.parse(budget) : null
+    budget_email: budget ? JSON.parse(budget) : null,
+    categories: categories ? JSON.parse(categories) : null
   }
 }
 
@@ -71,6 +73,7 @@ const setLocalStorageFromBackup = (
     accounts_email?: unknown
     config_email?: unknown
     budget_email?: unknown
+    categories?: unknown
   }
 ) => {
   if (backupData.accounts_email !== undefined) {
@@ -93,6 +96,13 @@ const setLocalStorageFromBackup = (
       JSON.stringify(backupData.budget_email)
     )
   }
+
+  if (backupData.categories !== undefined) {
+    localStorage.setItem(
+      `categories_${email}`,
+      JSON.stringify(backupData.categories)
+    )
+  }
 }
 
 const applyBackupIfChanged = (
@@ -102,6 +112,7 @@ const applyBackupIfChanged = (
     accounts_email?: unknown
     config_email?: unknown
     budget_email?: unknown
+    categories?: unknown
   }
 ) => {
   const deviceId = getDeviceId()
@@ -113,10 +124,12 @@ const applyBackupIfChanged = (
   const accountsKey = `accounts_${email}`
   const configKey = `config_${email}`
   const budgetKey = `budget_${email}`
+  const categoriesKey = `categories_${email}`
 
   const currentAccounts = localStorage.getItem(accountsKey)
   const currentConfig = localStorage.getItem(configKey)
   const currentBudget = localStorage.getItem(budgetKey)
+  const currentCategories = localStorage.getItem(categoriesKey)
 
   const nextAccounts =
     backupData.accounts_email !== undefined
@@ -130,6 +143,10 @@ const applyBackupIfChanged = (
     backupData.budget_email !== undefined
       ? JSON.stringify(backupData.budget_email)
       : currentBudget
+  const nextCategories =
+    backupData.categories !== undefined
+      ? JSON.stringify(backupData.categories)
+      : currentBudget
 
   if (currentAccounts !== nextAccounts && nextAccounts !== null) {
     localStorage.setItem(accountsKey, nextAccounts)
@@ -141,6 +158,10 @@ const applyBackupIfChanged = (
 
   if (currentBudget !== nextBudget && nextBudget !== null) {
     localStorage.setItem(budgetKey, nextBudget)
+  }
+
+  if (currentCategories !== nextCategories && nextCategories !== null) {
+    localStorage.setItem(categoriesKey, nextCategories)
   }
 }
 
@@ -175,6 +196,7 @@ export const backupService = {
       accounts_email?: unknown
       config_email?: unknown
       budget_email?: unknown
+      categories?: unknown
     }
 
     setLocalStorageFromBackup(email, backupData)
@@ -202,6 +224,7 @@ export const backupService = {
           accounts_email?: unknown
           config_email?: unknown
           budget_email?: unknown
+          categories?: unknown
         }
 
         if (timeoutId) {

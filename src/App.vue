@@ -38,6 +38,7 @@ const startBackupSubscription = (email?: string | null) => {
 
   if (email) {
     unsubscribeBackup = backupService.subscribeToBackup(email, () => {
+      console.log('categoryStore', categoryStore.loadCategories())
       accountsStore.loadAccounts()
       categoryStore.loadCategories()
     })

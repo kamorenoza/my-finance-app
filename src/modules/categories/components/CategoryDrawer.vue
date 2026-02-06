@@ -1,18 +1,25 @@
 <!-- CategoryDrawerContent.vue -->
 <template>
   <div class="category-drawer">
-    <div class="d-flex align-center justify-space-between">
+    <div class="category-drawer__header">
+      <div class="category-drawer__back">
+        <v-btn
+          class="category-drawer__back-button"
+          @click="onClose"
+          :ripple="false"
+        >
+          <v-icon left>mdi-arrow-left</v-icon>
+        </v-btn>
+      </div>
       <h2 class="category-drawer__title">Categorías</h2>
       <div>
-        <TooltipFabButton
-          tooltip="Categorias"
+        <v-btn
+          class="btn-fab fab-button"
           :color="colorMdPrimary"
           @click="addCategory"
         >
-          <template #icon>
-            <AddIcon class="icon" />
-          </template>
-        </TooltipFabButton>
+          <AddIcon class="icon" />
+        </v-btn>
       </div>
     </div>
 
@@ -26,16 +33,19 @@
 
     <div class="category-drawer__list">
       <template v-for="cat in categoryStore.categories">
-        <CategoryItem
-          v-if="editingCategory?.name !== cat.name"
-          :key="cat.name"
-          :category="cat"
-          @edit="handleEdit"
-          @delete="handleDelete"
-        />
+        <Transition name="category" tag="div" class="category-list">
+          <CategoryItem
+            v-if="editingCategory?.name !== cat.name"
+            :key="cat.name"
+            :category="cat"
+            @edit="handleEdit"
+            @delete="handleDelete"
+          />
+        </Transition>
 
         <NewCategory
           v-if="editingCategory && editingCategory?.name === cat.name"
+          :isEditing="true"
           :newCategory="editingCategory"
           :saveCategory="updateCategory"
           :cancelEdit="cancelEdit"
@@ -56,9 +66,10 @@ import NewCategory from './NewCategory.vue'
 import type { Category } from '../categories.interface'
 import { useConfirm } from '@/modules/shared/composables/useConfirm'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
-import TooltipFabButton from '@/modules/shared/components/TooltipFabButton.vue'
-import { colorMdPrimary } from '@/styles/variables.styles'
+import { colorMdPrimary, colorPrimary } from '@/styles/variables.styles'
 import AddIcon from '@/assets/icons/Add.icon.vue'
+
+const emit = defineEmits(['close'])
 
 const categoryStore = useCategoryStore()
 const confirm = useConfirm()
@@ -75,9 +86,9 @@ const addCategory = () => {
   editingCategory.value = null
   newCategory.value = {
     name: '',
-    icon: 'mdi-currency-usd',
+    icon: 'cat1',
     iconColor: '#ffffff',
-    backgroundColor: '#9C27B0'
+    backgroundColor: colorPrimary
   }
 }
 
@@ -128,12 +139,17 @@ const handleDelete = async (category: any) => {
     toast.success('Categoría eliminada')
   }
 }
+
+const onClose = () => {
+  emit('close')
+}
 </script>
 
 <style scoped lang="scss">
 .category-drawer {
   min-width: 280px;
   padding: 16px 15px;
+  padding-right: 0;
   max-height: 100vh;
   overflow-y: auto;
 
@@ -151,8 +167,47 @@ const handleDelete = async (category: any) => {
     }
   }
 
+  &__header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 30px;
+    padding-right: 15px;
+  }
+
   &__list {
-    margin-top: 20px;
+    margin-top: 15px;
+    padding-bottom: 40px;
+    height: calc(100dvh - 170px);
+    overflow-y: auto;
+    padding-right: 15px;
+    padding-top: 5px;
+
+    @media (min-width: 960px) {
+      height: calc(100dvh - 85px);
+    }
+  }
+
+  &__back {
+    position: absolute;
+    top: 2px;
+    left: -15px;
+    z-index: 8;
+
+    &-button {
+      background: none;
+      border: none;
+      box-shadow: none;
+      padding-left: 0;
+    }
+  }
+
+  .btn-fab {
+    width: 40px !important;
+    height: 40px !important;
+    display: flex;
+    align-items: center;
   }
 }
 

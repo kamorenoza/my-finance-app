@@ -10,7 +10,7 @@ export const budgetService = {
   loadEntries: (): BudgetEntry[] => {
     const userEmail = getUserEmail()
     if (!userEmail) return []
-    const data = localStorage.getItem(`budget_entries_${userEmail}`)
+    const data = localStorage.getItem(`budget_${userEmail}`)
     return data ? JSON.parse(data) : []
   },
 
@@ -19,7 +19,7 @@ export const budgetService = {
     if (!userEmail) return
     const entries = budgetService.loadEntries()
     entries.push(entry)
-    localStorage.setItem(`budget_entries_${userEmail}`, JSON.stringify(entries))
+    localStorage.setItem(`budget_${userEmail}`, JSON.stringify(entries))
   },
 
   updateEntry: (updated: Partial<BudgetEntry> & { id: string }) => {
@@ -30,13 +30,13 @@ export const budgetService = {
       .map(entry =>
         entry.id === updated.id ? { ...entry, ...updated } : entry
       )
-    localStorage.setItem(`budget_entries_${userEmail}`, JSON.stringify(entries))
+    localStorage.setItem(`budget_${userEmail}`, JSON.stringify(entries))
   },
 
   deleteEntry: (id: string) => {
     const userEmail = getUserEmail()
     if (!userEmail) return
     const entries = budgetService.loadEntries().filter(entry => entry.id !== id)
-    localStorage.setItem(`budget_entries_${userEmail}`, JSON.stringify(entries))
+    localStorage.setItem(`budget_${userEmail}`, JSON.stringify(entries))
   }
 }

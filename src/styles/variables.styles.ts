@@ -1,6 +1,7 @@
 export const colorGrey = '#9e9e9e'
 export const colorPrimary = '#8971ad'
 export const colorMdPrimary = '#ede8f3'
+export const colorSecondary = '#6faeaa'
 export const colorWhite = '#FFFFFF'
 export const green = '#3ab35a'
 export const textDark = '#1c1c1e'

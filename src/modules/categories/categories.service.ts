@@ -18,6 +18,15 @@ export const categoryService = {
     const userEmail = getUserEmail()
     if (!userEmail) return
     const categories = categoryService.loadCategories()
+    if (
+      categories.some(
+        (categoryExisted: Category) => categoryExisted.name === category.name
+      )
+    ) {
+      throw new Error('La categoría ya existe')
+      return
+    }
+
     categories.push(category)
     localStorage.setItem(`categories_${userEmail}`, JSON.stringify(categories))
   },
