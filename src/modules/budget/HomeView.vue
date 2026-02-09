@@ -28,8 +28,8 @@
             :initial-order-by="currentFilter.orderBy"
             @filterChange="onFilterChange"
           />
-          <AddBudgetComplete :account-id="'1'" />
-          <div class="home__add-btn">
+          <AddBudgetComplete v-if="!mdAndUp" />
+          <div class="home__add-btn" v-if="mdAndUp">
             <v-tooltip text="Agregar presupuesto" location="left">
               <template v-slot:activator="{ props }">
                 <v-btn
@@ -50,7 +50,7 @@
       <AddBudget />
     </div>
 
-    <AddBudgetSide ref="addBudgetSideRef" />
+    <AddBudgetSide v-if="mdAndUp" ref="addBudgetSideRef" />
   </div>
 
   <CategoryManager />
@@ -58,6 +58,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch, computed } from 'vue'
+import { useDisplay } from 'vuetify'
 import MonthYearSelector from '@/modules/shared/components/MonthYearSelector.vue'
 import CategoryManager from '@/modules/categories/CategoryManager.vue'
 import BudgetSummary from '@/modules/budget/components/BudgetSummary.vue'
@@ -72,6 +73,8 @@ import { useBudgetStore } from './budget.store'
 import AddBudgetSide from './components/AddBudgetSide.vue'
 import AddIcon from '@/assets/icons/Add.icon.vue'
 import { colorMdPrimary } from '@/styles/variables.styles'
+
+const { mdAndUp } = useDisplay()
 
 const currentDate = ref(new Date())
 const budgetToggle = ref('budget')
@@ -162,6 +165,7 @@ const onFilterChange = (filter: {
     @media (min-width: 960px) {
       display: flex;
       gap: 20px;
+      padding-right: 20px;
     }
   }
 
@@ -173,7 +177,7 @@ const onFilterChange = (filter: {
   }
 
   &__body {
-    height: calc(100dvh - 360px);
+    height: calc(100dvh - 335px);
     padding: 12px;
     padding-bottom: 70px;
 
@@ -202,8 +206,12 @@ const onFilterChange = (filter: {
   }
 
   &__add-btn {
-    display: flex;
-    justify-content: center;
+    display: none;
+
+    @media (min-width: 960px) {
+      display: flex;
+      justify-content: center;
+    }
   }
 }
 

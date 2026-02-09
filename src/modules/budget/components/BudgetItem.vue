@@ -139,12 +139,14 @@ const currency = (value: number): string =>
   &__status {
     display: flex;
     gap: 8px;
+    flex-direction: column;
 
     .badge {
       padding: 4px 12px;
       border-radius: 20px;
       font-size: 0.75rem;
       font-weight: 500;
+      display: block;
 
       &.paid {
         background-color: #e8f5e9;

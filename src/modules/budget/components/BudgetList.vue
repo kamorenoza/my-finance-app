@@ -200,8 +200,10 @@ const onEditEntry = (entry: BudgetEntry) => {
 
 <style scoped lang="scss">
 .budget-list {
-  height: calc(100vh - 500px);
+  height: calc(100vh - 480px);
   overflow-y: scroll;
+  padding-bottom: 40px;
+  margin-top: 5px;
 
   @media (min-width: 960px) {
     height: calc(100vh - 220px);

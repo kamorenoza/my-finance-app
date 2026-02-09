@@ -4,6 +4,8 @@
     ref="formContainer"
     :class="{ 'add-expense--focused': isFocused }"
   >
+    <div v-if="isFocused" class="add-expense__overlay" @click="close"></div>
+
     <v-tooltip
       v-model="tooltipVisible"
       text="Agregar movimiento"
@@ -99,10 +101,15 @@
                 <template v-slot:prepend>
                   <div
                     class="add-expense__cat"
-                    :style="{ backgroundColor: (item.raw as any).backgroundColor }"
+                    :style="{
+                      backgroundColor: (item.raw as any).backgroundColor
+                    }"
                   >
-                  <component :is="getIcon((item.raw as any).category?.icon)" :color="colorWhite" />
-                </div>
+                    <component
+                      :is="getIcon((item.raw as any).category?.icon)"
+                      :color="colorWhite"
+                    />
+                  </div>
                 </template>
                 <v-list-item-title>{{
                   (item.raw as any).name
@@ -113,10 +120,15 @@
             <template v-slot:selection="{ item }">
               <div class="d-flex align-center">
                 <div
-                    class="add-expense__cat"
-                    :style="{ backgroundColor: (item.raw as any).backgroundColor }"
-                  >
-                  <component :is="getIcon((item.raw as any).category?.icon)" :color="colorWhite" />
+                  class="add-expense__cat"
+                  :style="{
+                    backgroundColor: (item.raw as any).backgroundColor
+                  }"
+                >
+                  <component
+                    :is="getIcon((item.raw as any).category?.icon)"
+                    :color="colorWhite"
+                  />
                 </div>
                 {{ (item.raw as any).name }}
               </div>
@@ -263,12 +275,21 @@ const onInputFocus = () => {
 const saveEntry = () => {
   if (!entry.value.description || !entry.value.value) return
   try {
+    // Convert date to ISO string before saving
+    const expenseToSave = {
+      ...entry.value,
+      date:
+        entry.value.date instanceof Date
+          ? entry.value.date.toISOString()
+          : entry.value.date
+    }
+
     if (store.selectedExpense) {
-      entry.value.id = store.selectedExpense?.id || ''
-      store.updateExpense(props.accountId, entry.value)
+      expenseToSave.id = store.selectedExpense?.id || ''
+      store.updateExpense(props.accountId, expenseToSave)
       toast.success('Movimiento editado')
     } else {
-      store.addExpense(entry.value, props.accountId)
+      store.addExpense(expenseToSave, props.accountId)
       toast.success('Movimiento agregado')
     }
 
@@ -312,7 +333,15 @@ const fillData = () => {
       if (selectedExpense.category) {
         entry.value.category = selectedExpense.category
       }
-      entry.value.date = new Date(selectedExpense.date)
+      // Handle date safely - convert string to Date if needed
+      if (selectedExpense.date) {
+        entry.value.date =
+          selectedExpense.date instanceof Date
+            ? selectedExpense.date
+            : new Date(selectedExpense.date)
+      } else {
+        entry.value.date = new Date()
+      }
       entry.value.isPending = selectedExpense.isPending
       entry.value.comments = selectedExpense.comments || ''
       entry.value.id = selectedExpense.id || ''
@@ -419,12 +448,12 @@ watch(
 .add-expense {
   padding: 0;
   position: absolute;
-  bottom: calc(110px - 100vh);
-  height: calc(100vh - 200px);
+  bottom: calc(110px - 100dvh);
+  height: calc(100dvh - 200px);
   width: 100%;
   padding: 20px 15px 30px;
   border-radius: 32px 32px 0 0;
-  display: block;
+  display: none;
   transition: bottom 0.3s ease-in-out;
   border: 1px solid $bg-general;
   box-shadow:
@@ -432,7 +461,11 @@ watch(
     rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
   background: $white;
   left: 0;
-  z-index: 10;
+  z-index: 40;
+
+  .add-expense__container.add-expense--focused & {
+    display: block;
+  }
 
   &--focused {
     .add-expense {
@@ -443,17 +476,16 @@ watch(
         display: none;
       }
     }
+  }
 
-    &:after {
-      content: '';
-      width: 100%;
-      height: 100%;
-      position: absolute;
-      top: 0;
-      left: 0;
-      background: rgba(#000000, 0.7);
-      z-index: 9;
-    }
+  &__overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100dvh;
+    background-color: rgba(black, 0.7);
+    z-index: 39;
   }
 
   &__button {
@@ -489,16 +521,6 @@ watch(
   }
 
   &__container {
-    &:has(.add-expense--focused) {
-      position: absolute;
-      top: 0;
-      left: 0;
-      background-color: rgba(black, 0.6);
-      width: 100%;
-      height: 100%;
-      z-index: 1001;
-    }
-
     @media (min-width: 960px) {
       display: none;
     }

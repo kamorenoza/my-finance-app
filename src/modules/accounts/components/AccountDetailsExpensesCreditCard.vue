@@ -1,45 +1,50 @@
 <template>
   <div class="account-preview__expenses">
-    <template v-for="group in getPendingExpensesGrouped" :key="group.label">
-      <p
-        v-if="!group.hideHeader"
-        class="account-preview__group"
-        @click="toggleGroup(group.label)"
-        :style="{
-          borderLeftColor:
-            group.expenses[0]?.category?.backgroundColor || '#9e9e9e'
-        }"
-      >
-        <span class="group-header-content">
-          <span>{{ group.label }}</span>
-          <span class="account-preview__chevron">
-            <v-icon size="17">
-              {{
-                expandedGroups[group.label] === false
-                  ? 'mdi-chevron-down'
-                  : 'mdi-chevron-up'
-              }}
-            </v-icon>
-          </span>
-        </span>
-        <span
-          v-currency-formatter="Math.abs(group.total)"
-          class="group-total"
-        ></span>
-      </p>
-      <transition name="slide">
-        <div
-          v-show="expandedGroups[group.label] !== false || group.hideHeader"
-          class="account-preview__group-content"
+    <div v-if="pendingExpenses.length === 0" class="empty-state">
+      <p>No hay movimientos para mostrar</p>
+    </div>
+    <template v-else>
+      <template v-for="group in getPendingExpensesGrouped" :key="group.label">
+        <p
+          v-if="!group.hideHeader"
+          class="account-preview__group"
+          @click="toggleGroup(group.label)"
+          :style="{
+            borderLeftColor:
+              group.expenses[0]?.category?.backgroundColor || '#9e9e9e'
+          }"
         >
-          <AccountExpense
-            v-for="expense in group.expenses"
-            :key="expense.id"
-            :expense="expense"
-            :account-id="accountId"
-          />
-        </div>
-      </transition>
+          <span class="group-header-content">
+            <span>{{ group.label }}</span>
+            <span class="account-preview__chevron">
+              <v-icon size="17">
+                {{
+                  expandedGroups[group.label] === false
+                    ? 'mdi-chevron-down'
+                    : 'mdi-chevron-up'
+                }}
+              </v-icon>
+            </span>
+          </span>
+          <span
+            v-currency-formatter="Math.abs(group.total)"
+            class="group-total"
+          ></span>
+        </p>
+        <transition name="slide">
+          <div
+            v-show="expandedGroups[group.label] !== false || group.hideHeader"
+            class="account-preview__group-content"
+          >
+            <AccountExpense
+              v-for="expense in group.expenses"
+              :key="expense.id"
+              :expense="expense"
+              :account-id="accountId"
+            />
+          </div>
+        </transition>
+      </template>
     </template>
   </div>
 </template>
@@ -446,5 +451,14 @@ const getPendingExpensesGrouped = computed(() => {
 .slide-leave-to {
   max-height: 0;
   opacity: 0;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #999;
+  font-size: 0.95rem;
 }
 </style>

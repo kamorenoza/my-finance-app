@@ -135,9 +135,7 @@ const totalExpenses = computed(() => {
     : totalExpensesBudget.value
 })
 
-const balance = computed(
-  () => totalIncomesBudget.value - totalExpensesBudget.value
-)
+const balance = computed(() => totalIncomes.value - totalExpenses.value)
 
 const balanceReal = computed(
   () => totalIncomesReal.value - totalExpensesReal.value
@@ -157,7 +155,7 @@ const currency = (value: number): string =>
   align-items: stretch;
   gap: 6px;
   width: 100%;
-  padding: 20px 15px;
+  padding: 10px 15px 5px;
 
   @media (min-width: 960px) {
     flex-direction: column;

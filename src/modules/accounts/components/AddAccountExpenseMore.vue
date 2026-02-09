@@ -206,7 +206,15 @@ const fillData = () => {
       if (selectedExpense.category) {
         formData.value.category = selectedExpense.category
       }
-      formData.value.date = new Date(selectedExpense.date)
+      // Handle date safely - convert string to Date if needed
+      if (selectedExpense.date) {
+        formData.value.date =
+          selectedExpense.date instanceof Date
+            ? selectedExpense.date
+            : new Date(selectedExpense.date)
+      } else {
+        formData.value.date = new Date()
+      }
       formData.value.isPending = selectedExpense.isPending
       formData.value.comments = selectedExpense.comments || ''
     }
@@ -235,7 +243,10 @@ const saveExpense = () => {
     value: formData.value.value!,
     type: formData.value.type as 'ingreso' | 'gasto',
     category: formData.value.category,
-    date: formData.value.date,
+    date:
+      formData.value.date instanceof Date
+        ? formData.value.date.toISOString()
+        : formData.value.date,
     isPending: formData.value.isPending,
     comments: formData.value.comments || undefined
   }
@@ -263,6 +274,7 @@ const deleteExpense = async () => {
     if (!expense?.id) return
     store.deleteExpense(props.accountId, expense?.id)
     toast.success('Movimiento eliminado')
+    close()
   }
 }
 

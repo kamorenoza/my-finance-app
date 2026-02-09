@@ -30,7 +30,7 @@
 
       <div class="add-budget__value">
         <v-text-field
-        class="secondary-input"
+          class="secondary-input"
           ref="valueInput"
           density="compact"
           label="Valor"
@@ -90,7 +90,6 @@ watch(repeatEveryText, val => {
   entry.value.repeat = Number(val) || 1
 })
 
-
 const selectType = () => {
   typeMenu.value = !typeMenu.value
   entry.value.type = typeMenu.value ? 'ingreso' : 'gasto'
@@ -122,7 +121,10 @@ const saveEntry = () => {
     category: entry.value.category?.id || '',
     type: entry.value.type,
     isFixed: entry.value.isFixed,
-    isPaid: false
+    isPaid: false,
+    repeat: entry.value.repeat,
+    modifications: [],
+    id: ''
   })
 
   entry.value.name = ''
@@ -146,7 +148,7 @@ const scrollIntoView = (refEl: any) => {
 .add-budget {
   padding: 0 12px;
   position: absolute;
-  bottom: 20px;
+  bottom: 17px;
   width: 100%;
 
   @media (min-width: 960px) {

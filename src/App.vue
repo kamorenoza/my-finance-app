@@ -15,11 +15,13 @@ import { onMounted, onBeforeUnmount, watch } from 'vue'
 import { backupService } from '@/modules/shared/services/backup.service'
 import { useAccountsStore } from '@/modules/accounts/accounts.store'
 import { useCategoryStore } from '@/modules/categories/categories.store'
+import { useBudgetStore } from '@/modules/budget/budget.store'
 
 const user = localStorage.getItem('user')
 const authStore = useAuthStore()
 const accountsStore = useAccountsStore()
 const categoryStore = useCategoryStore()
+const budgetStore = useBudgetStore()
 
 if (user) {
   authStore.setUser(JSON.parse(user))
@@ -41,6 +43,7 @@ const startBackupSubscription = (email?: string | null) => {
       console.log('categoryStore', categoryStore.loadCategories())
       accountsStore.loadAccounts()
       categoryStore.loadCategories()
+      budgetStore.loadEntries()
     })
   }
 }

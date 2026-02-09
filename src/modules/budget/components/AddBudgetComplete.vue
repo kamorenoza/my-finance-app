@@ -4,6 +4,8 @@
     ref="formContainer"
     :class="{ 'add-expense--focused': isFocused }"
   >
+    <div v-if="isFocused" class="add-expense__overlay" @click="close"></div>
+
     <v-tooltip
       v-model="tooltipVisible"
       text="Agregar presupuesto"
@@ -161,7 +163,7 @@
               hide-details
               :color="isFixed ? 'success' : undefined"
               class="ma-0 pa-0 subtitle"
-              :disabled="isRepeating"
+              :disabled="isRepeating || !canEditRepeatingSettings"
             />
           </div>
           <v-switch
@@ -172,7 +174,7 @@
             hide-details
             :color="isRepeating ? 'success' : undefined"
             class="ma-0 pa-0 subtitle ms-7"
-            :disabled="isFixed"
+            :disabled="isFixed || !canEditRepeatingSettings"
           />
           <v-text-field
             v-if="isRepeating"
@@ -217,15 +219,25 @@
         <p @click="deleteExpense">Eliminar Presupuesto</p>
       </div>
     </div>
+
+    <ModificationChoiceDialog
+      v-if="showModificationDialog"
+      :entry-name="entry.name"
+      :reference-date="budgetStore.selectedDate"
+      @chosen="handleModificationChoice"
+      @cancelled="handleModificationCancel"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import dayjs from 'dayjs'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
 import type { EntryType, BudgetEntry } from '@/modules/budget/budget.interface'
 import { useCategoryStore } from '@/modules/categories/categories.store'
 import DateSelector from '@/modules/shared/components/DateSelector.vue'
+import ModificationChoiceDialog from './ModificationChoiceDialog.vue'
 import { colorMdPrimary, colorWhite } from '@/styles/variables.styles'
 import AddIcon from '@/assets/icons/Add.icon.vue'
 import { useConfirm } from '@/modules/shared/composables/useConfirm'
@@ -246,6 +258,9 @@ const isFocused = ref(false)
 const keyboard = ref(false)
 const tooltipVisible = ref(false)
 const isLongPress = ref(false)
+const showModificationDialog = ref(false)
+const modificationChoice = ref<'this' | 'all' | 'future' | null>(null)
+const originalEntry = ref<BudgetEntry | null>(null)
 let longPressResetTimeout: ReturnType<typeof setTimeout> | null = null
 let longPressTimeout: ReturnType<typeof setTimeout> | null = null
 let tooltipAutoHideTimeout: ReturnType<typeof setTimeout> | null = null
@@ -268,12 +283,25 @@ const onTypeChange = () => {
   entry.value.type = entry.value.type === 'gasto' ? 'ingreso' : 'gasto'
 }
 
+const canEditRepeatingSettings = computed(() => {
+  // Permitir editar si:
+  // - No estamos editando (entrada nueva), O
+  // - Estamos editando pero la entrada NO es fija Y NO se repite
+  if (!budgetStore.selectedEntry) {
+    return true // Nueva entrada
+  }
+  // Estamos editando: solo permitir si NO es fija Y NO se repite
+  return !originalEntry.value?.isFixed && !originalEntry.value?.repeat
+})
+
 const isFixed = computed({
   get: () => entry.value.isFixed,
   set: (value: boolean) => {
-    entry.value.isFixed = value
-    if (value) {
-      entry.value.repeat = undefined
+    if (canEditRepeatingSettings.value) {
+      entry.value.isFixed = value
+      if (value) {
+        entry.value.repeat = undefined
+      }
     }
   }
 })
@@ -281,10 +309,12 @@ const isFixed = computed({
 const isRepeating = computed({
   get: () => entry.value.repeat !== undefined,
   set: (value: boolean) => {
-    if (value) {
-      entry.value.repeat = 1
-    } else {
-      entry.value.repeat = undefined
+    if (canEditRepeatingSettings.value) {
+      if (value) {
+        entry.value.repeat = 1
+      } else {
+        entry.value.repeat = undefined
+      }
     }
   }
 })
@@ -328,6 +358,7 @@ const close = () => {
     date: new Date().toISOString().split('T')[0],
     category: null as any
   }
+  originalEntry.value = null
   budgetStore.setSelectedEntry(null)
   keyboard.value = false
 }
@@ -356,6 +387,14 @@ const onInputFocus = () => {
   //isFocused.value = true
 }
 
+const hasNameOrValueChanged = computed(() => {
+  if (!originalEntry.value) return false
+  return (
+    entry.value.name !== originalEntry.value.name ||
+    entry.value.value !== originalEntry.value.value
+  )
+})
+
 const saveEntry = () => {
   if (!entry.value.name || !entry.value.value) return
   try {
@@ -364,7 +403,11 @@ const saveEntry = () => {
       category: entry.value.category?.name || null
     }
 
-    if (budgetStore.selectedEntry) {
+    if (budgetStore.selectedEntry && hasNameOrValueChanged.value) {
+      // Si es edición y hay cambios en nombre o valor, mostrar opciones
+      showModificationDialog.value = true
+      return // Esperar a que el usuario elija una opción
+    } else if (budgetStore.selectedEntry) {
       budgetStore.updateEntry(budgetEntry)
       toast.success('Presupuesto editado')
     } else {
@@ -377,6 +420,31 @@ const saveEntry = () => {
   } catch (e: any) {
     toast.error(e.message)
   }
+}
+
+const handleModificationChoice = (choice: 'this' | 'all' | 'future') => {
+  modificationChoice.value = choice
+  showModificationDialog.value = false
+
+  // Guardar la entrada con la opción elegida
+  if (entry.value.name && entry.value.value) {
+    saveEntryWithChoice(choice)
+  }
+}
+
+const handleModificationCancel = () => {
+  modificationChoice.value = null
+  showModificationDialog.value = false
+}
+
+const saveEntryWithChoice = (choice: 'this' | 'all' | 'future') => {
+  const budgetEntry: BudgetEntry = {
+    ...entry.value,
+    category: entry.value.category?.name || null
+  }
+  budgetStore.updateEntryWithModification(budgetEntry, choice)
+  toast.success('Presupuesto editado')
+  close()
 }
 
 const deleteExpense = async () => {
@@ -407,6 +475,23 @@ const fillData = () => {
   if (budgetStore.selectedEntry) {
     const selectedEntry = budgetStore.selectedEntry
     if (selectedEntry) {
+      // Guardar una copia como original para detectar cambios
+      originalEntry.value = JSON.parse(JSON.stringify(selectedEntry))
+
+      // Aplicar modificaciones del mes actual a originalEntry
+      const currentMonth = dayjs(budgetStore.selectedDate).format('YYYY-MM')
+      const modification = selectedEntry.modifications?.find(
+        m => m.month === currentMonth
+      )
+      if (modification) {
+        if (modification.name !== undefined) {
+          originalEntry.value!.name = modification.name
+        }
+        if (modification.value !== undefined) {
+          originalEntry.value!.value = modification.value
+        }
+      }
+
       entry.value.name = selectedEntry.name
       entry.value.value = selectedEntry.value
       entry.value.type = selectedEntry.type
@@ -422,6 +507,16 @@ const fillData = () => {
       entry.value.repeat = selectedEntry.repeat
       entry.value.comments = selectedEntry.comments || ''
       entry.value.id = selectedEntry.id || ''
+
+      // Aplicar modificaciones del mes actual a entry también
+      if (modification) {
+        if (modification.name !== undefined) {
+          entry.value.name = modification.name
+        }
+        if (modification.value !== undefined) {
+          entry.value.value = modification.value
+        }
+      }
     }
   }
 }
@@ -525,12 +620,12 @@ watch(
 .add-expense {
   padding: 0;
   position: absolute;
-  bottom: calc(110px - 100vh);
-  height: calc(100vh - 200px);
+  bottom: calc(110px - 100dvh);
+  height: calc(100dvh - 200px);
   width: 100%;
   padding: 20px 15px 30px;
   border-radius: 32px 32px 0 0;
-  display: block;
+  display: none;
   transition: bottom 0.3s ease-in-out;
   border: 1px solid $bg-general;
   box-shadow:
@@ -538,7 +633,11 @@ watch(
     rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
   background: $white;
   left: 0;
-  z-index: 10;
+  z-index: 40;
+
+  .add-expense__container.add-expense--focused & {
+    display: block;
+  }
 
   &--focused {
     .add-expense {
@@ -549,17 +648,16 @@ watch(
         display: none;
       }
     }
+  }
 
-    &:after {
-      content: '';
-      width: 100%;
-      height: 100%;
-      position: absolute;
-      top: 0;
-      left: 0;
-      background: rgba(#000000, 0.7);
-      z-index: 9;
-    }
+  &__overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100dvh;
+    background-color: rgba(black, 0.7);
+    z-index: 39;
   }
 
   &__button {
@@ -595,16 +693,6 @@ watch(
   }
 
   &__container {
-    &:has(.add-expense--focused) {
-      position: absolute;
-      top: 0;
-      left: 0;
-      background-color: rgba(black, 0.6);
-      width: 100%;
-      height: 100%;
-      z-index: 1001;
-    }
-
     @media (min-width: 960px) {
       display: none;
     }

@@ -10,6 +10,10 @@ export const useBudgetStore = defineStore('budget', () => {
   const selectedDate = ref(dayjs().startOf('month').toDate())
   const selectedEntry = ref<BudgetEntry | null>(null)
 
+  const loadEntries = () => {
+    entries.value = budgetService.loadEntries()
+  }
+
   const addEntry = (entry: BudgetEntry) => {
     budgetService.addEntry(entry)
     entries.value.push(entry)
@@ -32,23 +36,8 @@ export const useBudgetStore = defineStore('budget', () => {
     const index = entries.value.findIndex(e => e.id === updated.id)
     if (index !== -1) {
       const entry = entries.value[index]
-      const month = dayjs(updated.date).format('YYYY-MM')
-
-      // Crear la modificación
-      const modification: BudgetModification = {
-        month,
-        appliedTo
-      }
-
-      // Agregar nombre si cambió
-      if (updated.name !== entry.name) {
-        modification.name = updated.name
-      }
-
-      // Agregar valor si cambió
-      if (updated.value !== entry.value) {
-        modification.value = updated.value
-      }
+      // Usar selectedDate (mes del selector) NO la fecha del presupuesto
+      const month = dayjs(selectedDate.value).format('YYYY-MM')
 
       // Agregar modificación al entry
       if (!entry.modifications) {
@@ -58,19 +47,62 @@ export const useBudgetStore = defineStore('budget', () => {
       // Remover modificaciones anteriores para este mes si es 'this'
       if (appliedTo === 'this') {
         entry.modifications = entry.modifications.filter(m => m.month !== month)
+
+        // Crear la modificación para este mes
+        const modification: BudgetModification = {
+          month,
+          appliedTo
+        }
+        if (updated.name !== entry.name) {
+          modification.name = updated.name
+        }
+        if (updated.value !== entry.value) {
+          modification.value = updated.value
+        }
+        entry.modifications.push(modification)
       } else if (appliedTo === 'all') {
         // Si es 'all', limpiar todas las modificaciones y actualizar el entry principal
         entry.modifications = []
         entry.name = updated.name
         entry.value = updated.value
       } else if (appliedTo === 'future') {
-        // Si es 'future', remover modificaciones de este mes en adelante
-        entry.modifications = entry.modifications.filter(m =>
-          dayjs(m.month).isBefore(dayjs(month))
-        )
+        // Si es 'future', crear modificaciones para meses pasados con el valor original
+        // y actualizar el valor base para los futuros
+        const selectedMonth = dayjs(month)
+        const entryMonth = dayjs(entry.date).startOf('month')
+        const oldValue = entry.value
+        const oldName = entry.name
+
+        const newModifications: BudgetModification[] = []
+
+        // Para todos los meses desde entry.date hasta el anterior al seleccionado
+        let current = entryMonth
+        while (current.isBefore(selectedMonth)) {
+          const monthStr = current.format('YYYY-MM')
+          const existingMod = entry.modifications?.find(
+            m => m.month === monthStr
+          )
+
+          if (existingMod) {
+            // Mantener la modificación existente
+            newModifications.push(existingMod)
+          } else {
+            // Crear nueva modificación con el valor original
+            newModifications.push({
+              month: monthStr,
+              value: oldValue,
+              ...(oldName !== updated.name && { name: oldName }),
+              appliedTo: 'future'
+            })
+          }
+          current = current.add(1, 'month')
+        }
+
+        entry.modifications = newModifications
+        entry.name = updated.name
+        entry.value = updated.value
       }
 
-      entry.modifications.push(modification)
       budgetService.updateEntry(entry)
       backupService.queueBackup()
     }
@@ -132,6 +164,7 @@ export const useBudgetStore = defineStore('budget', () => {
     entries,
     selectedDate,
     selectedEntry,
+    loadEntries,
     addEntry,
     updateEntry,
     updateEntryWithModification,

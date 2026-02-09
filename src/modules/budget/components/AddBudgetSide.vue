@@ -162,13 +162,23 @@
         <p @click="deleteExpense">Eliminar Presupuesto</p>
       </div>
     </v-card>
+
+    <ModificationChoiceDialog
+      v-if="showModificationDialog"
+      :entry-name="entry.name"
+      :reference-date="budgetStore.selectedDate"
+      @chosen="handleModificationChoice"
+      @cancelled="handleModificationCancel"
+    />
   </v-navigation-drawer>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import dayjs from 'dayjs'
 import { colorWhite } from '@/styles/variables.styles'
 import DateSelector from '@/modules/shared/components/DateSelector.vue'
+import ModificationChoiceDialog from './ModificationChoiceDialog.vue'
 import type { BudgetEntry, EntryType } from '../budget.interface'
 import { useBudgetStore } from '../budget.store'
 import { useCategoryStore } from '@/modules/categories/categories.store'
@@ -188,6 +198,8 @@ const toast = useToastStore()
 const confirm = useConfirm()
 
 const drawer = ref(false)
+const showModificationDialog = ref(false)
+const modificationChoice = ref<'this' | 'all' | 'future' | null>(null)
 const originalEntry = ref<BudgetEntry | null>(null)
 const entry = ref({
   id: '',
@@ -216,6 +228,20 @@ const fillData = () => {
     // Guardar una copia como original para detectar cambios
     originalEntry.value = JSON.parse(JSON.stringify(selectedEntry))
 
+    // Aplicar modificaciones del mes actual a originalEntry
+    const currentMonth = dayjs(budgetStore.selectedDate).format('YYYY-MM')
+    const modification = selectedEntry.modifications?.find(
+      m => m.month === currentMonth
+    )
+    if (modification) {
+      if (modification.name !== undefined) {
+        originalEntry.value!.name = modification.name
+      }
+      if (modification.value !== undefined) {
+        originalEntry.value!.value = modification.value
+      }
+    }
+
     entry.value.id = selectedEntry.id
     entry.value.name = selectedEntry.name
     entry.value.value = selectedEntry.value
@@ -225,6 +251,16 @@ const fillData = () => {
     entry.value.repeat = selectedEntry.repeat
     entry.value.comments = selectedEntry.comments || ''
     entry.value.date = selectedEntry.date
+
+    // Aplicar modificaciones del mes actual a entry también
+    if (modification) {
+      if (modification.name !== undefined) {
+        entry.value.name = modification.name
+      }
+      if (modification.value !== undefined) {
+        entry.value.value = modification.value
+      }
+    }
 
     // Encontrar la categoría correspondiente
     if (selectedEntry.category) {
@@ -342,11 +378,8 @@ const saveEntry = async () => {
 
     if (budgetStore.selectedEntry && hasNameOrValueChanged.value) {
       // Si es edición y hay cambios en nombre o valor, mostrar opciones
-      const choice = await showModificationChoice()
-      if (choice) {
-        budgetStore.updateEntryWithModification(budgetEntry, choice)
-        toast.success('Presupuesto editado')
-      }
+      showModificationDialog.value = true
+      return // Esperar a que el usuario elija una opción
     } else if (budgetStore.selectedEntry) {
       // Sin cambios en nombre/valor, solo actualizar otros campos
       budgetStore.updateEntry(budgetEntry)
@@ -364,31 +397,29 @@ const saveEntry = async () => {
   }
 }
 
-const showModificationChoice = async (): Promise<
-  'this' | 'all' | 'future' | null
-> => {
-  // Primer confirm: ¿Aplicar a todos los meses?
-  const applyToAll = await confirm({
-    title: 'Aplicar cambio',
-    message: '¿Deseas aplicar este cambio a todos los meses pasados y futuros?'
-  })
+const handleModificationChoice = (choice: 'this' | 'all' | 'future') => {
+  modificationChoice.value = choice
+  showModificationDialog.value = false
 
-  if (applyToAll) {
-    return 'all'
+  // Guardar la entrada con la opción elegida
+  if (entry.value.name && entry.value.value) {
+    saveEntryWithChoice(choice)
   }
+}
 
-  // Segundo confirm: ¿Aplicar a próximos meses?
-  const applyToFuture = await confirm({
-    title: 'Aplicar cambio',
-    message:
-      '¿Deseas aplicar el cambio a los próximos meses (después de este mes)? Si dices "Cancelar", solo se aplicará a este mes.'
-  })
+const handleModificationCancel = () => {
+  modificationChoice.value = null
+  showModificationDialog.value = false
+}
 
-  if (applyToFuture) {
-    return 'future'
+const saveEntryWithChoice = (choice: 'this' | 'all' | 'future') => {
+  const budgetEntry: BudgetEntry = {
+    ...entry.value,
+    category: entry.value.category?.name || null
   }
-
-  return 'this'
+  budgetStore.updateEntryWithModification(budgetEntry, choice)
+  toast.success('Presupuesto editado')
+  close()
 }
 
 const deleteExpense = async () => {
@@ -433,9 +464,14 @@ const close = () => {
   top: 0;
   right: 0;
   bottom: 0;
+  display: none !important;
 
   .v-overlay {
     position: absolute !important;
+  }
+
+  @media (min-width: 960px) {
+    display: block !important;
   }
 }
 
