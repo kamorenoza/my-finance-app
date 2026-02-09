@@ -23,18 +23,18 @@
     </v-btn>
   </div>
 
-  <v-dialog v-model="showPicker" width="300">
-    <v-card class="pa-4 pb-0">
-      <p class="pb-6 text-medium">Seleccionar fecha</p>
+  <v-dialog v-model="showPicker" width="370">
+    <v-card class="date-selector__card">
+      <p class="date-selector__title">Seleccionar fecha</p>
       <v-row dense>
         <v-col cols="6">
           <v-select
+            class="general-input"
             v-model="selectedMonth"
             :items="months"
             label="Mes"
             density="comfortable"
             hide-details
-            variant="outlined"
             menu-icon=""
           >
             <template #append-inner />
@@ -47,25 +47,26 @@
             label="Año"
             density="comfortable"
             hide-details
-            variant="outlined"
+            class="general-input"
             menu-icon=""
           >
             <template #append-inner />
           </v-select>
         </v-col>
       </v-row>
-      <div
-        class="sub-label d-flex align-center justify-center"
-        @click="goToCurrentMonth"
-      >
-        <v-icon size="18" color="primary" class="mr-1"
-          >mdi-calendar-month</v-icon
-        >
+      <div class="date-selector__today" @click="goToCurrentMonth">
+        <calendar-icon />
         <span>Seleccionar mes actual</span>
       </div>
       <v-card-actions class="justify-end">
-        <v-btn class="picker-btn" @click="showPicker = false">Cancelar</v-btn>
-        <v-btn class="picker-btn pr-0" color="primary" @click="applySelection">
+        <v-btn class="date-selector__action" @click="showPicker = false"
+          >Cancelar</v-btn
+        >
+        <v-btn
+          class="date-selector__action pr-0"
+          :color="colorPrimary"
+          @click="applySelection"
+        >
           Aceptar
         </v-btn>
       </v-card-actions>
@@ -79,6 +80,7 @@ import { useDisplay } from 'vuetify'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
 import { colorPrimary } from '@/styles/variables.styles'
+import CalendarIcon from '@/assets/icons/Calendar.icon.vue'
 
 const emit = defineEmits(['update:modelValue'])
 
@@ -182,6 +184,45 @@ const goToCurrentMonth = () => {
     &:active {
       background: none !important;
     }
+  }
+
+  &__card {
+    background-color: $white;
+    padding: 20px 20px 5px;
+    box-shadow:
+      0px 12px 32px rgba(0, 0, 0, 0.12),
+      0px 2px 8px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    border-radius: 32px !important;
+  }
+
+  &__title {
+    padding-bottom: 15px;
+    font-size: 1rem;
+    font-family: $font-medium;
+  }
+
+  &__today {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 15px;
+    width: 320px;
+    margin: auto;
+    font-size: 14px;
+    color: $color-primary;
+
+    .icon {
+      width: 25px !important;
+      height: 25px !important;
+    }
+  }
+
+  &__action {
+    font-size: 0.9rem;
+    letter-spacing: 0.1px;
+    font-family: $font-medium;
+    padding-top: 8px;
   }
 }
 

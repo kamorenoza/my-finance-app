@@ -185,6 +185,13 @@ const scrollIntoView = (refEl: any) => {
 <style scoped lang="scss">
 .add-budget {
   padding: 0 12px;
+  position: absolute;
+  bottom: 40px;
+  width: 100%;
+
+  @media (min-width: 960px) {
+    display: none;
+  }
 
   &__bar {
     display: flex;

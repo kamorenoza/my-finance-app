@@ -141,5 +141,13 @@ const handlePress = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+
+  &.has-label {
+    @media (min-width: 960px) {
+      width: max-content !important;
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+    }
+  }
 }
 </style>

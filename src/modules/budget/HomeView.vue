@@ -4,19 +4,22 @@
       <p class="general-title">Mi presupuesto</p>
     </div>
 
-    <div class="home__header">
-      <div class="home__selector">
-        <MonthYearSelector v-model="currentDate" />
-      </div>
-      <div class="home__toggle">
-        <BudgetToggle v-model="budgetToggle" />
+    <div class="home__content">
+      <div class="home__header">
+        <div class="home__selector">
+          <MonthYearSelector v-model="currentDate" />
+        </div>
+        <div class="home__toggle">
+          <BudgetToggle v-model="budgetToggle" />
+        </div>
+
+        <BudgetSummary />
       </div>
 
-      <BudgetSummary />
+      <div class="home__body">1</div>
+
+      <AddBudget />
     </div>
-
-    <div class="home__content"></div>
-    <AddBudget />
   </div>
 
   <CategoryManager />
@@ -58,9 +61,15 @@ onMounted(() => {
   }
   &__header {
     @media (min-width: 960px) {
+      flex-grow: 0;
+    }
+  }
+
+  &__content {
+    position: relative;
+    @media (min-width: 960px) {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      gap: 20px;
     }
   }
 
@@ -71,10 +80,14 @@ onMounted(() => {
     justify-content: center;
   }
 
-  &__content {
+  &__body {
     height: calc(100dvh - 300px);
     padding: 12px;
     padding-bottom: 280px;
+
+    @media (min-width: 960px) {
+      flex-grow: 1;
+    }
   }
 
   &__toggle {
@@ -82,6 +95,10 @@ onMounted(() => {
     justify-content: center;
     margin-top: 10px;
     padding-right: 4px;
+
+    @media (min-width: 960px) {
+      display: none;
+    }
   }
 }
 </style>

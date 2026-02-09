@@ -4,9 +4,11 @@
       tooltip="Categorias"
       :color="colorMdPrimary"
       @click="handlePress"
+      button-class="has-label"
     >
       <template #icon>
         <CategoriesIcon />
+        <span class="fab-label">Categorías</span>
       </template>
     </TooltipFabButton>
   </div>
@@ -62,6 +64,11 @@ const handlePress = () => {
 
     .icon {
       width: 30px;
+
+      @media (min-width: 960px) {
+        width: 23px !important;
+        height: 23px !important;
+      }
     }
   }
   .icon-cat {
@@ -70,16 +77,15 @@ const handlePress = () => {
 
   .fab-label {
     margin-top: 0px;
-    font-size: 12px;
-    color: $color-secondary;
-    font-weight: 500;
-    white-space: nowrap;
-    margin-top: 6px;
+    font-size: 0.9rem;
+    letter-spacing: normal;
+    text-transform: none;
+    color: $color-primary;
+    margin-left: 2px;
+    display: none;
 
-    @media (max-width: 959px) {
-      display: none;
-      color: $color-white;
-      margin-top: 0;
+    @media (min-width: 960px) {
+      display: block;
     }
   }
 

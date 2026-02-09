@@ -1,54 +1,28 @@
 <template>
   <div class="budget-summary">
-    <v-row class="summary-wrapper" dense>
-      <v-col cols="4" sm="4">
-        <v-card class="summary-card income" flat>
-          <div class="card-content">
-            <div class="d-flex">
-              <v-icon size="20" class="icon" color="#388e3c">
-                mdi-cash-plus
-              </v-icon>
-              <div class="label">Ingresos</div>
-            </div>
-            <div>
-              <div class="amount">{{ currency(totalIncomes) }}</div>
-            </div>
-          </div>
-        </v-card>
-      </v-col>
+    <div class="budget-summary__card">
+      <div class="budget-summary__header">
+        <v-icon size="20" class="icon" color="#388e3c"> mdi-cash-plus </v-icon>
+        <div class="label">Ingresos</div>
+      </div>
+      <div class="budget-summary__amount">{{ currency(totalIncomes) }}</div>
+    </div>
 
-      <v-col cols="4" sm="4">
-        <v-card class="summary-card expense" flat>
-          <div class="card-content">
-            <div class="d-flex">
-              <v-icon size="20" class="icon" color="#d32f2f">
-                mdi-cash-minus
-              </v-icon>
-              <div class="label">Gastos</div>
-            </div>
-            <div>
-              <div class="amount">{{ currency(totalExpenses) }}</div>
-            </div>
-          </div>
-        </v-card>
-      </v-col>
+    <div class="budget-summary__card expense">
+      <div class="budget-summary__header">
+        <v-icon size="20" class="icon" color="#388e3c"> mdi-cash-plus </v-icon>
+        <div class="label">Gastos</div>
+      </div>
+      <div class="budget-summary__amount">{{ currency(totalExpenses) }}</div>
+    </div>
 
-      <v-col cols="4" sm="4">
-        <v-card class="summary-card balance" flat>
-          <div class="card-content">
-            <div class="d-flex align-center">
-              <v-icon size="17" class="icon" color="#8971ad">
-                mdi-scale-balance
-              </v-icon>
-              <div class="label">Balance</div>
-            </div>
-            <div>
-              <div class="amount">{{ currency(balance) }}</div>
-            </div>
-          </div>
-        </v-card>
-      </v-col>
-    </v-row>
+    <div class="budget-summary__card balance">
+      <div class="budget-summary__header">
+        <v-icon size="20" class="icon" color="#388e3c"> mdi-cash-plus </v-icon>
+        <div class="label">Balance</div>
+      </div>
+      <div class="budget-summary__amount">{{ currency(balance) }}</div>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -70,47 +44,49 @@ const currency = (value: number): string =>
 </script>
 
 <style scoped lang="scss">
-.summary-wrapper {
-  margin: 5px;
-}
-
-.summary-card {
-  border-radius: 4px;
-  padding: 5px 5px 5px 7px;
-  background-color: $color-white;
+.budget-summary {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  padding: 20px 15px;
 
   @media (min-width: 960px) {
-    width: 120px;
+    flex-direction: column;
   }
 
-  .card-content {
-    .icon {
-      font-size: 32px;
-      margin-right: 5px;
+  &__card {
+    flex: 1;
+    background-color: $green-md;
+    border-radius: 24px;
+    padding: 10px 15px;
+
+    @media (min-width: 960px) {
+      width: 150px;
     }
 
-    .label {
-      font-size: 13px;
-      font-weight: 500;
-      color: $text-gray-2;
+    &.expense {
+      background-color: $red-md;
     }
 
-    .amount {
-      font-size: 13px;
-      font-weight: 600;
+    &.balance {
+      background-color: $blue-md;
     }
   }
 
-  &.income {
-    border-top: 4px solid #a5d6a7;
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    color: $text-gray;
   }
 
-  &.expense {
-    border-top: 4px solid #ef9a9a;
-  }
-
-  &.balance {
-    border-top: 4px solid #90caf9;
+  &__amount {
+    font-family: $font-medium;
+    font-size: 0.9rem;
+    padding-top: 8px;
+    padding-bottom: 3px;
   }
 }
 </style>

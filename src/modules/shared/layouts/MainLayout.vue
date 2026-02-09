@@ -111,7 +111,8 @@ const handleLogout = async () => {
   height: 28px;
 }
 
-.v-menu .v-overlay__content:has(.user-menu-list) {
+:deep(.v-overlay__content:has(.user-menu-list)) {
   min-width: 200px !important;
+  width: 200px !important;
 }
 </style>

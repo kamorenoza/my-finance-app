@@ -1,7 +1,7 @@
 <!-- src/components/ConfirmDialog.vue -->
 <template>
   <v-dialog v-model="visible" max-width="350">
-    <v-card>
+    <v-card class="confirm-dialog">
       <v-card-title class="general-title confirm-title">{{
         title
       }}</v-card-title>
@@ -48,11 +48,24 @@ const onCancel = () => {
 
 <style scoped lang="scss">
 .confirm-title {
-  padding: 16px 24px 8px;
+  padding-left: 24px;
 }
 
 .confirm-message {
   padding: 16px 24px 8px !important;
   font-size: 15px !important;
+}
+.confirm-dialog {
+  background-color: $white;
+  padding: 20px 10px 10px;
+  box-shadow:
+    0px 12px 32px rgba(0, 0, 0, 0.12),
+    0px 2px 8px rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border-radius: 32px !important;
+
+  .btn-label {
+    font-family: $font-medium;
+  }
 }
 </style>
