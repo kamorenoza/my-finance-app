@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 import { generateId } from '@/modules/shared/utils'
 import type { BudgetEntry } from './budget.interface'
 import { budgetService } from './budget.service'
+import { backupService } from '../shared/services/backup.service'
 
 export const useBudgetStore = defineStore('budget', () => {
   const entries = ref<BudgetEntry[]>(budgetService.loadEntries())
@@ -13,6 +14,7 @@ export const useBudgetStore = defineStore('budget', () => {
     const newEntry = { ...entry, id: generateId() }
     budgetService.addEntry(newEntry)
     entries.value.push(newEntry)
+    backupService.queueBackup()
   }
 
   const updateEntry = (id: string, updated: Partial<BudgetEntry>) => {
@@ -20,12 +22,14 @@ export const useBudgetStore = defineStore('budget', () => {
     if (index !== -1) {
       entries.value[index] = { ...entries.value[index], ...updated }
       budgetService.updateEntry({ ...entries.value[index] })
+      backupService.queueBackup()
     }
   }
 
   const deleteEntry = (id: string) => {
     entries.value = entries.value.filter(e => e.id !== id)
     budgetService.deleteEntry(id)
+    backupService.queueBackup()
   }
 
   const filteredEntries = computed(() => {
@@ -46,6 +50,30 @@ export const useBudgetStore = defineStore('budget', () => {
       .reduce((sum, e) => sum + e.value, 0)
   })
 
+  const totalIncomesBudget = computed(() => {
+    return filteredEntries.value
+      .filter(e => e.type === 'ingreso' && !e.isPaid)
+      .reduce((sum, e) => sum + e.value, 0)
+  })
+
+  const totalExpensesBudget = computed(() => {
+    return filteredEntries.value
+      .filter(e => e.type === 'gasto' && !e.isPaid)
+      .reduce((sum, e) => sum + e.value, 0)
+  })
+
+  const totalIncomesReal = computed(() => {
+    return filteredEntries.value
+      .filter(e => e.type === 'ingreso' && e.isPaid)
+      .reduce((sum, e) => sum + e.value, 0)
+  })
+
+  const totalExpensesReal = computed(() => {
+    return filteredEntries.value
+      .filter(e => e.type === 'gasto' && e.isPaid)
+      .reduce((sum, e) => sum + e.value, 0)
+  })
+
   return {
     entries,
     selectedDate,
@@ -54,6 +82,10 @@ export const useBudgetStore = defineStore('budget', () => {
     deleteEntry,
     filteredEntries,
     totalIncomes,
-    totalExpenses
+    totalExpenses,
+    totalIncomesBudget,
+    totalExpensesBudget,
+    totalIncomesReal,
+    totalExpensesReal
   }
 })

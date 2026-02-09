@@ -13,7 +13,7 @@
           <BudgetToggle v-model="budgetToggle" />
         </div>
 
-        <BudgetSummary />
+        <BudgetSummary :budget-toggle="budgetToggle" />
       </div>
 
       <div class="home__body">1</div>
@@ -81,9 +81,9 @@ onMounted(() => {
   }
 
   &__body {
-    height: calc(100dvh - 300px);
+    height: calc(100dvh - 360px);
     padding: 12px;
-    padding-bottom: 280px;
+    padding-bottom: 70px;
 
     @media (min-width: 960px) {
       flex-grow: 1;

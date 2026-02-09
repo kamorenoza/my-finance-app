@@ -345,8 +345,7 @@ body {
   }
 }
 
-.general-input,
-.secondary-input {
+.general-input {
   font-size: 14px;
 
   .v-label {
@@ -393,6 +392,53 @@ body {
     display: none !important;
   }
 }
+
+.secondary-input {
+  font-size: 14px;
+
+  .v-label {
+    font-size: 14px;
+    margin-left: 0;
+  }
+
+  .v-field-label--floating {
+    font-size: 10px;
+    margin-left: 0;
+  }
+
+  .v-field__input {
+    font-size: 14px;
+    padding-left: 0px !important;
+    border-radius: 8px;
+  }
+
+  .v-field {
+    padding-left: 8px;
+    padding-bottom: 2px;
+    background-color: $color-white !important;
+    border-radius: 8px;
+  }
+
+  .v-text-field__prefix {
+    padding-right: 2px;
+    padding-left: 0 !important;
+  }
+
+  .v-input__details {
+    padding-left: 0;
+
+    .v-messages__message {
+      font-size: 10px !important;
+    }
+  }
+
+  .v-field__outline,
+  .v-text-field__prefix,
+  .v-field__overlay {
+    display: none !important;
+  }
+}
+
 
 /* Notification */
 .v-snackbar {

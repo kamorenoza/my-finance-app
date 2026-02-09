@@ -5,7 +5,7 @@
         <v-btn
           icon
           size="large"
-          :color="entry.type === 'ingreso' ? 'success' : 'error'"
+          :color="entry.type === 'ingreso' ? '#6aa66c' : '#cb4f47'"
           class="add-budget__type"
           @click="selectType"
         >
@@ -14,56 +14,26 @@
           </v-icon>
         </v-btn>
       </div>
-      <div>
-        <v-menu v-model="categoryMenu">
-          <template #activator="{ props }">
-            <v-btn
-              v-bind="props"
-              icon
-              class="add-budget__category"
-              :style="{
-                backgroundColor: entry?.category?.backgroundColor || 'gray'
-              }"
-            >
-              <v-icon size="20" :color="entry?.category?.iconColor || 'white'">
-                {{ entry?.category?.icon || 'mdi-shape-plus' }}
-              </v-icon>
-            </v-btn>
-          </template>
-
-          <v-list>
-            <v-list-item
-              v-for="cat in categoryStore.categories"
-              :key="cat.id"
-              @click="selectCategory(cat)"
-            >
-              <v-icon start :color="cat.iconColor">{{ cat.icon }}</v-icon>
-              <v-list-item-title>{{ cat.name }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-      </div>
 
       <div class="add-budget__input">
         <v-text-field
           v-model="entry.name"
-          density="compact"
+          class="secondary-input"
           label="Descripción"
-          variant="outlined"
-          hide-details
-          type="text"
-          maxlength="100"
+          density="compact"
+          :maxlength="100"
           @keyup.enter="goToValue"
+          hide-details
           @focus="scrollIntoView(valueInput)"
         />
       </div>
 
-      <div class="add-budget__input">
+      <div class="add-budget__value">
         <v-text-field
+        class="secondary-input"
           ref="valueInput"
           density="compact"
           label="Valor"
-          variant="outlined"
           hide-details
           type="text"
           prefix="$"
@@ -79,15 +49,12 @@
 
       <div class="add-budget__actions">
         <v-btn
-          icon
-          class="btn-label add-budget__save"
-          variant="plain"
+          class="btn-fab add-budget__save"
           @click="saveEntry"
           :ripple="false"
         >
-          <v-icon>mdi-check</v-icon>
+          <CheckIcon />
         </v-btn>
-        <AddBudgetMoreOptions v-model="entry" />
       </div>
     </div>
   </div>
@@ -96,14 +63,11 @@
 <script setup lang="ts">
 import { computed, ref, watch, type Ref } from 'vue'
 import { useBudgetStore } from '@/modules/budget/budget.store'
-import type { Category } from '@/modules/categories/categories.interface'
-import { useCategoryStore } from '@/modules/categories/categories.store'
 import type { EntryType } from '../budget.interface'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
-import AddBudgetMoreOptions from './AddBudgetMoreOptions.vue'
+import CheckIcon from '@/assets/icons/Check.icon.vue'
 
 const store = useBudgetStore()
-const categoryStore = useCategoryStore()
 const toast = useToastStore()
 
 const valueInput = ref()
@@ -116,7 +80,6 @@ const entry = ref({
   repeat: 0
 })
 const menu = ref(false)
-const categoryMenu = ref(false)
 const typeMenu = ref(false)
 const repeatEveryText = ref(
   entry.value.repeat > 0 ? entry.value.repeat.toString() : ''
@@ -126,10 +89,6 @@ watch(repeatEveryText, val => {
   entry.value.repeat = Number(val) || 1
 })
 
-const selectCategory = (category: Category) => {
-  entry.value.category = category
-  categoryMenu.value = false
-}
 
 const selectType = () => {
   typeMenu.value = !typeMenu.value
@@ -186,7 +145,7 @@ const scrollIntoView = (refEl: any) => {
 .add-budget {
   padding: 0 12px;
   position: absolute;
-  bottom: 40px;
+  bottom: 20px;
   width: 100%;
 
   @media (min-width: 960px) {
@@ -196,7 +155,10 @@ const scrollIntoView = (refEl: any) => {
   &__bar {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
+    background-color: $bg-general;
+    padding: 10px 15px;
+    border-radius: 24px;
 
     @media (min-width: 960px) {
       gap: 8px;
@@ -206,6 +168,7 @@ const scrollIntoView = (refEl: any) => {
   &__type {
     width: 24px;
     height: 24px;
+    box-shadow: none;
   }
 
   &__category {
@@ -216,9 +179,14 @@ const scrollIntoView = (refEl: any) => {
   }
 
   &__input {
-    width: 45%;
+    width: 60%;
     font-size: 14px;
     scroll-margin-bottom: 200px;
+    flex-grow: 1;
+  }
+
+  &__value {
+    width: 150px;
   }
 
   &__button {
@@ -231,18 +199,26 @@ const scrollIntoView = (refEl: any) => {
   }
 
   &__save {
-    color: $color-success;
-    width: 20px;
-    margin-left: 5px;
+    background: $color-md-primary;
 
-    @media (min-width: 960px) {
-      width: 40px;
-      margin-left: 0;
+    &:disabled {
+      opacity: 0.6;
+    }
+  }
+
+  .btn-fab {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 12px !important;
+
+    .icon {
+      width: 30px;
+      height: 30px;
     }
   }
 }
 
-:deep(.v-field__input) {
-  font-size: 14px !important;
+::deep(.v-field__input) {
+  background-color: $color-white !important;
 }
 </style>

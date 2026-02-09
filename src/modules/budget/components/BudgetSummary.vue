@@ -29,10 +29,21 @@
 import { computed } from 'vue'
 import { useBudgetStore } from '../budget.store'
 
-const store = useBudgetStore()
+interface Props {
+  budgetToggle?: string
+}
 
-const totalIncomes = computed(() => store.totalIncomes)
-const totalExpenses = computed(() => store.totalExpenses)
+const store = useBudgetStore()
+const props = defineProps<Props>()
+
+const totalIncomes = computed(() => {
+  return props.budgetToggle === 'real' ? store.totalIncomesReal : store.totalIncomesBudget
+})
+
+const totalExpenses = computed(() => {
+  return props.budgetToggle === 'real' ? store.totalExpensesReal : store.totalExpensesBudget
+})
+
 const balance = computed(() => totalIncomes.value - totalExpenses.value)
 
 const currency = (value: number): string =>
