@@ -52,6 +52,7 @@
           class="btn-fab add-budget__save"
           @click="saveEntry"
           :ripple="false"
+          :disabled="!entry.name || !entry.value"
         >
           <CheckIcon />
         </v-btn>

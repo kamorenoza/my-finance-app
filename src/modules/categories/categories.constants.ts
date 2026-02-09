@@ -69,11 +69,13 @@ export const categoryIcons: CategoryIconOption[] = [
 ]
 
 export const getIcon = (key: string) => {
+  if (!key) return categoryIcons[0].icon
+
   const cat = categoryIcons.find(icon => {
     return icon.key === key
   })
 
-  return cat?.icon
+  return cat?.icon || categoryIcons[0].icon
 }
 
 export const colorPalette = [

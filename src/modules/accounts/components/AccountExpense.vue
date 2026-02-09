@@ -9,9 +9,10 @@
           backgroundColor: expense?.category?.backgroundColor || '#9e9e9e'
         }"
       >
-        <v-icon size="16" :color="expense?.category?.iconColor || 'white'">
-          {{ expense?.category?.icon || 'mdi-shape-plus' }}
-        </v-icon>
+        <component
+          :is="getIconComponent(expense.category?.icon)"
+          :color="colorWhite"
+        />
       </div>
     </div>
     <div class="account-expense__content">
@@ -53,10 +54,12 @@
 </template>
 
 <script setup lang="ts">
+import { colorWhite } from '@/styles/variables.styles'
 import type { Expense } from '../accounts.interface'
 import { useAccountsStore } from '../accounts.store'
 import AddAccountExpenseMore from './AddAccountExpenseMore.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { getIcon } from '@/modules/categories/categories.constants'
 
 interface Props {
   expense: Expense
@@ -90,6 +93,10 @@ const editExpense = () => {
   accountStore.setSelectedExpense(props.expense)
 }
 
+const getIconComponent = (icon: string) => {
+  return getIcon(icon)
+}
+
 const onCloseEdit = () => {
   drawer.value = false
 }
@@ -99,7 +106,7 @@ const onCloseEdit = () => {
 .account-expense {
   margin-bottom: 10px;
   display: flex;
-  gap: 5px;
+  gap: 8px;
   width: 100%;
   padding: 10px;
   align-items: center;
@@ -107,13 +114,18 @@ const onCloseEdit = () => {
   background-color: $bg-item;
 
   &__category {
-    border-radius: 8px !important;
+    border-radius: 10px !important;
     width: 30px !important;
     height: 30px !important;
     padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+
+    .icon {
+      width: 22px !important;
+      height: 22px !important;
+    }
   }
 
   &__content {

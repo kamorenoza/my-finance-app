@@ -60,12 +60,16 @@
 
       <div class="account-preview__container">
         <div class="account-preview__header pr15">
-          <AccountDetailsFilter
-            :account-id="accountId"
+          <SearchOrderFilter
             :initial-group-by="currentFilter.groupBy"
             :initial-order-by="currentFilter.orderBy"
             @filterChange="onFilterChange"
-          />
+          >
+            <template #actions>
+              <AddAccountExpense :account-id="accountId" v-if="isMobile" />
+              <AddAccountExpenseMore :account-id="accountId" v-if="!isMobile" />
+            </template>
+          </SearchOrderFilter>
         </div>
         <div class="account-preview__body">
           <AccountDetailsExpensesNormal
@@ -88,18 +92,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAccountsStore } from '@/modules/accounts/accounts.store'
 import { configService } from '@/modules/shared/services/config.service'
 import type { Expense } from '@/modules/accounts/accounts.interface'
 import NormalCard from './components/NormalCard.vue'
-import AccountDetailsFilter from './components/AccountDetailsFilter.vue'
 import AccountDetailsExpensesNormal from './components/AccountDetailsExpensesNormal.vue'
 import AccountDetailsExpensesCreditCard from './components/AccountDetailsExpensesCreditCard.vue'
 import CardCreditCard from './components/CardCreditCard.vue'
+import AddAccountExpense from './components/AddAccountExpense.vue'
+import AddAccountExpenseMore from './components/AddAccountExpenseMore.vue'
 import { currencyFormatter } from '../shared/utils'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
+import SearchOrderFilter from '@/modules/shared/components/SearchOrderFilter.vue'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -118,6 +124,16 @@ const currentFilter = ref({
   endDate: null as Date | null
 })
 
+const screenWidth = ref(window.innerWidth)
+
+const isMobile = computed(() => {
+  return screenWidth.value < 960
+})
+
+const updateScreenWidth = () => {
+  screenWidth.value = window.innerWidth
+}
+
 // Load configuration when component mounts
 onMounted(() => {
   if (account.value.type === 'TC') {
@@ -131,6 +147,12 @@ onMounted(() => {
   if (savedConfig.orderBy !== undefined) {
     currentFilter.value.orderBy = savedConfig.orderBy
   }
+
+  window.addEventListener('resize', updateScreenWidth)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateScreenWidth)
 })
 
 const backToAccounts = (event: Event) => {

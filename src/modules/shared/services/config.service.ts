@@ -9,8 +9,14 @@ export interface AccountConfig {
   orderBy?: string | null
 }
 
+export interface BudgetConfig {
+  groupBy?: string | null
+  orderBy?: string | null
+}
+
 export interface UserConfig {
   accounts?: { [accountId: string]: AccountConfig }
+  budget?: BudgetConfig
   lastPage?: string
 }
 
@@ -50,6 +56,21 @@ export const configService = {
     if (userConfig.accounts) delete userConfig.accounts[accountId]
 
     localStorage.setItem(`config_${userEmail}`, JSON.stringify(userConfig))
+  },
+
+  saveBudgetConfig: (config: BudgetConfig) => {
+    const userEmail = getUserEmail()
+    if (!userEmail) return
+
+    const userConfig = configService.loadConfig()
+    userConfig.budget = config
+
+    localStorage.setItem(`config_${userEmail}`, JSON.stringify(userConfig))
+  },
+
+  getBudgetConfig: (): BudgetConfig => {
+    const userConfig = configService.loadConfig()
+    return userConfig?.budget || {}
   },
 
   saveLastPage: (page: string) => {

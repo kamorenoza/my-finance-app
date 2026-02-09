@@ -1,13 +1,13 @@
 <template>
-  <div class="accounts-filter">
-    <div class="accounts-filter__search">
+  <div class="search-filter">
+    <div class="search-filter__search">
       <v-menu v-model="menu" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
-          <div class="accounts-filter__icon" v-bind="props">
+          <div class="search-filter__icon" v-bind="props">
             <FilterIcon />
           </div>
         </template>
-        <div class="accounts-filter__filters">
+        <div class="search-filter__filters">
           <v-select
             v-model="selectedType"
             :items="groupByOptions"
@@ -36,7 +36,7 @@
 
           <DateSelector v-model="endDate" :empty-date="true" />
 
-          <div class="accounts-filter__actions">
+          <div class="search-filter__actions">
             <v-btn @click="menu = false" type="button" class="btn-label">
               Cerrar
             </v-btn>
@@ -50,7 +50,7 @@
       <v-text-field
         class="search-input"
         v-model="search"
-        label="Buscar por nombre"
+        :label="searchLabel"
         density="compact"
       >
         <template v-slot:prepend>
@@ -58,8 +58,7 @@
         </template>
       </v-text-field>
 
-      <AddAccountExpense :account-id="accountId" v-if="isMobile" />
-      <AddAccountExpenseMore :account-id="accountId" v-if="!isMobile" />
+      <slot name="actions" />
     </div>
   </div>
 </template>
@@ -68,34 +67,46 @@
 import FilterIcon from '@/assets/icons/Filter.icon.vue'
 import SearchIcon from '@/assets/icons/Search.icon.vue'
 import { ref, watch, onMounted, computed, onUnmounted } from 'vue'
-import { configService } from '@/modules/shared/services/config.service'
-import AddAccountExpenseMore from './AddAccountExpenseMore.vue'
 import DateSelector from '@/modules/shared/components/DateSelector.vue'
-import AddAccountExpense from './AddAccountExpense.vue'
 
-const groupByOptions = [
+interface GroupByOption {
+  label: string
+  type: string
+}
+
+interface OrderByOption {
+  label: string
+  filter: string
+}
+
+interface Props {
+  initialGroupBy?: string | null
+  initialOrderBy?: string | null
+  groupByOptions?: GroupByOption[]
+  orderByOptions?: OrderByOption[]
+  searchLabel?: string
+  entityId?: string | null
+}
+
+const defaultGroupByOptions: GroupByOption[] = [
   { label: 'No agrupar', type: 'none' },
   { label: 'Ingreso/Gasto', type: 'type' },
   { label: 'Categoría', type: 'category' },
   { label: 'Fecha', type: 'date' }
 ]
 
-const orderByOptions = [
+const defaultOrderByOptions: OrderByOption[] = [
   { label: 'Más reciente', filter: 'newest' },
   { label: 'Más antiguo', filter: 'oldest' },
   { label: 'Mayor monto', filter: 'highest' },
   { label: 'Menor monto', filter: 'lowest' }
 ]
 
-interface Props {
-  accountId: string
-  initialGroupBy?: string | null
-  initialOrderBy?: string | null
-}
-
 const props = withDefaults(defineProps<Props>(), {
   initialGroupBy: 'category',
-  initialOrderBy: null
+  initialOrderBy: null,
+  searchLabel: 'Buscar por nombre',
+  entityId: null
 })
 
 const emit = defineEmits<{
@@ -119,22 +130,35 @@ const initDate = ref<any>(null)
 const endDate = ref<any>(null)
 const screenWidth = ref(window.innerWidth)
 
-// Load configuration when component mounts
-onMounted(() => {
-  const savedConfig = configService.getAccountConfig(props.accountId)
-  if (savedConfig.groupBy !== undefined) {
-    selectedType.value = savedConfig.groupBy
-  }
-  if (savedConfig.orderBy !== undefined) {
-    sortBy.value = savedConfig.orderBy
-  }
+const groupByOptions = computed(
+  () => props.groupByOptions || defaultGroupByOptions
+)
+const orderByOptions = computed(
+  () => props.orderByOptions || defaultOrderByOptions
+)
 
+onMounted(() => {
   window.addEventListener('resize', updateSize)
 })
 
 onUnmounted(() => {
-  window.addEventListener('resize', updateSize)
+  window.removeEventListener('resize', updateSize)
 })
+
+// Sincronizar estado local con props iniciales cuando cambien
+watch(
+  () => props.initialGroupBy,
+  newVal => {
+    selectedType.value = newVal
+  }
+)
+
+watch(
+  () => props.initialOrderBy,
+  newVal => {
+    sortBy.value = newVal
+  }
+)
 
 const isMobile = computed(() => {
   return screenWidth.value < 960
@@ -147,8 +171,8 @@ const updateSize = () => {
 const clearAll = () => {
   menu.value = false
   search.value = ''
-  selectedType.value = 'category'
-  sortBy.value = null
+  selectedType.value = props.initialGroupBy || 'category'
+  sortBy.value = props.initialOrderBy || null
   initDate.value = null
   endDate.value = null
 }
@@ -167,7 +191,7 @@ watch([search, selectedType, sortBy, initDate, endDate], () => {
 </script>
 
 <style scoped lang="scss">
-.accounts-filter {
+.search-filter {
   display: flex;
   align-items: center;
   justify-content: space-between;

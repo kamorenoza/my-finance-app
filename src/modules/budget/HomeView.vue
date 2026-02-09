@@ -16,7 +16,17 @@
         <BudgetSummary :budget-toggle="budgetToggle" />
       </div>
 
-      <div class="home__body">1</div>
+      <div class="home__body">
+        <div class="home__filter">
+          <SearchOrderFilter
+            search-label="Buscar presupuesto"
+            :initial-group-by="currentFilter.groupBy"
+            :initial-order-by="currentFilter.orderBy"
+            @filterChange="onFilterChange"
+          />
+        </div>
+        <BudgetList :selected-date="currentDate" :filters="currentFilter" />
+      </div>
 
       <AddBudget />
     </div>
@@ -26,27 +36,65 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import MonthYearSelector from '@/modules/shared/components/MonthYearSelector.vue'
 import CategoryManager from '@/modules/categories/CategoryManager.vue'
 import BudgetSummary from '@/modules/budget/components/BudgetSummary.vue'
 import AddBudget from '@/modules/budget/components/AddBudget.vue'
 import BudgetToggle from '../shared/components/BudgetToggle.vue'
+import BudgetList from './components/BudgetList.vue'
+import SearchOrderFilter from '@/modules/shared/components/SearchOrderFilter.vue'
+import { configService } from '@/modules/shared/services/config.service'
 
 const currentDate = ref(new Date())
 const budgetToggle = ref('budget')
 
-onMounted(() => {
-  /*onAuthStateChanged(auth, user => {
-    if (!user) {
-      router.push({ name: 'login' })
-    } else {
-      if (!userLocal) {
-        localStorage.setItem('user', JSON.stringify(user))
-      }
-    }
-  })*/
+const currentFilter = ref({
+  search: '',
+  groupBy: 'category' as string | null,
+  orderBy: null as string | null,
+  initDate: null as Date | null,
+  endDate: null as Date | null
 })
+
+onMounted(() => {
+  // Load configuration when component mounts
+  const savedConfig = configService.getBudgetConfig()
+  if (savedConfig.groupBy !== undefined) {
+    currentFilter.value.groupBy = savedConfig.groupBy
+  }
+  if (savedConfig.orderBy !== undefined) {
+    currentFilter.value.orderBy = savedConfig.orderBy
+  }
+})
+
+// Save configuration when filter changes
+watch(
+  () => currentFilter.value,
+  newFilter => {
+    configService.saveBudgetConfig({
+      groupBy: newFilter.groupBy,
+      orderBy: newFilter.orderBy
+    })
+  },
+  { deep: true }
+)
+
+const onFilterChange = (filter: {
+  search: string
+  groupBy: string | null
+  orderBy: string | null
+  initDate?: Date | null
+  endDate?: Date | null
+}) => {
+  currentFilter.value = {
+    search: filter.search,
+    groupBy: filter.groupBy,
+    orderBy: filter.orderBy,
+    initDate: filter.initDate || null,
+    endDate: filter.endDate || null
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -98,6 +146,12 @@ onMounted(() => {
 
     @media (min-width: 960px) {
       display: none;
+    }
+  }
+
+  &__filter {
+    @media (min-width: 960px) {
+      padding: 0;
     }
   }
 }

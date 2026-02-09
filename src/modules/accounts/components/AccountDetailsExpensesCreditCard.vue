@@ -5,6 +5,10 @@
         v-if="!group.hideHeader"
         class="account-preview__group"
         @click="toggleGroup(group.label)"
+        :style="{
+          borderLeftColor:
+            group.expenses[0]?.category?.backgroundColor || '#9e9e9e'
+        }"
       >
         <span class="group-header-content">
           <span>{{ group.label }}</span>
@@ -24,7 +28,10 @@
         ></span>
       </p>
       <transition name="slide">
-        <div v-show="expandedGroups[group.label] !== false || group.hideHeader">
+        <div
+          v-show="expandedGroups[group.label] !== false || group.hideHeader"
+          class="account-preview__group-content"
+        >
           <AccountExpense
             v-for="expense in group.expenses"
             :key="expense.id"
@@ -323,6 +330,10 @@ const getPendingExpensesGrouped = computed(() => {
     padding-right: 15px;
     padding-bottom: 60px;
 
+    @media (min-width: 960px) {
+      height: calc(100dvh - 230px);
+    }
+
     .expense-item {
       display: flex;
       justify-content: space-between;
@@ -342,7 +353,11 @@ const getPendingExpensesGrouped = computed(() => {
 
   &__completed {
     margin-bottom: 10px;
-    margin-top: 40px;
+    margin-top: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
 
     &.not-pending {
       margin-top: 0;
@@ -362,14 +377,19 @@ const getPendingExpensesGrouped = computed(() => {
   &__group {
     font-weight: 600;
     font-size: 0.9rem;
-    margin: 25px 0 10px;
+    margin-bottom: 15px;
+    margin-top: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
     user-select: none;
-    border-bottom: 1px solid $bg-general;
+    //border-bottom: 1px solid $bg-general;
     padding-bottom: 5px;
+    padding: 10px;
+    background-color: $bg-input;
+    border-radius: 8px;
+    border-left: 4px solid;
 
     &:first-of-type {
       margin-top: 0;
@@ -386,9 +406,14 @@ const getPendingExpensesGrouped = computed(() => {
     }
 
     .group-total {
-      font-size: 0.85rem;
-      font-weight: 700;
+      font-size: 0.95rem;
+      font-weight: 100;
+      font-family: $font-medium;
     }
+  }
+
+  &__group-content {
+    padding-bottom: 20px;
   }
 
   &__chevron {
@@ -405,5 +430,21 @@ const getPendingExpensesGrouped = computed(() => {
 
 .pr15 {
   padding-right: 15px;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition:
+    max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 5000px;
+  overflow: hidden;
+  will-change: max-height, opacity;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  max-height: 0;
+  opacity: 0;
 }
 </style>

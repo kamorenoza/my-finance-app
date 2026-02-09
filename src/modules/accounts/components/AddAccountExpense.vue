@@ -53,7 +53,7 @@
             maxlength="100"
             @keydown.enter.prevent="goToValue"
             @focus="onInputFocus"
-            class="secondary-input"
+            class="general-input"
             enterkeyhint="next"
             :readonly="!isFocused"
             @click="openForm"
@@ -63,7 +63,7 @@
         <div class="add-expense__input add-expense__value">
           <v-text-field
             ref="valueInput"
-            class="secondary-input"
+            class="general-input"
             density="compact"
             label="Valor*"
             hide-details
@@ -81,13 +81,13 @@
       <div class="add-expense__more">
         <div>
           <v-select
-            class="secondary-input mt-3 mb-2"
+            class="general-input mt-3 mb-2"
             v-model="entry.category"
             :items="categories"
             item-title="name"
             return-object
             label="Categoría"
-            density="compact"
+            density="comfortable"
             hide-details
           >
             <template v-slot:item="{ props, item }">
@@ -97,14 +97,12 @@
                 :prepend-avatar="undefined"
               >
                 <template v-slot:prepend>
-                  <v-avatar
-                    size="24"
-                    :color="(item.raw as any).backgroundColor"
+                  <div
+                    class="add-expense__cat"
+                    :style="{ backgroundColor: (item.raw as any).backgroundColor }"
                   >
-                    <v-icon size="14" :color="(item.raw as any).iconColor">
-                      {{ (item.raw as any).icon }}
-                    </v-icon>
-                  </v-avatar>
+                  <component :is="getIcon((item.raw as any).category?.icon)" :color="colorWhite" />
+                </div>
                 </template>
                 <v-list-item-title>{{
                   (item.raw as any).name
@@ -113,12 +111,13 @@
             </template>
 
             <template v-slot:selection="{ item }">
-              <div class="d-flex align-center ga-2">
-                <v-avatar size="20" :color="(item.raw as any).backgroundColor">
-                  <v-icon size="12" :color="(item.raw as any).iconColor">
-                    {{ (item.raw as any).icon }}
-                  </v-icon>
-                </v-avatar>
+              <div class="d-flex align-center">
+                <div
+                    class="add-expense__cat"
+                    :style="{ backgroundColor: (item.raw as any).backgroundColor }"
+                  >
+                  <component :is="getIcon((item.raw as any).category?.icon)" :color="colorWhite" />
+                </div>
                 {{ (item.raw as any).name }}
               </div>
             </template>
@@ -140,7 +139,7 @@
 
         <div>
           <v-text-field
-            class="secondary-input mt-2"
+            class="general-input mt-2"
             v-model="entry.comments"
             label="Comentarios"
             density="compact"
@@ -177,9 +176,10 @@ import type { EntryType } from '@/modules/budget/budget.interface'
 import { useAccountsStore } from '../accounts.store'
 import { useCategoryStore } from '@/modules/categories/categories.store'
 import DateSelector from '@/modules/shared/components/DateSelector.vue'
-import { colorMdPrimary } from '@/styles/variables.styles'
+import { colorMdPrimary, colorWhite } from '@/styles/variables.styles'
 import AddIcon from '@/assets/icons/Add.icon.vue'
 import { useConfirm } from '@/modules/shared/composables/useConfirm'
+import { getIcon } from '@/modules/categories/categories.constants'
 
 const props = defineProps<{ accountId: string }>()
 
@@ -544,6 +544,21 @@ watch(
     padding: 0;
   }
 
+  &__cat {
+    width: 25px;
+    height: 25px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 5px;
+
+    .icon {
+      width: 18px !important;
+      height: 18px !important;
+    }
+  }
+
   &__input {
     width: 100%;
     font-size: 14px;
@@ -598,7 +613,7 @@ watch(
   }
 
   &__delete {
-    padding: 20px 20px 0;
+    padding: 20px 5px 0 20px;
     font-size: 0.9rem;
     color: $color-red;
     text-align: right;

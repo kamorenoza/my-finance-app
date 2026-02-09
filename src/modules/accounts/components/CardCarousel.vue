@@ -1,21 +1,9 @@
 <template>
   <div class="carousel-wrapper">
-    <div
-      class="carousel carousel--list"
-      ref="carouselRef"
-      tabindex="0"
-      @pointerdown="onPointerDown"
-      @pointermove="onPointerMove"
-      @pointerup="onPointerUp"
-      @pointercancel="onPointerUp"
-      @keydown="onKeydown"
-      :style="{ transform: `translateX(-${offset}px)` }"
-      :class="{ 'carousel--list': store.viewMode === AccountView.list }"
-    >
+    <div class="carousel carousel--list" ref="carouselRef" tabindex="0">
       <div
         v-for="account in store.filteredAccounts"
         class="carousel__item"
-        v-touch="{ left: swipeLeft, right: swipeRight }"
         ref="cardRefs"
       >
         <NormalCard
