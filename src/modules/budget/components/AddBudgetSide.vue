@@ -1,0 +1,470 @@
+<template>
+  <v-navigation-drawer
+    v-model="drawer"
+    location="right"
+    temporary
+    width="400"
+    persistent
+    @vue:unmounted="close"
+    class="add-budget__drawer"
+  >
+    <v-card flat>
+      <div class="px-3 pt-3 d-flex align-center ga-3">
+        <div class="subtitle">Agregar presupuesto</div>
+        <div class="add-budget__pill" :class="entry.type" @click="onTypeChange">
+          {{ entry.type === 'gasto' ? 'Gasto' : 'Ingreso' }}
+        </div>
+      </div>
+
+      <v-card-text>
+        <v-text-field
+          v-model="entry.name"
+          class="general-input mb-5"
+          density="comfortable"
+          label="Descripción*"
+          hide-details
+          type="text"
+          maxlength="100"
+        />
+
+        <v-text-field
+          class="general-input mb-5"
+          density="comfortable"
+          label="Valor*"
+          hide-details
+          prefix="$"
+          @update:model-value="onInput"
+          :model-value="formattedValue"
+          maxlength="12"
+          pattern="[0-9]*"
+          inputmode="numeric"
+        />
+
+        <v-select
+          class="general-input mb-5"
+          v-model="entry.category"
+          :items="categories"
+          item-title="name"
+          return-object
+          label="Categoría"
+          density="comfortable"
+          hide-details
+        >
+          <template v-slot:item="{ props, item }">
+            <v-list-item
+              v-bind="props"
+              :title="undefined"
+              :prepend-avatar="undefined"
+            >
+              <template v-slot:prepend>
+                <v-avatar size="24" :color="(item.raw as any).backgroundColor">
+                  <component
+                    :is="getIcon((item.raw as any).category?.icon)"
+                    :color="colorWhite"
+                    size="14"
+                  />
+                </v-avatar>
+              </template>
+              <v-list-item-title>{{
+                (item.raw as any).name
+              }}</v-list-item-title>
+            </v-list-item>
+          </template>
+
+          <template v-slot:selection="{ item }">
+            <div class="d-flex align-center ga-2">
+              <v-avatar size="20" :color="(item.raw as any).backgroundColor">
+                <component
+                  :is="getIcon((item.raw as any).category?.icon)"
+                  :color="colorWhite"
+                  size="12"
+                />
+              </v-avatar>
+              {{ (item.raw as any).name }}
+            </div>
+          </template>
+        </v-select>
+
+        <DateSelector @on-change="onChangeDate" v-model="dateForDateSelector" />
+
+        <v-switch
+          v-model="entry.isPaid"
+          label="Pagado"
+          inset
+          density="compact"
+          hide-details
+          :color="entry.isPaid ? 'success' : undefined"
+          class="ma-0 pa-0 mb-3 mt-4 subtitle"
+        />
+
+        <div class="d-flex align-center ga-2 mb-3 mt-3">
+          <v-switch
+            v-model="isFixed"
+            label="Es fijo"
+            inset
+            density="compact"
+            hide-details
+            :color="isFixed ? 'success' : undefined"
+            class="ma-0 pa-0 subtitle"
+            :disabled="isRepeating || !canEditRepeatingSettings"
+          />
+          <v-switch
+            v-model="isRepeating"
+            label="Se repite"
+            inset
+            density="compact"
+            hide-details
+            :color="isRepeating ? 'success' : undefined"
+            class="ma-0 pa-0 subtitle"
+            :disabled="isFixed || !canEditRepeatingSettings"
+          />
+        </div>
+
+        <v-text-field
+          v-if="isRepeating"
+          type="text"
+          label="Meses"
+          density="compact"
+          hide-details
+          class="general-input mb-5"
+          pattern="[0-9]*"
+          :model-value="formattedNumber"
+          @update:model-value="onInputNumber"
+          maxlength="5"
+          inputmode="numeric"
+        />
+
+        <v-text-field
+          class="general-input mt-2"
+          v-model="entry.comments"
+          label="Comentarios"
+          density="comfortable"
+          rows="3"
+          multi-line
+          hide-details
+        />
+      </v-card-text>
+
+      <v-card-actions class="pr-4 mt-2">
+        <v-spacer />
+        <v-btn type="button" class="btn-neutro" @click="close">Cancelar</v-btn>
+        <v-btn
+          type="button"
+          class="btn-primary"
+          @click="saveEntry"
+          :disabled="!entry.name || !entry.value"
+        >
+          Guardar
+        </v-btn>
+      </v-card-actions>
+
+      <div class="add-budget__delete" v-if="budgetStore.selectedEntry">
+        <p @click="deleteExpense">Eliminar Presupuesto</p>
+      </div>
+    </v-card>
+  </v-navigation-drawer>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, watch } from 'vue'
+import { colorWhite } from '@/styles/variables.styles'
+import DateSelector from '@/modules/shared/components/DateSelector.vue'
+import type { BudgetEntry, EntryType } from '../budget.interface'
+import { useBudgetStore } from '../budget.store'
+import { useCategoryStore } from '@/modules/categories/categories.store'
+import { generateId } from '@/modules/shared/utils'
+import { useToastStore } from '@/modules/shared/toast/toast.store'
+import { getIcon } from '@/modules/categories/categories.constants'
+import { useConfirm } from '@/modules/shared/composables/useConfirm'
+
+interface Props {}
+
+const props = defineProps<Props>()
+const emit = defineEmits(['closeEditExpense'])
+
+const budgetStore = useBudgetStore()
+const categoryStore = useCategoryStore()
+const toast = useToastStore()
+const confirm = useConfirm()
+
+const drawer = ref(false)
+const originalEntry = ref<BudgetEntry | null>(null)
+const entry = ref({
+  id: '',
+  name: '',
+  value: 0,
+  type: 'gasto' as EntryType,
+  isFixed: false,
+  isPaid: false,
+  repeat: undefined as number | undefined,
+  comments: '',
+  date: new Date().toISOString().split('T')[0],
+  category: null as any
+})
+
+const openDrawer = () => {
+  drawer.value = true
+}
+
+defineExpose({
+  openDrawer
+})
+
+const fillData = () => {
+  const selectedEntry = budgetStore.selectedEntry
+  if (selectedEntry) {
+    // Guardar una copia como original para detectar cambios
+    originalEntry.value = JSON.parse(JSON.stringify(selectedEntry))
+
+    entry.value.id = selectedEntry.id
+    entry.value.name = selectedEntry.name
+    entry.value.value = selectedEntry.value
+    entry.value.type = selectedEntry.type
+    entry.value.isFixed = selectedEntry.isFixed
+    entry.value.isPaid = selectedEntry.isPaid
+    entry.value.repeat = selectedEntry.repeat
+    entry.value.comments = selectedEntry.comments || ''
+    entry.value.date = selectedEntry.date
+
+    // Encontrar la categoría correspondiente
+    if (selectedEntry.category) {
+      const cat = categoryStore.categories.find(
+        (c: any) => c.name === selectedEntry.category
+      )
+      entry.value.category = cat || null
+    }
+  }
+}
+
+watch(
+  () => budgetStore.selectedEntry,
+  newValue => {
+    if (newValue) {
+      fillData()
+      drawer.value = true
+    }
+  }
+)
+
+const onTypeChange = () => {
+  entry.value.type = entry.value.type === 'gasto' ? 'ingreso' : 'gasto'
+}
+
+const canEditRepeatingSettings = computed(() => {
+  // Permitir editar si:
+  // - No estamos editando (entrada nueva), O
+  // - Estamos editando pero la entrada NO es fija Y NO se repite
+  if (!budgetStore.selectedEntry) {
+    return true // Nueva entrada
+  }
+  // Estamos editando: solo permitir si NO es fija Y NO se repite
+  return !originalEntry.value?.isFixed && !originalEntry.value?.repeat
+})
+
+const isFixed = computed({
+  get: () => entry.value.isFixed,
+  set: (value: boolean) => {
+    if (canEditRepeatingSettings.value) {
+      entry.value.isFixed = value
+      if (value) {
+        entry.value.repeat = undefined
+      }
+    }
+  }
+})
+
+const isRepeating = computed({
+  get: () => entry.value.repeat !== undefined,
+  set: (value: boolean) => {
+    if (canEditRepeatingSettings.value) {
+      if (value) {
+        entry.value.repeat = 1
+      } else {
+        entry.value.repeat = undefined
+      }
+    }
+  }
+})
+
+const formattedValue = computed(() => {
+  if (entry.value.value === 0) return ''
+  if (!entry.value.value && entry.value.value !== 0) return ''
+  return entry.value.value.toLocaleString('es-CO')
+})
+
+const formattedNumber = computed(() => {
+  if (entry.value.repeat === 0) return ''
+  if (!entry.value.repeat && entry.value.repeat !== 0) return ''
+  return entry.value.repeat.toLocaleString('es-CO')
+})
+
+const categories = computed(() => categoryStore.categories)
+
+const hasNameOrValueChanged = computed(() => {
+  if (!originalEntry.value) return false
+  return (
+    entry.value.name !== originalEntry.value.name ||
+    entry.value.value !== originalEntry.value.value
+  )
+})
+
+const onInput = (val: string) => {
+  const numeric = Number(val.replace(/[^\d]/g, ''))
+  entry.value.value = isNaN(numeric) ? 0 : numeric
+}
+
+const onInputNumber = (val: string) => {
+  const numeric = Number(val.replace(/[^\d]/g, ''))
+  entry.value.repeat = isNaN(numeric) ? 0 : numeric
+}
+
+const onChangeDate = (newDate: Date) => {
+  entry.value.date = newDate.toISOString().split('T')[0]
+}
+
+const dateForDateSelector = computed({
+  get: () => {
+    if (!entry.value.date) return new Date()
+    return new Date(entry.value.date + 'T00:00:00')
+  },
+  set: (newDate: Date) => {
+    entry.value.date = newDate.toISOString().split('T')[0]
+  }
+})
+
+const saveEntry = async () => {
+  if (!entry.value.name || !entry.value.value) return
+  try {
+    const budgetEntry: BudgetEntry = {
+      ...entry.value,
+      category: entry.value.category?.name || null
+    }
+
+    if (budgetStore.selectedEntry && hasNameOrValueChanged.value) {
+      // Si es edición y hay cambios en nombre o valor, mostrar opciones
+      const choice = await showModificationChoice()
+      if (choice) {
+        budgetStore.updateEntryWithModification(budgetEntry, choice)
+        toast.success('Presupuesto editado')
+      }
+    } else if (budgetStore.selectedEntry) {
+      // Sin cambios en nombre/valor, solo actualizar otros campos
+      budgetStore.updateEntry(budgetEntry)
+      toast.success('Presupuesto editado')
+    } else {
+      // Nueva entrada
+      budgetEntry.id = generateId()
+      budgetStore.addEntry(budgetEntry)
+      toast.success('Presupuesto agregado')
+    }
+
+    close()
+  } catch (e: any) {
+    toast.error(e.message)
+  }
+}
+
+const showModificationChoice = async (): Promise<
+  'this' | 'all' | 'future' | null
+> => {
+  // Primer confirm: ¿Aplicar a todos los meses?
+  const applyToAll = await confirm({
+    title: 'Aplicar cambio',
+    message: '¿Deseas aplicar este cambio a todos los meses pasados y futuros?'
+  })
+
+  if (applyToAll) {
+    return 'all'
+  }
+
+  // Segundo confirm: ¿Aplicar a próximos meses?
+  const applyToFuture = await confirm({
+    title: 'Aplicar cambio',
+    message:
+      '¿Deseas aplicar el cambio a los próximos meses (después de este mes)? Si dices "Cancelar", solo se aplicará a este mes.'
+  })
+
+  if (applyToFuture) {
+    return 'future'
+  }
+
+  return 'this'
+}
+
+const deleteExpense = async () => {
+  const expense = budgetStore.selectedEntry
+  const confirmed = await confirm({
+    title: 'Eliminar presupuesto',
+    message: `Se eliminará el presupuesto ${expense?.name} ¿Está seguro?`,
+    confirmColor: 'red'
+  })
+
+  if (confirmed) {
+    if (!expense?.id) return
+    budgetStore.deleteEntry(expense?.id)
+    toast.success('Presupuesto eliminado')
+    close()
+  }
+}
+
+const close = () => {
+  entry.value = {
+    id: '',
+    name: '',
+    value: 0,
+    type: 'gasto' as EntryType,
+    isFixed: false,
+    isPaid: false,
+    repeat: undefined,
+    comments: '',
+    date: new Date().toISOString().split('T')[0],
+    category: null as any
+  }
+  originalEntry.value = null
+  budgetStore.setSelectedEntry(null)
+  drawer.value = false
+}
+</script>
+
+<style scoped lang="scss">
+:deep(.add-budget__drawer) {
+  position: absolute !important;
+  height: 100%;
+  top: 0;
+  right: 0;
+  bottom: 0;
+
+  .v-overlay {
+    position: absolute !important;
+  }
+}
+
+.add-budget {
+  &__pill {
+    padding: 4px 12px;
+    border-radius: 16px;
+    background-color: #e0e0e0;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.85rem;
+    color: $white;
+
+    &.gasto {
+      background-color: $color-red;
+    }
+
+    &.ingreso {
+      background-color: $color-green;
+    }
+  }
+
+  &__delete {
+    padding: 20px 20px 0;
+    font-size: 0.9rem;
+    color: $color-red;
+    text-align: right;
+    font-family: $font-medium;
+    cursor: pointer;
+  }
+}
+</style>

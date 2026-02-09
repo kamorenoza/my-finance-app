@@ -22,14 +22,12 @@ export const budgetService = {
     localStorage.setItem(`budget_${userEmail}`, JSON.stringify(entries))
   },
 
-  updateEntry: (updated: Partial<BudgetEntry> & { id: string }) => {
+  updateEntry: (updated: BudgetEntry) => {
     const userEmail = getUserEmail()
     if (!userEmail) return
     const entries = budgetService
       .loadEntries()
-      .map(entry =>
-        entry.id === updated.id ? { ...entry, ...updated } : entry
-      )
+      .map(entry => (entry.id === updated.id ? updated : entry))
     localStorage.setItem(`budget_${userEmail}`, JSON.stringify(entries))
   },
 

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="budget-list">
     <div v-if="filteredAndSortedEntries.length === 0" class="empty-state">
       <p>No hay movimientos para mostrar</p>
     </div>
@@ -10,6 +10,8 @@
           v-for="entry in filteredAndSortedEntries"
           :key="entry.id"
           :entry="entry"
+          :reference-date="props.selectedDate || new Date()"
+          @edit="onEditEntry"
         />
       </template>
       <template v-else>
@@ -36,6 +38,8 @@
                 v-for="entry in group.entries"
                 :key="entry.id"
                 :entry="entry"
+                :reference-date="props.selectedDate || new Date()"
+                @edit="onEditEntry"
               />
             </div>
           </transition>
@@ -49,13 +53,9 @@
 import { watch, computed, ref } from 'vue'
 import BudgetItem from './BudgetItem.vue'
 import { useBudgetStore } from '../budget.store'
+import { useBudgetFilter } from '../composables/useBudgetFilter'
 import type { BudgetEntry } from '../budget.interface'
 import dayjs from 'dayjs'
-import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
-import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
-
-dayjs.extend(isSameOrAfter)
-dayjs.extend(isSameOrBefore)
 
 interface BudgetGroup {
   label: string
@@ -88,6 +88,14 @@ const props = withDefaults(defineProps<Props>(), {
 const store = useBudgetStore()
 const expandedGroups = ref<{ [key: string]: boolean }>({})
 
+// Usar useBudgetFilter para obtener entries filtrados
+const { filteredAndSortedEntries: baseFilteredEntries } = useBudgetFilter({
+  selectedDate: computed(() => props.selectedDate || new Date()),
+  search: computed(() => props.filters?.search || ''),
+  initDate: computed(() => props.filters?.initDate || null),
+  endDate: computed(() => props.filters?.endDate || null)
+})
+
 watch(
   () => props.selectedDate,
   newDate => {
@@ -110,34 +118,9 @@ const toggleGroup = (groupLabel: string) => {
     expandedGroups.value[groupLabel] !== false ? false : true
 }
 
+// Aplicar ordenamiento
 const filteredAndSortedEntries = computed(() => {
-  let entries = store.filteredEntries
-
-  // Filtrar por búsqueda
-  if (props.filters?.search) {
-    const search = props.filters.search.toLowerCase()
-    entries = entries.filter(
-      e =>
-        e.name.toLowerCase().includes(search) ||
-        e.category.toLowerCase().includes(search)
-    )
-  }
-
-  // Filtrar por fechas
-  if (props.filters?.initDate) {
-    entries = entries.filter(e =>
-      dayjs(e.date).isSameOrAfter(dayjs(props.filters!.initDate), 'day')
-    )
-  }
-
-  if (props.filters?.endDate) {
-    entries = entries.filter(e =>
-      dayjs(e.date).isSameOrBefore(dayjs(props.filters!.endDate), 'day')
-    )
-  }
-
-  // Ordenar
-  const sorted = [...entries]
+  const sorted = [...baseFilteredEntries.value]
   if (props.filters?.orderBy) {
     switch (props.filters.orderBy) {
       case 'newest':
@@ -209,9 +192,22 @@ const groupedEntries = computed((): BudgetGroup[] | null => {
     total: calculateGroupTotal(entries)
   }))
 })
+
+const onEditEntry = (entry: BudgetEntry) => {
+  store.setSelectedEntry(entry)
+}
 </script>
 
 <style scoped lang="scss">
+.budget-list {
+  height: calc(100vh - 500px);
+  overflow-y: scroll;
+
+  @media (min-width: 960px) {
+    height: calc(100vh - 220px);
+  }
+}
+
 .empty-state {
   display: flex;
   align-items: center;

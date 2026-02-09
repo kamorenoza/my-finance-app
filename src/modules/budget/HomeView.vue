@@ -13,7 +13,11 @@
           <BudgetToggle v-model="budgetToggle" />
         </div>
 
-        <BudgetSummary :budget-toggle="budgetToggle" />
+        <BudgetSummary
+          :budget-toggle="budgetToggle"
+          :filtered-entries="filteredAndSortedEntries"
+          :selected-date="currentDate"
+        />
       </div>
 
       <div class="home__body">
@@ -24,19 +28,36 @@
             :initial-order-by="currentFilter.orderBy"
             @filterChange="onFilterChange"
           />
+          <AddBudgetComplete :account-id="'1'" />
+          <div class="home__add-btn">
+            <v-tooltip text="Agregar presupuesto" location="left">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  :color="colorMdPrimary"
+                  class="btn-fab fab-button"
+                  @click="openAddBudgetDrawer"
+                  v-bind="props"
+                >
+                  <AddIcon class="icon" />
+                </v-btn>
+              </template>
+            </v-tooltip>
+          </div>
         </div>
         <BudgetList :selected-date="currentDate" :filters="currentFilter" />
       </div>
 
       <AddBudget />
     </div>
+
+    <AddBudgetSide ref="addBudgetSideRef" />
   </div>
 
   <CategoryManager />
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch, computed } from 'vue'
 import MonthYearSelector from '@/modules/shared/components/MonthYearSelector.vue'
 import CategoryManager from '@/modules/categories/CategoryManager.vue'
 import BudgetSummary from '@/modules/budget/components/BudgetSummary.vue'
@@ -45,9 +66,24 @@ import BudgetToggle from '../shared/components/BudgetToggle.vue'
 import BudgetList from './components/BudgetList.vue'
 import SearchOrderFilter from '@/modules/shared/components/SearchOrderFilter.vue'
 import { configService } from '@/modules/shared/services/config.service'
+import AddBudgetComplete from './components/AddBudgetComplete.vue'
+import { useBudgetFilter } from './composables/useBudgetFilter'
+import { useBudgetStore } from './budget.store'
+import AddBudgetSide from './components/AddBudgetSide.vue'
+import AddIcon from '@/assets/icons/Add.icon.vue'
+import { colorMdPrimary } from '@/styles/variables.styles'
 
 const currentDate = ref(new Date())
 const budgetToggle = ref('budget')
+const addBudgetSideRef = ref()
+const budgetStore = useBudgetStore()
+
+const openAddBudgetDrawer = () => {
+  budgetStore.setSelectedEntry(null)
+  if (addBudgetSideRef.value) {
+    addBudgetSideRef.value.openDrawer()
+  }
+}
 
 const currentFilter = ref({
   search: '',
@@ -55,6 +91,14 @@ const currentFilter = ref({
   orderBy: null as string | null,
   initDate: null as Date | null,
   endDate: null as Date | null
+})
+
+// Usar el composable para obtener movimientos filtrados
+const { filteredAndSortedEntries } = useBudgetFilter({
+  selectedDate: currentDate,
+  search: computed(() => currentFilter.value.search),
+  initDate: computed(() => currentFilter.value.initDate),
+  endDate: computed(() => currentFilter.value.endDate)
 })
 
 onMounted(() => {
@@ -150,9 +194,25 @@ const onFilterChange = (filter: {
   }
 
   &__filter {
+    display: flex;
+    gap: 10px;
     @media (min-width: 960px) {
       padding: 0;
     }
   }
+
+  &__add-btn {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+.fab-button {
+  width: 40px !important;
+  height: 40px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px !important;
 }
 </style>

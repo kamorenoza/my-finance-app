@@ -2,26 +2,79 @@
   <div class="budget-item" :class="{ paid: entry.isPaid }">
     <div class="budget-item__content">
       <div class="budget-item__info">
-        <p class="budget-item__name">{{ entry.name }}</p>
+        <p class="budget-item__name">{{ displayName }}</p>
         <p class="budget-item__category">{{ entry.category }}</p>
       </div>
       <div class="budget-item__amount" :class="entry.type">
-        {{ currency(entry.value) }}
+        {{ currency(displayValue) }}
       </div>
     </div>
     <div class="budget-item__status" :class="entry.type">
       <span v-if="entry.isPaid" class="badge paid">Pagado</span>
       <span v-else class="badge pending">Pendiente</span>
     </div>
+    <v-btn
+      icon
+      density="compact"
+      class="budget-item__action"
+      @click="editEntry"
+    >
+      <v-icon size="24">mdi-chevron-right</v-icon>
+    </v-btn>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { BudgetEntry } from '../budget.interface'
+import dayjs from 'dayjs'
 
-defineProps<{
+interface Props {
   entry: BudgetEntry
+  referenceDate?: Date
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  referenceDate: () => new Date()
+})
+
+const emit = defineEmits<{
+  edit: [entry: BudgetEntry]
 }>()
+
+// Calcular el valor actual considerando modificaciones
+const displayValue = computed(() => {
+  const month = dayjs(props.referenceDate).format('YYYY-MM')
+
+  // Buscar si hay una modificación en este mes con un nuevo valor
+  const modification = props.entry.modifications?.find(m => m.month === month)
+
+  if (modification && modification.value !== undefined) {
+    return modification.value
+  }
+
+  // Si no hay modificación, usar el valor base
+  return props.entry.value
+})
+
+// Calcular el nombre actual considerando modificaciones
+const displayName = computed(() => {
+  const month = dayjs(props.referenceDate).format('YYYY-MM')
+
+  // Buscar si hay una modificación en este mes con un nuevo nombre
+  const modification = props.entry.modifications?.find(m => m.month === month)
+
+  if (modification && modification.name !== undefined) {
+    return modification.name
+  }
+
+  // Si no hay modificación, usar el nombre base
+  return props.entry.name
+})
+
+const editEntry = () => {
+  emit('edit', props.entry)
+}
 
 const currency = (value: number): string =>
   new Intl.NumberFormat('es-CO', {
@@ -103,6 +156,11 @@ const currency = (value: number): string =>
         color: #f57c00;
       }
     }
+  }
+
+  &__action {
+    flex-shrink: 0;
+    margin-left: auto;
   }
 }
 </style>

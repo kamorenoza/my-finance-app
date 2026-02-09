@@ -500,7 +500,7 @@ const getCompletedExpensesGrouped = computed((): ExpenseGroup[] => {
 <style scoped lang="scss">
 .account-preview {
   &__expenses {
-    overflow-y: auto;
+    overflow-y: scroll;
     flex-grow: 1;
     height: calc(100dvh - 360px);
     padding-right: 15px;
