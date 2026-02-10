@@ -1,4 +1,5 @@
 import type { EntryType } from '../budget/budget.interface'
+import type { Category } from '../categories/categories.interface'
 import type { AccountTypes } from './accounts.constants'
 
 export interface Account {
@@ -19,5 +20,5 @@ export interface Expense {
   isPending: boolean
   comments?: string
   date: string | Date
-  category: any
+  category: Category | null
 }

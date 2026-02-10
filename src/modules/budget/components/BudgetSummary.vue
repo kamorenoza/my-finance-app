@@ -7,9 +7,11 @@
       </div>
 
       <div class="budget-summary__section">
-        <p class="budget-summary__label">Presupuestado</p>
+        <p class="budget-summary__label">
+          {{ props.budgetToggle === 'real' ? 'Real' : 'Presupuestado' }}
+        </p>
         <p class="budget-summary__amount">
-          {{ currency(totalIncomes) }}
+          {{ currency(totalIncomesBudget) }}
         </p>
       </div>
 
@@ -27,9 +29,11 @@
         <div class="label">Gastos</div>
       </div>
       <div class="budget-summary__section">
-        <p class="budget-summary__label">Presupuestado</p>
+        <p class="budget-summary__label">
+          {{ props.budgetToggle === 'real' ? 'Real' : 'Presupuestado' }}
+        </p>
         <p class="budget-summary__amount">
-          {{ currency(totalExpenses) }}
+          {{ currency(totalExpensesBudget) }}
         </p>
       </div>
 
@@ -47,7 +51,9 @@
         <div class="label">Balance</div>
       </div>
       <div class="budget-summary__section">
-        <p class="budget-summary__label">Presupuestado</p>
+        <p class="budget-summary__label">
+          {{ props.budgetToggle === 'real' ? 'Real' : 'Presupuestado' }}
+        </p>
         <p class="budget-summary__amount">
           {{ currency(balance) }}
         </p>
@@ -66,12 +72,10 @@ import { useBudgetStore } from '../budget.store'
 import IncomeIcon from '@/assets/icons/Income.icon.vue'
 import ExpenseIcon from '@/assets/icons/Expense.icon.vue'
 import BalanceIcon from '@/assets/icons/Balance.icon.vue'
-import type { BudgetEntry } from '../budget.interface'
-import dayjs from 'dayjs'
 
 interface Props {
   budgetToggle?: string
-  filteredEntries?: BudgetEntry[]
+  filteredEntries?: any[]
   selectedDate?: Date
 }
 
@@ -82,63 +86,24 @@ const props = withDefaults(defineProps<Props>(), {
   selectedDate: () => new Date()
 })
 
-// Helper para obtener el valor actual considerando modificaciones
-const getActualValue = (entry: BudgetEntry): number => {
-  const month = dayjs(props.selectedDate).format('YYYY-MM')
-  const modification = entry.modifications?.find(m => m.month === month)
-
-  if (modification && modification.value !== undefined) {
-    return modification.value
-  }
-
-  return entry.value
-}
-
-// Calcular totales basados en los movimientos filtrados
 const totalIncomesBudget = computed(() => {
-  if (props.filteredEntries.length === 0) return 0
-  return props.filteredEntries
-    .filter(e => e.type === 'ingreso')
-    .reduce((sum, e) => sum + getActualValue(e), 0)
-})
-
-const totalIncomesReal = computed(() => {
-  if (props.filteredEntries.length === 0) return 0
-  return props.filteredEntries
-    .filter(e => e.type === 'ingreso' && e.isPaid)
-    .reduce((sum, e) => sum + getActualValue(e), 0)
+  return props.budgetToggle === 'real'
+    ? store.totalIncomesReal
+    : store.totalIncomesBudget
 })
 
 const totalExpensesBudget = computed(() => {
-  if (props.filteredEntries.length === 0) return 0
-  return props.filteredEntries
-    .filter(e => e.type === 'gasto')
-    .reduce((sum, e) => sum + getActualValue(e), 0)
-})
-
-const totalExpensesReal = computed(() => {
-  if (props.filteredEntries.length === 0) return 0
-  return props.filteredEntries
-    .filter(e => e.type === 'gasto' && e.isPaid)
-    .reduce((sum, e) => sum + getActualValue(e), 0)
-})
-
-const totalIncomes = computed(() => {
   return props.budgetToggle === 'real'
-    ? totalIncomesReal.value
-    : totalIncomesBudget.value
+    ? store.totalExpensesReal
+    : store.totalExpensesBudget
 })
 
-const totalExpenses = computed(() => {
-  return props.budgetToggle === 'real'
-    ? totalExpensesReal.value
-    : totalExpensesBudget.value
-})
-
-const balance = computed(() => totalIncomes.value - totalExpenses.value)
+const balance = computed(
+  () => totalIncomesBudget.value - totalExpensesBudget.value
+)
 
 const balanceReal = computed(
-  () => totalIncomesReal.value - totalExpensesReal.value
+  () => store.totalIncomesReal - store.totalExpensesReal
 )
 
 const currency = (value: number): string =>

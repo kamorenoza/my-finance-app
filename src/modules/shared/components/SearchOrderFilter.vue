@@ -29,12 +29,16 @@
             density="comfortable"
           />
 
-          <p>Filtrar por fechas</p>
-          <div class="mt-3 mb-3">
+          <p v-if="!props.hideDateFilter">Filtrar por fechas</p>
+          <div class="mt-3 mb-3" v-if="!props.hideDateFilter">
             <DateSelector v-model="initDate" :empty-date="true" />
           </div>
 
-          <DateSelector v-model="endDate" :empty-date="true" />
+          <DateSelector
+            v-model="endDate"
+            :empty-date="true"
+            v-if="!props.hideDateFilter"
+          />
 
           <div class="search-filter__actions">
             <v-btn @click="menu = false" type="button" class="btn-label">
@@ -86,6 +90,7 @@ interface Props {
   orderByOptions?: OrderByOption[]
   searchLabel?: string
   entityId?: string | null
+  hideDateFilter?: boolean
 }
 
 const defaultGroupByOptions: GroupByOption[] = [

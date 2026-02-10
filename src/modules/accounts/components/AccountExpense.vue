@@ -10,7 +10,7 @@
         }"
       >
         <component
-          :is="getIconComponent(expense.category?.icon)"
+          :is="getIconComponent(expense.category?.icon || '')"
           :color="colorWhite"
         />
       </div>

@@ -23,10 +23,11 @@
       <div class="home__body">
         <div class="home__filter">
           <SearchOrderFilter
-            search-label="Buscar presupuesto"
+            search-label="Buscar"
             :initial-group-by="currentFilter.groupBy"
             :initial-order-by="currentFilter.orderBy"
             @filterChange="onFilterChange"
+            hide-date-filter
           />
           <AddBudgetComplete v-if="!mdAndUp" />
           <div class="home__add-btn" v-if="mdAndUp">
@@ -180,6 +181,7 @@ const onFilterChange = (filter: {
     height: calc(100dvh - 335px);
     padding: 12px;
     padding-bottom: 70px;
+    padding-right: 0;
 
     @media (min-width: 960px) {
       flex-grow: 1;
@@ -200,6 +202,7 @@ const onFilterChange = (filter: {
   &__filter {
     display: flex;
     gap: 10px;
+    padding-right: 15px;
     @media (min-width: 960px) {
       padding: 0;
     }

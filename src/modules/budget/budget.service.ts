@@ -1,4 +1,5 @@
 import type { BudgetEntry } from './budget.interface'
+import { generateId } from '../shared/utils'
 
 const getUserEmail = () => {
   const userString = localStorage.getItem('user')
@@ -11,7 +12,27 @@ export const budgetService = {
     const userEmail = getUserEmail()
     if (!userEmail) return []
     const data = localStorage.getItem(`budget_${userEmail}`)
-    return data ? JSON.parse(data) : []
+    const entries = data ? JSON.parse(data) : []
+
+    // Ensure all entries have IDs (migrate legacy data)
+    let modified = false
+    const migratedEntries = entries.map((entry: BudgetEntry) => {
+      if (!entry.id) {
+        modified = true
+        return { ...entry, id: generateId() }
+      }
+      return entry
+    })
+
+    // Save migrated data back if any entries were missing IDs
+    if (modified) {
+      localStorage.setItem(
+        `budget_${userEmail}`,
+        JSON.stringify(migratedEntries)
+      )
+    }
+
+    return migratedEntries
   },
 
   addEntry: (entry: BudgetEntry) => {

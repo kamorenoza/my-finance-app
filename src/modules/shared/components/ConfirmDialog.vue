@@ -11,7 +11,7 @@
         <v-btn class="btn-label" @click="onCancel">Cancelar</v-btn>
         <v-btn
           class="btn-label"
-          :color="confirmColor || 'primary'"
+          :color="confirmColor || colorPrimary"
           text
           @click="onConfirm"
         >
@@ -23,6 +23,7 @@
 </template>
 
 <script setup lang="ts">
+import { colorPrimary } from '@/styles/variables.styles'
 import { ref } from 'vue'
 
 const props = defineProps<{

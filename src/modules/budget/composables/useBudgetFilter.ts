@@ -27,6 +27,15 @@ interface FilterOptions {
 export function useBudgetFilter(options: FilterOptions = {}) {
   const store = useBudgetStore()
 
+  // Función helper para obtener el nombre actual considerando modificaciones
+  const getDisplayName = (entry: BudgetEntry, selectedDate: Date): string => {
+    const month = dayjs(selectedDate).format('YYYY-MM')
+    const modification = entry.modifications?.find(m => m.month === month)
+    return modification && modification.name !== undefined
+      ? modification.name
+      : entry.name
+  }
+
   const filteredAndSortedEntries = computed(() => {
     const selectedDate = unref(options.selectedDate) || new Date()
     const search = unref(options.search) || ''
@@ -68,11 +77,13 @@ export function useBudgetFilter(options: FilterOptions = {}) {
     // Filtrar por búsqueda
     if (search) {
       const searchLower = search.toLowerCase()
-      entries = entries.filter(
-        e =>
-          e.name.toLowerCase().includes(searchLower) ||
-          e.category?.toLowerCase().includes(searchLower)
-      )
+      entries = entries.filter(e => {
+        const displayName = getDisplayName(e, selectedDate)
+        return (
+          displayName.toLowerCase().includes(searchLower) ||
+          e.category?.name?.toLowerCase().includes(searchLower)
+        )
+      })
     }
 
     // Filtrar por fechas (si están especificadas)

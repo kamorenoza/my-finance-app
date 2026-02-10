@@ -30,7 +30,9 @@
                 </v-icon>
               </span>
             </span>
-            <span class="budget-group__total">{{ currency(group.total) }}</span>
+            <span class="budget-group__total">{{
+              currency(Math.abs(group.total))
+            }}</span>
           </p>
           <transition name="slide">
             <div v-show="expandedGroups[group.label] !== false">
@@ -170,7 +172,7 @@ const groupedEntries = computed((): BudgetGroup[] | null => {
         groupKey = entry.type === 'ingreso' ? 'Ingresos' : 'Gastos'
         break
       case 'category':
-        groupKey = entry.category || 'Sin categoría'
+        groupKey = entry.category?.name || 'Sin categoría'
         break
       case 'date':
         groupKey = dayjs(entry.date).format('DD/MM/YYYY')
@@ -204,6 +206,7 @@ const onEditEntry = (entry: BudgetEntry) => {
   overflow-y: scroll;
   padding-bottom: 40px;
   margin-top: 5px;
+  padding-right: 12px;
 
   @media (min-width: 960px) {
     height: calc(100vh - 220px);
@@ -224,19 +227,14 @@ const onEditEntry = (entry: BudgetEntry) => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 15px;
-    background-color: #f5f5f5;
+    padding: 12px 5px;
     border-radius: 12px;
-    margin-bottom: 16px;
+    margin-bottom: 5px;
     cursor: pointer;
     transition: background-color 0.2s ease;
     font-family: $font-medium;
     font-size: 0.95rem;
     color: #333;
-
-    &:hover {
-      background-color: #efefef;
-    }
 
     &-content {
       display: flex;
@@ -250,11 +248,18 @@ const onEditEntry = (entry: BudgetEntry) => {
     display: flex;
     align-items: center;
     transition: transform 0.2s ease;
+    background-color: $bg-general;
+    border-radius: 100%;
+    margin-left: 3px;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   &__total {
     font-weight: 600;
-    color: #388e3c;
     font-size: 0.95rem;
   }
 }
@@ -262,8 +267,8 @@ const onEditEntry = (entry: BudgetEntry) => {
 .slide-enter-active,
 .slide-leave-active {
   transition:
-    max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   max-height: 5000px;
   overflow: hidden;
   will-change: max-height, opacity;

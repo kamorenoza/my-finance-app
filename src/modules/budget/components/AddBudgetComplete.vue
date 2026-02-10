@@ -395,12 +395,22 @@ const hasNameOrValueChanged = computed(() => {
   )
 })
 
+const hasIsPaidChanged = computed(() => {
+  if (!originalEntry.value) return false
+  return entry.value.isPaid !== originalEntry.value.isPaid
+})
+
 const saveEntry = () => {
   if (!entry.value.name || !entry.value.value) return
   try {
     const budgetEntry: BudgetEntry = {
       ...entry.value,
-      category: entry.value.category?.name || null
+      category: entry.value.category || null
+    }
+
+    // Independientemente de lo demás, si cambió isPaid, guardarlo solo para este mes
+    if (budgetStore.selectedEntry && hasIsPaidChanged.value) {
+      budgetStore.updateEntryIsPaidForMonth(entry.value.id, entry.value.isPaid)
     }
 
     if (budgetStore.selectedEntry && hasNameOrValueChanged.value) {
@@ -408,7 +418,12 @@ const saveEntry = () => {
       showModificationDialog.value = true
       return // Esperar a que el usuario elija una opción
     } else if (budgetStore.selectedEntry) {
-      budgetStore.updateEntry(budgetEntry)
+      // Edición sin cambios en nombre/valor
+      // Si cambió isPaid, ya se guardó con updateEntryIsPaidForMonth
+      // Solo llamar a updateEntry si no cambió isPaid
+      if (!hasIsPaidChanged.value) {
+        budgetStore.updateEntry(budgetEntry)
+      }
       toast.success('Presupuesto editado')
     } else {
       budgetEntry.id = generateId()
@@ -440,8 +455,14 @@ const handleModificationCancel = () => {
 const saveEntryWithChoice = (choice: 'this' | 'all' | 'future') => {
   const budgetEntry: BudgetEntry = {
     ...entry.value,
-    category: entry.value.category?.name || null
+    category: entry.value.category || null
   }
+
+  // Independientemente de la opción elegida, si cambió isPaid, guardarlo solo para este mes
+  if (hasIsPaidChanged.value) {
+    budgetStore.updateEntryIsPaidForMonth(entry.value.id, entry.value.isPaid)
+  }
+
   budgetStore.updateEntryWithModification(budgetEntry, choice)
   toast.success('Presupuesto editado')
   close()
@@ -449,6 +470,17 @@ const saveEntryWithChoice = (choice: 'this' | 'all' | 'future') => {
 
 const deleteExpense = async () => {
   const expense = budgetStore.selectedEntry
+
+  if (!expense) {
+    toast.error('No hay presupuesto seleccionado')
+    return
+  }
+
+  if (!expense.id) {
+    toast.error('Error: El presupuesto no tiene ID válido')
+    return
+  }
+
   const confirmed = await confirm({
     title: 'Eliminar presupuesto',
     message: `Se eliminará el presupuesto ${expense?.name} ¿Está seguro?`,
@@ -456,10 +488,13 @@ const deleteExpense = async () => {
   })
 
   if (confirmed) {
-    if (!expense?.id) return
-    budgetStore.deleteEntry(expense?.id)
-    toast.success('Presupuesto eliminado')
-    close()
+    try {
+      budgetStore.deleteEntry(expense.id)
+      toast.success('Presupuesto eliminado')
+      close()
+    } catch (e: any) {
+      toast.error('Error al eliminar el presupuesto')
+    }
   }
 }
 
@@ -490,17 +525,15 @@ const fillData = () => {
         if (modification.value !== undefined) {
           originalEntry.value!.value = modification.value
         }
+        if (modification.isPaid !== undefined) {
+          originalEntry.value!.isPaid = modification.isPaid
+        }
       }
 
       entry.value.name = selectedEntry.name
       entry.value.value = selectedEntry.value
       entry.value.type = selectedEntry.type
-      if (selectedEntry.category) {
-        const cat = categoryStore.categories.find(
-          (c: any) => c.name === selectedEntry.category
-        )
-        entry.value.category = cat || null
-      }
+      entry.value.category = selectedEntry.category || null
       entry.value.date = selectedEntry.date
       entry.value.isFixed = selectedEntry.isFixed
       entry.value.isPaid = selectedEntry.isPaid
@@ -515,6 +548,9 @@ const fillData = () => {
         }
         if (modification.value !== undefined) {
           entry.value.value = modification.value
+        }
+        if (modification.isPaid !== undefined) {
+          entry.value.isPaid = modification.isPaid
         }
       }
     }
@@ -830,5 +866,9 @@ watch(
 
 :deep(.v-field__input) {
   font-size: 14px !important;
+}
+
+:deep(.v-switch .v-selection-control--dirty .v-switch__track) {
+  background-color: $green;
 }
 </style>
