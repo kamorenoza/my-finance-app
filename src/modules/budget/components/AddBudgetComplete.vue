@@ -275,7 +275,7 @@ const entry = ref({
   isPaid: false,
   repeat: undefined as number | undefined,
   comments: '',
-  date: new Date().toISOString().split('T')[0],
+  date: dayjs(budgetStore.selectedDate).format('YYYY-MM-DD'),
   category: null as any
 })
 
@@ -355,7 +355,7 @@ const close = () => {
     isPaid: false,
     repeat: undefined,
     comments: '',
-    date: new Date().toISOString().split('T')[0],
+    date: dayjs(budgetStore.selectedDate).format('YYYY-MM-DD'),
     category: null as any
   }
   originalEntry.value = null
@@ -370,16 +370,26 @@ const goToValue = () => {
 }
 
 const onChangeDate = (newDate: Date) => {
-  entry.value.date = newDate.toISOString().split('T')[0]
+  const year = newDate.getUTCFullYear()
+  const month = String(newDate.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(newDate.getUTCDate()).padStart(2, '0')
+  entry.value.date = `${year}-${month}-${day}`
 }
 
 const dateForDateSelector = computed({
   get: () => {
     if (!entry.value.date) return new Date()
-    return new Date(entry.value.date + 'T00:00:00')
+    // Crear fecha en UTC para evitar problemas de zona horaria
+    const [year, month, day] = entry.value.date.split('-')
+    return new Date(
+      Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day))
+    )
   },
   set: (newDate: Date) => {
-    entry.value.date = newDate.toISOString().split('T')[0]
+    const year = newDate.getUTCFullYear()
+    const month = String(newDate.getUTCMonth() + 1).padStart(2, '0')
+    const day = String(newDate.getUTCDate()).padStart(2, '0')
+    entry.value.date = `${year}-${month}-${day}`
   }
 })
 
@@ -637,6 +647,7 @@ const handlePress = () => {
     isLongPress.value = false
     return
   }
+  entry.value.date = dayjs(budgetStore.selectedDate).format('YYYY-MM-DD')
   isFocused.value = true
 }
 

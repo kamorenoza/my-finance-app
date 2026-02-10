@@ -270,6 +270,8 @@ export const useBudgetStore = defineStore('budget', () => {
     updateEntryIsPaidForMonth,
     deleteEntry,
     setSelectedEntry,
+    getDisplayValue,
+    getDisplayIsPaid,
     filteredEntries,
     totalIncomes,
     totalExpenses,

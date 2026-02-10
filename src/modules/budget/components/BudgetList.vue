@@ -147,12 +147,13 @@ const filteredAndSortedEntries = computed(() => {
   return sorted
 })
 
-const calculateGroupTotal = (entries: BudgetEntry[]): number => {
+const calculateGroupTotal = (entries: BudgetEntry[], dateRef: Date): number => {
   return entries.reduce((sum, entry) => {
+    const displayValue = store.getDisplayValue(entry, dateRef)
     if (entry.type === 'ingreso') {
-      return sum + entry.value
+      return sum + displayValue
     } else {
-      return sum - entry.value
+      return sum - displayValue
     }
   }, 0)
 }
@@ -191,7 +192,7 @@ const groupedEntries = computed((): BudgetGroup[] | null => {
   return Object.entries(groups).map(([label, entries]) => ({
     label,
     entries,
-    total: calculateGroupTotal(entries)
+    total: calculateGroupTotal(entries, props.selectedDate || new Date())
   }))
 })
 

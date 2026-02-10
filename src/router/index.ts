@@ -24,6 +24,11 @@ const routes = [
         path: '/cuentas/detalle/:id',
         name: 'cuentas-detalle',
         component: () => import('@/modules/accounts/AccountDetailsView.vue')
+      },
+      {
+        path: '/notas',
+        name: 'notas',
+        component: () => import('@/modules/notes/NotesView.vue')
       }
     ]
   },
