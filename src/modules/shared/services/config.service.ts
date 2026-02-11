@@ -7,11 +7,15 @@ const getUserEmail = () => {
 export interface AccountConfig {
   groupBy?: string | null
   orderBy?: string | null
+  collapseAll?: boolean
+  expandedGroups?: { [key: string]: boolean }
 }
 
 export interface BudgetConfig {
   groupBy?: string | null
   orderBy?: string | null
+  collapseAll?: boolean
+  expandedGroups?: { [key: string]: boolean }
 }
 
 export interface UserConfig {

@@ -52,12 +52,13 @@
 </template>
 
 <script setup lang="ts">
-import { watch, computed, ref } from 'vue'
+import { watch, computed, ref, onMounted } from 'vue'
 import BudgetItem from './BudgetItem.vue'
 import { useBudgetStore } from '../budget.store'
 import { useBudgetFilter } from '../composables/useBudgetFilter'
 import type { BudgetEntry } from '../budget.interface'
 import dayjs from 'dayjs'
+import { configService } from '@/modules/shared/services/config.service'
 
 interface BudgetGroup {
   label: string
@@ -73,6 +74,7 @@ interface Props {
     orderBy: string | null
     initDate?: Date | null
     endDate?: Date | null
+    collapseAll?: boolean
   }
 }
 
@@ -89,6 +91,19 @@ const props = withDefaults(defineProps<Props>(), {
 
 const store = useBudgetStore()
 const expandedGroups = ref<{ [key: string]: boolean }>({})
+const hasLoadedState = ref(false)
+
+// Cargar estado de grupos expandidos al montar
+onMounted(() => {
+  const savedConfig = configService.getBudgetConfig()
+  if (
+    savedConfig.expandedGroups &&
+    Object.keys(savedConfig.expandedGroups).length > 0
+  ) {
+    expandedGroups.value = { ...savedConfig.expandedGroups }
+    hasLoadedState.value = true
+  }
+})
 
 // Usar useBudgetFilter para obtener entries filtrados
 const { filteredAndSortedEntries: baseFilteredEntries } = useBudgetFilter({
@@ -118,6 +133,17 @@ const currency = (value: number): string =>
 const toggleGroup = (groupLabel: string) => {
   expandedGroups.value[groupLabel] =
     expandedGroups.value[groupLabel] !== false ? false : true
+
+  // Guardar el estado
+  saveExpandedGroups()
+}
+
+const saveExpandedGroups = () => {
+  const currentConfig = configService.getBudgetConfig()
+  configService.saveBudgetConfig({
+    ...currentConfig,
+    expandedGroups: { ...expandedGroups.value }
+  })
 }
 
 // Aplicar ordenamiento
@@ -195,6 +221,36 @@ const groupedEntries = computed((): BudgetGroup[] | null => {
     total: calculateGroupTotal(entries, props.selectedDate || new Date())
   }))
 })
+
+// Watcher para manejar collapseAll (solo cuando cambia, no al iniciar)
+watch(
+  () => props.filters?.collapseAll,
+  (collapseAll, oldValue) => {
+    // Solo ejecutar si hay un cambio real (no undefined -> true al montar)
+    if (collapseAll && oldValue !== undefined && groupedEntries.value) {
+      // Colapsar todos los grupos
+      groupedEntries.value.forEach(group => {
+        expandedGroups.value[group.label] = false
+      })
+      saveExpandedGroups()
+    }
+  }
+)
+
+// Watcher en groupedEntries para aplicar collapseAll SOLO si no hay estado guardado
+watch(
+  groupedEntries,
+  groups => {
+    // Solo aplicar collapseAll si no se ha cargado estado previo
+    if (props.filters?.collapseAll && groups && !hasLoadedState.value) {
+      groups.forEach(group => {
+        expandedGroups.value[group.label] = false
+      })
+      saveExpandedGroups()
+    }
+  },
+  { immediate: true }
+)
 
 const onEditEntry = (entry: BudgetEntry) => {
   store.setSelectedEntry(entry)

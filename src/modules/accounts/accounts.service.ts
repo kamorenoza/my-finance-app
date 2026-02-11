@@ -1,6 +1,5 @@
 import { AccountView } from './accounts.constants'
 import type { Account, Expense } from './accounts.interface'
-import { generateId } from '../shared/utils'
 
 const getUserEmail = () => {
   const userString = localStorage.getItem('user')

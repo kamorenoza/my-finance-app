@@ -63,6 +63,7 @@
           <SearchOrderFilter
             :initial-group-by="currentFilter.groupBy"
             :initial-order-by="currentFilter.orderBy"
+            :initial-collapse-all="currentFilter.collapseAll"
             @filterChange="onFilterChange"
           >
             <template #actions>
@@ -121,7 +122,8 @@ const currentFilter = ref({
   groupBy: account.value.type === 'TC' ? 'none' : ('category' as string | null),
   orderBy: null as string | null,
   initDate: null as Date | null,
-  endDate: null as Date | null
+  endDate: null as Date | null,
+  collapseAll: false
 })
 
 const screenWidth = ref(window.innerWidth)
@@ -147,6 +149,9 @@ onMounted(() => {
   if (savedConfig.orderBy !== undefined) {
     currentFilter.value.orderBy = savedConfig.orderBy
   }
+  if (savedConfig.collapseAll !== undefined) {
+    currentFilter.value.collapseAll = savedConfig.collapseAll
+  }
 
   window.addEventListener('resize', updateScreenWidth)
 })
@@ -166,7 +171,8 @@ watch(
   newFilter => {
     configService.saveAccountConfig(accountId, {
       groupBy: newFilter.groupBy,
-      orderBy: newFilter.orderBy
+      orderBy: newFilter.orderBy,
+      collapseAll: newFilter.collapseAll
     })
   },
   { deep: true }
@@ -178,13 +184,15 @@ const onFilterChange = (filter: {
   orderBy: string | null
   initDate?: Date | null
   endDate?: Date | null
+  collapseAll?: boolean
 }) => {
   currentFilter.value = {
     search: filter.search,
     groupBy: filter.groupBy,
     orderBy: filter.orderBy,
     initDate: filter.initDate || null,
-    endDate: filter.endDate || null
+    endDate: filter.endDate || null,
+    collapseAll: filter.collapseAll || false
   }
 }
 

@@ -25,11 +25,13 @@ const authStore = useAuthStore()
 
 const handleLogin = async () => {
   try {
+    authStore.setLoading(true)
     const user = await loginWithGoogle()
     authStore.setUser(user)
     localStorage.setItem('user', JSON.stringify(user))
     router.push('/')
   } catch (e) {
+    authStore.setLoading(false)
     alert('Error al iniciar sesión')
   }
 }

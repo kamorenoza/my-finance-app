@@ -111,20 +111,6 @@
         </v-col>
 
         <v-col cols="2">
-          <div class="menu-btn">
-            <div class="menu-item" @click="router.push('/notas')">
-              <NotesIcon
-                class="menu-icon"
-                :color="isActive('/notas') ? colorPrimary : colorGrey"
-              />
-            </div>
-            <span :class="['menu-label', { active: isActive('/notas') }]">
-              Notas
-            </span>
-          </div>
-        </v-col>
-
-        <v-col cols="2">
           <div class="menu-btn" :class="{ active: isActive('/compras') }">
             <div class="menu-item" @click="router.push('/compras')">
               <ShoppingIcon
@@ -134,6 +120,20 @@
             </div>
             <span :class="['menu-label', { active: isActive('/compras') }]">
               Compras
+            </span>
+          </div>
+        </v-col>
+
+        <v-col cols="2">
+          <div class="menu-btn">
+            <div class="menu-item" @click="router.push('/user')">
+              <UserIcon
+                class="menu-icon-user"
+                :color="isActive('/user') ? colorPrimary : colorGrey"
+              />
+            </div>
+            <span :class="['menu-label', { active: isActive('/user') }]">
+              Usuario
             </span>
           </div>
         </v-col>
@@ -153,6 +153,7 @@ import PurseIcon from '@/assets/icons/Purse.icon.vue'
 import NotesIcon from '@/assets/icons/Notes.icon.vue'
 import ShoppingIcon from '@/assets/icons/Shopping.icon.vue'
 import BudgetIcon from '@/assets/icons/Budget.icon.vue'
+import UserIcon from '@/assets/icons/User.icon.vue'
 const layout = useLayoutStore()
 
 const { mdAndUp } = useDisplay()
@@ -313,6 +314,12 @@ const hideBottomMenu = computed(() => {
 .menu-icon {
   width: 40px;
   height: 40px;
+}
+
+.menu-icon-user {
+  width: 34px;
+  height: 34px;
+  margin-top: 3px;
 }
 
 .menu-fab-icon {

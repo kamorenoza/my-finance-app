@@ -125,6 +125,7 @@ import AccountExpense from './AccountExpense.vue'
 import { useAccountsStore } from '../accounts.store'
 import type { Expense } from '../accounts.interface'
 import { dateFormatter } from '@/modules/shared/utils'
+import { configService } from '@/modules/shared/services/config.service'
 
 interface ExpenseGroup {
   label: string
@@ -141,6 +142,7 @@ const props = defineProps<{
     orderBy: string | null
     initDate?: Date | null
     endDate?: Date | null
+    collapseAll?: boolean
   }
 }>()
 
@@ -154,8 +156,20 @@ const accountId = props.accountId
 const expandedPendingGroups = ref<{ [key: string]: boolean }>({})
 const expandedCompletedGroups = ref<{ [key: string]: boolean }>({})
 const showCompleted = ref(false)
+const hasLoadedState = ref(false)
 
 onMounted(() => {
+  // Cargar estado guardado de grupos expandidos
+  const savedConfig = configService.getAccountConfig(accountId)
+  if (
+    savedConfig.expandedGroups &&
+    Object.keys(savedConfig.expandedGroups).length > 0
+  ) {
+    expandedPendingGroups.value = { ...savedConfig.expandedGroups }
+    expandedCompletedGroups.value = { ...savedConfig.expandedGroups }
+    hasLoadedState.value = true
+  }
+
   showCompleted.value = getPendingExpensesGrouped.value.length === 0
   emit('updateExpenses', allFilteredExpenses.value)
 })
@@ -173,6 +187,22 @@ const toggleGroup = (section: 'pending' | 'completed', groupLabel: string) => {
     section === 'pending' ? expandedPendingGroups : expandedCompletedGroups
   groups.value[groupLabel] =
     groups.value[groupLabel] === undefined ? false : !groups.value[groupLabel]
+
+  // Guardar el estado
+  saveExpandedGroups()
+}
+
+const saveExpandedGroups = () => {
+  const currentConfig = configService.getAccountConfig(accountId)
+  // Combinar ambos estados (pending y completed) en uno solo
+  const combinedGroups = {
+    ...expandedPendingGroups.value,
+    ...expandedCompletedGroups.value
+  }
+  configService.saveAccountConfig(accountId, {
+    ...currentConfig,
+    expandedGroups: combinedGroups
+  })
 }
 
 const applyFilters = (expenses: Expense[]) => {
@@ -500,6 +530,54 @@ const getCompletedExpensesGrouped = computed((): ExpenseGroup[] => {
     }
   ]
 })
+
+// Watcher para manejar collapseAll
+watch(
+  () => props.filters.collapseAll,
+  (collapseAll, oldValue) => {
+    // Solo ejecutar si hay un cambio real (no undefined -> true al montar)
+    if (collapseAll && oldValue !== undefined) {
+      // Colapsar todos los grupos
+      getPendingExpensesGrouped.value.forEach(group => {
+        expandedPendingGroups.value[group.label] = false
+      })
+      getCompletedExpensesGrouped.value.forEach(group => {
+        expandedCompletedGroups.value[group.label] = false
+      })
+      saveExpandedGroups()
+    }
+  }
+)
+
+// Watcher en getPendingExpensesGrouped para aplicar collapseAll SOLO si no hay estado guardado
+watch(
+  getPendingExpensesGrouped,
+  groups => {
+    // Solo aplicar collapseAll si no se ha cargado estado previo
+    if (props.filters.collapseAll && !hasLoadedState.value) {
+      groups.forEach(group => {
+        expandedPendingGroups.value[group.label] = false
+      })
+      saveExpandedGroups()
+    }
+  },
+  { immediate: true }
+)
+
+// Watcher en getCompletedExpensesGrouped para aplicar collapseAll SOLO si no hay estado guardado
+watch(
+  getCompletedExpensesGrouped,
+  groups => {
+    // Solo aplicar collapseAll si no se ha cargado estado previo
+    if (props.filters.collapseAll && !hasLoadedState.value) {
+      groups.forEach(group => {
+        expandedCompletedGroups.value[group.label] = false
+      })
+      saveExpandedGroups()
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped lang="scss">

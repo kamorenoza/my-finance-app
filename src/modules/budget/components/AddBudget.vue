@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, type Ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useBudgetStore } from '@/modules/budget/budget.store'
 import type { EntryType } from '../budget.interface'
 import { useToastStore } from '@/modules/shared/toast/toast.store'

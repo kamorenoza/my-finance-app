@@ -245,8 +245,6 @@ import { getIcon } from '@/modules/categories/categories.constants'
 import { useBudgetStore } from '@/modules/budget/budget.store'
 import { generateId } from '@/modules/shared/utils'
 
-const props = defineProps<{}>()
-
 const toast = useToastStore()
 const budgetStore = useBudgetStore()
 const categoryStore = useCategoryStore()

@@ -14,7 +14,7 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #f9f9f9;
+  background-color: #ffffff;
 
   .spinner {
     width: 40px;

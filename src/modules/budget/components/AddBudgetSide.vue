@@ -187,9 +187,6 @@ import { useToastStore } from '@/modules/shared/toast/toast.store'
 import { getIcon } from '@/modules/categories/categories.constants'
 import { useConfirm } from '@/modules/shared/composables/useConfirm'
 
-interface Props {}
-
-const props = defineProps<Props>()
 const emit = defineEmits(['closeEditExpense'])
 
 const budgetStore = useBudgetStore()

@@ -76,7 +76,6 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useDisplay } from 'vuetify'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
 import { colorPrimary } from '@/styles/variables.styles'
@@ -93,9 +92,6 @@ const showPicker = ref(false)
 
 const selectedMonth: any = ref(internalDate.value.getMonth())
 const selectedYear = ref(internalDate.value.getFullYear())
-
-const { mdAndUp } = useDisplay()
-const isDesktop = computed(() => mdAndUp.value)
 
 watch(
   () => props.modelValue,

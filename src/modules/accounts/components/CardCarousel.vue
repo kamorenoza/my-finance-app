@@ -22,7 +22,7 @@
 import { ref, watch } from 'vue'
 import { useAccountsStore } from '../accounts.store'
 import NormalCard from './NormalCard.vue'
-import { AccountTypes, AccountView } from '../accounts.constants'
+import { AccountTypes } from '../accounts.constants'
 import CardCreditCard from './CardCreditCard.vue'
 
 const store = useAccountsStore()
@@ -30,58 +30,6 @@ const store = useAccountsStore()
 const currentIndex = ref(0)
 const offset = ref(0)
 const cardRefs = ref<HTMLElement[]>([] as HTMLElement[])
-
-// Pointer (mouse / trackpad / touch) drag support for desktop
-let isPointerDown = false
-let pointerStartX = 0
-const SWIPE_THRESHOLD = 50
-
-const onPointerDown = (e: PointerEvent) => {
-  if (e.pointerType === 'touch') return
-  isPointerDown = true
-  pointerStartX = e.clientX
-  try {
-    ;(e.target as Element)?.setPointerCapture?.(e.pointerId)
-  } catch {}
-}
-
-const onPointerMove = (e: PointerEvent) => {
-  if (e.pointerType === 'touch') return
-  if (!isPointerDown) return
-  const diff = pointerStartX - e.clientX
-  if (Math.abs(diff) >= SWIPE_THRESHOLD) {
-    if (diff > 0) swipeLeft()
-    else swipeRight()
-    isPointerDown = false
-    try {
-      ;(e.target as Element)?.releasePointerCapture?.(e.pointerId)
-    } catch {}
-  }
-}
-
-const onPointerUp = (e: PointerEvent) => {
-  if (e.pointerType === 'touch') return
-  if (!isPointerDown) return
-  isPointerDown = false
-  const diff = pointerStartX - e.clientX
-  try {
-    ;(e.target as Element)?.releasePointerCapture?.(e.pointerId)
-  } catch {}
-
-  // If the user dragged enough, trigger a swipe; otherwise snap to current index
-  if (Math.abs(diff) >= SWIPE_THRESHOLD) {
-    if (diff > 0) swipeLeft()
-    else swipeRight()
-  } else {
-    // No swipe: ensure offset/current index is recalculated (snap back)
-    updateOffset()
-  }
-}
-
-const onKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'ArrowLeft') swipeRight()
-  if (e.key === 'ArrowRight') swipeLeft()
-}
 
 const updateOffset: any = () => {
   const el = cardRefs.value[currentIndex.value]
@@ -98,24 +46,6 @@ const updateOffset: any = () => {
     }
   }
   store.setCurrentIndexAccount(currentIndex.value)
-}
-
-const swipeLeft = () => {
-  if (currentIndex.value < store.accounts.length - 1) {
-    currentIndex.value = currentIndex.value + 1
-  } else {
-    currentIndex.value = 0
-  }
-  updateOffset()
-}
-
-const swipeRight = () => {
-  if (currentIndex.value === 0) {
-    currentIndex.value = store.accounts.length - 1
-  } else {
-    currentIndex.value--
-  }
-  updateOffset()
 }
 
 watch(

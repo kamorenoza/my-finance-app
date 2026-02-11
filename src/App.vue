@@ -1,8 +1,11 @@
 <template>
   <v-app>
     <v-main>
-      <LoadingScreen v-if="authStore.loading" />
       <router-view />
+      <LoadingScreen
+        v-show="authStore.loading || isInitializing"
+        class="overlay-loader"
+      />
     </v-main>
   </v-app>
 </template>
@@ -11,61 +14,108 @@
 import { useAuthListener } from '@/modules/auth/composables/useAuthListener'
 import { useAuthStore } from './modules/auth/auth.store'
 import LoadingScreen from './modules/shared/components/LoadingScreen.vue'
-import { onMounted, onBeforeUnmount, watch } from 'vue'
+import { onMounted, onBeforeUnmount, watch, ref } from 'vue'
 import { backupService } from '@/modules/shared/services/backup.service'
-import { useAccountsStore } from '@/modules/accounts/accounts.store'
-import { useCategoryStore } from '@/modules/categories/categories.store'
-import { useBudgetStore } from '@/modules/budget/budget.store'
 
 const user = localStorage.getItem('user')
 const authStore = useAuthStore()
-const accountsStore = useAccountsStore()
-const categoryStore = useCategoryStore()
-const budgetStore = useBudgetStore()
+const isInitializing = ref(true)
+
+// Lazy load de stores para no bloquear inicio
+let accountsStore: any = null
+let categoryStore: any = null
+let budgetStore: any = null
+
+const loadStores = async () => {
+  if (!accountsStore) {
+    const { useAccountsStore } = await import(
+      '@/modules/accounts/accounts.store'
+    )
+    accountsStore = useAccountsStore()
+  }
+  if (!categoryStore) {
+    const { useCategoryStore } = await import(
+      '@/modules/categories/categories.store'
+    )
+    categoryStore = useCategoryStore()
+  }
+  if (!budgetStore) {
+    const { useBudgetStore } = await import('@/modules/budget/budget.store')
+    budgetStore = useBudgetStore()
+  }
+}
 
 if (user) {
   authStore.setUser(JSON.parse(user))
-  authStore.setLoading(false)
 } else {
   useAuthListener()
+  isInitializing.value = false
 }
 
 let unsubscribeBackup: (() => void) | null = null
 
-const startBackupSubscription = (email?: string | null) => {
+const startBackupSubscription = async (email?: string | null) => {
   if (unsubscribeBackup) {
     unsubscribeBackup()
     unsubscribeBackup = null
   }
 
   if (email) {
+    await loadStores()
     unsubscribeBackup = backupService.subscribeToBackup(email, () => {
-      console.log('categoryStore', categoryStore.loadCategories())
-      accountsStore.loadAccounts()
-      categoryStore.loadCategories()
-      budgetStore.loadEntries()
+      accountsStore?.loadAccounts()
+      categoryStore?.loadCategories()
+      budgetStore?.loadEntries()
     })
   }
 }
 
 const runRestoreAndBackup = async () => {
   const email = authStore.user?.email
+  const wasLoadingInitially = authStore.loading
 
   await backupService.restoreBackupIfAvailable(email)
   await backupService.runBackupIfNeeded(email)
 
-  startBackupSubscription(email)
+  await startBackupSubscription(email)
+
+  // Solo finalizar el estado de carga si estaba en loading
+  // (si no estaba en loading, es porque ya había datos locales)
+  if (wasLoadingInitially) {
+    authStore.setLoading(false)
+  }
+
+  isInitializing.value = false
 }
 
 onMounted(async () => {
-  await runRestoreAndBackup()
+  // Solo ejecutar si ya hay un usuario autenticado
+  if (!authStore.user?.email) {
+    isInitializing.value = false
+    return
+  }
+
+  // Si está en loading (no hay datos locales), esperar la restauración
+  // Si no está en loading (hay datos locales), ejecutar en segundo plano
+  if (authStore.loading) {
+    await runRestoreAndBackup()
+  } else {
+    runRestoreAndBackup() // Sin await - en segundo plano
+    isInitializing.value = false
+  }
 })
 
 watch(
   () => authStore.user?.email,
-  async newEmail => {
+  async (newEmail, oldEmail) => {
     if (!newEmail) return
-    await runRestoreAndBackup()
+
+    // Si hay cambio de usuario (login inicial o cambio de cuenta)
+    // siempre esperamos la restauración
+    if (oldEmail !== newEmail) {
+      authStore.setLoading(true)
+      await runRestoreAndBackup()
+    }
   }
 )
 
@@ -85,5 +135,11 @@ onBeforeUnmount(() => {
 .text-medium {
   font-family: $font-medium;
   font-weight: 400;
+}
+
+.overlay-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
 }
 </style>

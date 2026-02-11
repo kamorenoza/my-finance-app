@@ -47,8 +47,6 @@ const router = createRouter({
   routes
 })
 
-let hasAppliedLastPageRedirect = false
-
 const getLocalUser = (): { email?: string } | null => {
   const storedUser = localStorage.getItem('user')
 
@@ -64,94 +62,75 @@ const getLocalUser = (): { email?: string } | null => {
   }
 }
 
-const getFirebaseUser = () =>
+const getFirebaseUser = (timeoutMs = 5000) =>
   new Promise<User | null>(resolve => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      unsubscribe()
+    let unsubscribe: (() => void) | null = null
+    let hasResolved = false
+
+    const timeout = setTimeout(() => {
+      if (hasResolved) return
+      hasResolved = true
+
+      if (unsubscribe) {
+        unsubscribe()
+      }
+      console.warn('Firebase auth timeout - resolving with null')
+      resolve(null)
+    }, timeoutMs)
+
+    unsubscribe = onAuthStateChanged(auth, user => {
+      if (hasResolved) return
+      hasResolved = true
+
+      clearTimeout(timeout)
+      if (unsubscribe) {
+        unsubscribe()
+      }
       resolve(user)
     })
   })
 
-const resolveUserEmail = (
-  localUser: { email?: string } | null,
-  firebaseUser: User | null
-) => {
-  if (localUser?.email) {
-    return localUser.email
-  }
-
-  if (firebaseUser?.email) {
-    return firebaseUser.email
-  }
-
-  const authStore = useAuthStore()
-  return authStore.user?.email ?? null
-}
-
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _, next) => {
   const authStore = useAuthStore()
   const localUser = getLocalUser()
-  const firebaseUser = auth.currentUser ?? (await getFirebaseUser())
 
-  if (!localUser || (firebaseUser && localUser.email !== firebaseUser.email)) {
-    if (firebaseUser) {
-      localStorage.setItem('user', JSON.stringify(firebaseUser))
-      authStore.setUser(firebaseUser)
-      authStore.setLoading(false)
+  // Si hay usuario en localStorage, permitir la navegación inmediatamente
+  if (localUser?.email) {
+    authStore.setUser(JSON.parse(localStorage.getItem('user') || '{}'))
+    next()
+    return
+  }
 
-      if (to.path === '/login') {
-        next('/')
-        return
-      }
+  // Si NO hay usuario local, intentar obtener de Firebase (solo una vez)
+  let firebaseUser = auth.currentUser
+
+  if (!firebaseUser) {
+    // Timeout corto para obtener usuario de Firebase
+    firebaseUser = await getFirebaseUser(2000)
+  }
+
+  if (firebaseUser) {
+    localStorage.setItem('user', JSON.stringify(firebaseUser))
+    authStore.setUser(firebaseUser)
+    authStore.setLoading(false)
+
+    if (to.path === '/login') {
+      next('/')
     } else {
-      localStorage.removeItem('user')
-      authStore.logout()
-      authStore.setLoading(false)
+      next()
+    }
+  } else {
+    // Sin usuario, ir a login
+    localStorage.removeItem('user')
+    authStore.logout()
+    authStore.setLoading(false)
 
-      if (to.path !== '/login') {
-        next('/login')
-        return
-      }
+    if (to.path !== '/login') {
+      next('/login')
+    } else {
+      next()
     }
   }
-
-  if (hasAppliedLastPageRedirect || to.path !== '/') {
-    next()
-    return
-  }
-
-  const email = resolveUserEmail(localUser, firebaseUser)
-
-  if (!email) {
-    hasAppliedLastPageRedirect = true
-    next()
-    return
-  }
-
-  const configKey = `config_${email}`
-  const storedConfig = localStorage.getItem(configKey)
-
-  if (!storedConfig) {
-    hasAppliedLastPageRedirect = true
-    next()
-    return
-  }
-
-  try {
-    const parsedConfig = JSON.parse(storedConfig) as { lastpage?: string }
-    const lastPage = parsedConfig.lastpage
-
-    if (lastPage && lastPage !== to.fullPath) {
-      hasAppliedLastPageRedirect = true
-      next(lastPage)
-      return
-    }
-  } catch (error) {
-    console.error('Error parsing config in localStorage', error)
-  }
-
-  hasAppliedLastPageRedirect = true
-  next()
 })
 
 export default router

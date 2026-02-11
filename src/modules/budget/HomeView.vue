@@ -26,6 +26,7 @@
             search-label="Buscar"
             :initial-group-by="currentFilter.groupBy"
             :initial-order-by="currentFilter.orderBy"
+            :initial-collapse-all="currentFilter.collapseAll"
             @filterChange="onFilterChange"
             hide-date-filter
           />
@@ -94,7 +95,8 @@ const currentFilter = ref({
   groupBy: 'category' as string | null,
   orderBy: null as string | null,
   initDate: null as Date | null,
-  endDate: null as Date | null
+  endDate: null as Date | null,
+  collapseAll: false
 })
 
 // Usar el composable para obtener movimientos filtrados
@@ -114,6 +116,9 @@ onMounted(() => {
   if (savedConfig.orderBy !== undefined) {
     currentFilter.value.orderBy = savedConfig.orderBy
   }
+  if (savedConfig.collapseAll !== undefined) {
+    currentFilter.value.collapseAll = savedConfig.collapseAll
+  }
 })
 
 // Save configuration when filter changes
@@ -122,7 +127,8 @@ watch(
   newFilter => {
     configService.saveBudgetConfig({
       groupBy: newFilter.groupBy,
-      orderBy: newFilter.orderBy
+      orderBy: newFilter.orderBy,
+      collapseAll: newFilter.collapseAll
     })
   },
   { deep: true }
@@ -134,13 +140,15 @@ const onFilterChange = (filter: {
   orderBy: string | null
   initDate?: Date | null
   endDate?: Date | null
+  collapseAll?: boolean
 }) => {
   currentFilter.value = {
     search: filter.search,
     groupBy: filter.groupBy,
     orderBy: filter.orderBy,
     initDate: filter.initDate || null,
-    endDate: filter.endDate || null
+    endDate: filter.endDate || null,
+    collapseAll: filter.collapseAll || false
   }
 }
 </script>

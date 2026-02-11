@@ -35,7 +35,7 @@ interface Props {
   buttonClass?: string | string[] | Record<string, boolean>
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   color: undefined,
   buttonClass: undefined
 })

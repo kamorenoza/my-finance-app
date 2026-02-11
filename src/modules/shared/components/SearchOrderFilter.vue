@@ -40,6 +40,18 @@
             v-if="!props.hideDateFilter"
           />
 
+          <div class="collapse-toggle">
+            <v-switch
+              v-model="collapseAll"
+              label="Collapsar todo"
+              inset
+              density="compact"
+              hide-details
+              :color="collapseAll ? 'success' : undefined"
+              class="ma-0 pa-0"
+            />
+          </div>
+
           <div class="search-filter__actions">
             <v-btn @click="menu = false" type="button" class="btn-label">
               Cerrar
@@ -91,6 +103,7 @@ interface Props {
   searchLabel?: string
   entityId?: string | null
   hideDateFilter?: boolean
+  initialCollapseAll?: boolean
 }
 
 const defaultGroupByOptions: GroupByOption[] = [
@@ -111,7 +124,8 @@ const props = withDefaults(defineProps<Props>(), {
   initialGroupBy: 'category',
   initialOrderBy: null,
   searchLabel: 'Buscar por nombre',
-  entityId: null
+  entityId: null,
+  initialCollapseAll: false
 })
 
 const emit = defineEmits<{
@@ -123,6 +137,7 @@ const emit = defineEmits<{
       orderBy: string | null
       initDate?: Date | null
       endDate?: Date | null
+      collapseAll?: boolean
     }
   ): void
 }>()
@@ -133,6 +148,7 @@ const selectedType = ref<string | null>(props.initialGroupBy)
 const sortBy = ref<string | null>(props.initialOrderBy)
 const initDate = ref<any>(null)
 const endDate = ref<any>(null)
+const collapseAll = ref(props.initialCollapseAll)
 const screenWidth = ref(window.innerWidth)
 
 const groupByOptions = computed(
@@ -165,9 +181,12 @@ watch(
   }
 )
 
-const isMobile = computed(() => {
-  return screenWidth.value < 960
-})
+watch(
+  () => props.initialCollapseAll,
+  newVal => {
+    collapseAll.value = newVal
+  }
+)
 
 const updateSize = () => {
   screenWidth.value = window.innerWidth
@@ -180,16 +199,18 @@ const clearAll = () => {
   sortBy.value = props.initialOrderBy || null
   initDate.value = null
   endDate.value = null
+  collapseAll.value = false
 }
 
-watch([search, selectedType, sortBy, initDate, endDate], () => {
+watch([search, selectedType, sortBy, initDate, endDate, collapseAll], () => {
   // Emit filter change event
   const filter = {
     search: search.value,
     groupBy: selectedType.value,
     orderBy: sortBy.value,
     initDate: initDate.value,
-    endDate: endDate.value
+    endDate: endDate.value,
+    collapseAll: collapseAll.value
   }
   emit('filterChange', filter)
 })

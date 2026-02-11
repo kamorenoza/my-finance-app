@@ -55,6 +55,7 @@ import AccountExpense from './AccountExpense.vue'
 import { useAccountsStore } from '../accounts.store'
 import type { Expense } from '../accounts.interface'
 import { dateFormatter } from '@/modules/shared/utils'
+import { configService } from '@/modules/shared/services/config.service'
 
 const props = defineProps<{
   accountId: string
@@ -64,6 +65,7 @@ const props = defineProps<{
     orderBy: string | null
     initDate?: Date | null
     endDate?: Date | null
+    collapseAll?: boolean
   }
 }>()
 
@@ -76,8 +78,19 @@ const store = useAccountsStore()
 const accountId = props.accountId
 const expandedGroups = ref<{ [key: string]: boolean }>({})
 const showCompleted = ref(false)
+const hasLoadedState = ref(false)
 
 onMounted(() => {
+  // Cargar estado guardado de grupos expandidos
+  const savedConfig = configService.getAccountConfig(accountId)
+  if (
+    savedConfig.expandedGroups &&
+    Object.keys(savedConfig.expandedGroups).length > 0
+  ) {
+    expandedGroups.value = { ...savedConfig.expandedGroups }
+    hasLoadedState.value = true
+  }
+
   showCompleted.value = getPendingExpensesGrouped.value.length === 0
   emit('updateExpenses', pendingExpenses.value)
 })
@@ -92,6 +105,17 @@ const toggleGroup = (groupLabel: string) => {
   } else {
     expandedGroups.value[groupLabel] = !expandedGroups.value[groupLabel]
   }
+
+  // Guardar el estado
+  saveExpandedGroups()
+}
+
+const saveExpandedGroups = () => {
+  const currentConfig = configService.getAccountConfig(accountId)
+  configService.saveAccountConfig(accountId, {
+    ...currentConfig,
+    expandedGroups: { ...expandedGroups.value }
+  })
 }
 
 const applyFilters = (expenses: Expense[]) => {
@@ -324,6 +348,36 @@ const getPendingExpensesGrouped = computed(() => {
     }
   ] as any
 })
+
+// Watcher para manejar collapseAll (solo cuando cambia, no al iniciar)
+watch(
+  () => props.filters.collapseAll,
+  (collapseAll, oldValue) => {
+    // Solo ejecutar si hay un cambio real (no undefined -> true al montar)
+    if (collapseAll && oldValue !== undefined) {
+      // Colapsar todos los grupos
+      getPendingExpensesGrouped.value.forEach((group: any) => {
+        expandedGroups.value[group.label] = false
+      })
+      saveExpandedGroups()
+    }
+  }
+)
+
+// Watcher en getPendingExpensesGrouped para aplicar collapseAll SOLO si no hay estado guardado
+watch(
+  getPendingExpensesGrouped,
+  groups => {
+    // Solo aplicar collapseAll si no se ha cargado estado previo
+    if (props.filters.collapseAll && !hasLoadedState.value) {
+      groups.forEach((group: any) => {
+        expandedGroups.value[group.label] = false
+      })
+      saveExpandedGroups()
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped lang="scss">
