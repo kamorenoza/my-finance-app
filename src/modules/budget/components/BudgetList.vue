@@ -59,6 +59,7 @@ import { useBudgetFilter } from '../composables/useBudgetFilter'
 import type { BudgetEntry } from '../budget.interface'
 import dayjs from 'dayjs'
 import { configService } from '@/modules/shared/services/config.service'
+import { backupService } from '@/modules/shared/services/backup.service'
 
 interface BudgetGroup {
   label: string
@@ -144,6 +145,7 @@ const saveExpandedGroups = () => {
     ...currentConfig,
     expandedGroups: { ...expandedGroups.value }
   })
+  backupService.queueBackup()
 }
 
 // Aplicar ordenamiento

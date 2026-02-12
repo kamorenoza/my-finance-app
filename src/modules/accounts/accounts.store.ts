@@ -4,6 +4,7 @@ import type { Account, Expense } from './accounts.interface'
 import { generateId } from '@/modules/shared/utils'
 import { AccountView } from './accounts.constants'
 import { backupService } from '@/modules/shared/services/backup.service'
+import { useExpensesStore } from '@/modules/expenses/expenses.store'
 
 export const useAccountsStore = defineStore('accounts', {
   state: () => ({
@@ -88,6 +89,7 @@ export const useAccountsStore = defineStore('accounts', {
 
     deleteAccount(account: Account) {
       accountService.deleteAccount(account)
+      useExpensesStore().onAccountDelete(account.id!)
       this.loadAccounts()
       backupService.queueBackup()
     },
@@ -101,7 +103,11 @@ export const useAccountsStore = defineStore('accounts', {
       if (exists) {
         throw new Error('La cuenta ya existe')
       }
+      const oldAccount = this.accounts.find(a => a.id === account.id)
       accountService.updateAccount(account)
+      if (oldAccount && oldAccount.name !== account.name) {
+        useExpensesStore().onAccountUpdate(account.id!, account.name)
+      }
       this.loadAccounts()
       backupService.queueBackup()
     },

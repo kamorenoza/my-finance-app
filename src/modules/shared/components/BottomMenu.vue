@@ -42,10 +42,10 @@
               class="side-menu-icon"
               :color="isActive('/cuentas') ? colorPrimary : colorGrey"
             />
-            <NotesIcon
-              v-if="item.path === '/notas'"
-              class="side-menu-icon"
-              :color="isActive('/notas') ? colorPrimary : colorGrey"
+            <UserIcon
+              v-if="item.path === '/user'"
+              class="side-menu-icon-user"
+              :color="isActive('/user') ? colorPrimary : colorGrey"
             />
             <ShoppingIcon
               v-if="item.path === '/compras'"
@@ -173,8 +173,8 @@ const items = [
   { path: '/', icon: 'mdi-finance', label: 'Presupuesto' },
   { path: '/cuentas', icon: ExpenseHandIcon, label: 'Cuentas' },
   { path: '/gastos', icon: 'mdi-cash-multiple', label: 'Gastos' },
-  { path: '/notas', icon: 'mdi-notebook-edit', label: 'Notas' },
-  { path: '/compras', icon: 'mdi-format-list-bulleted', label: 'Compras' }
+  { path: '/compras', icon: 'mdi-format-list-bulleted', label: 'Compras' },
+  { path: '/user', icon: 'mdi-notebook-edit', label: 'Usuario' }
 ]
 
 onMounted(() => {
@@ -362,6 +362,13 @@ const hideBottomMenu = computed(() => {
     width: 35px;
     height: 35px;
     margin-right: 3px;
+  }
+
+  .side-menu-icon-user {
+    width: 30px;
+    height: 28px;
+    margin-right: 6px;
+    margin-left: 2px;
   }
 }
 

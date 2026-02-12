@@ -75,6 +75,7 @@ import { useBudgetStore } from './budget.store'
 import AddBudgetSide from './components/AddBudgetSide.vue'
 import AddIcon from '@/assets/icons/Add.icon.vue'
 import { colorMdPrimary } from '@/styles/variables.styles'
+import { backupService } from '@/modules/shared/services/backup.service'
 
 const { mdAndUp } = useDisplay()
 
@@ -130,6 +131,7 @@ watch(
       orderBy: newFilter.orderBy,
       collapseAll: newFilter.collapseAll
     })
+    backupService.queueBackup()
   },
   { deep: true }
 )

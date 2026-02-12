@@ -27,7 +27,7 @@
             >Pendiente</span
           >
         </div>
-        <p v-date-formatter="entry.date" class="budget-item__date"></p>
+        <p class="budget-item__date">{{ displayDate }}</p>
         <p class="budget-item__comments">{{ entry.comments }}</p>
       </div>
       <div>
@@ -122,6 +122,13 @@ const displayIsPaid = computed(() => {
 
   // Si no hay modificación, usar el isPaid base
   return props.entry.isPaid
+})
+
+// Calcular la fecha a mostrar basándose en referenceDate pero con el día de entry.date
+const displayDate = computed(() => {
+  const day = dayjs(props.entry.date).date()
+  const dateInReferenceMonth = dayjs(props.referenceDate).date(day)
+  return dateInReferenceMonth.format('D MMM YYYY')
 })
 
 const editEntry = () => {

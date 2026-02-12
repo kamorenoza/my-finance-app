@@ -25,6 +25,7 @@ const isInitializing = ref(true)
 let accountsStore: any = null
 let categoryStore: any = null
 let budgetStore: any = null
+let expensesStore: any = null
 
 const loadStores = async () => {
   if (!accountsStore) {
@@ -42,6 +43,12 @@ const loadStores = async () => {
   if (!budgetStore) {
     const { useBudgetStore } = await import('@/modules/budget/budget.store')
     budgetStore = useBudgetStore()
+  }
+  if (!expensesStore) {
+    const { useExpensesStore } = await import(
+      '@/modules/expenses/expenses.store'
+    )
+    expensesStore = useExpensesStore()
   }
 }
 
@@ -66,6 +73,7 @@ const startBackupSubscription = async (email?: string | null) => {
       accountsStore?.loadAccounts()
       categoryStore?.loadCategories()
       budgetStore?.loadEntries()
+      expensesStore?.loadExpenses()
     })
   }
 }

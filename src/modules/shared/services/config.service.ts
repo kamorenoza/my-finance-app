@@ -18,9 +18,15 @@ export interface BudgetConfig {
   expandedGroups?: { [key: string]: boolean }
 }
 
+export interface ExpensesConfig {
+  groupBy?: string | null
+  orderBy?: string | null
+}
+
 export interface UserConfig {
   accounts?: { [accountId: string]: AccountConfig }
   budget?: BudgetConfig
+  expenses?: ExpensesConfig
   lastPage?: string
 }
 
@@ -75,6 +81,21 @@ export const configService = {
   getBudgetConfig: (): BudgetConfig => {
     const userConfig = configService.loadConfig()
     return userConfig?.budget || {}
+  },
+
+  saveExpensesConfig: (config: ExpensesConfig) => {
+    const userEmail = getUserEmail()
+    if (!userEmail) return
+
+    const userConfig = configService.loadConfig()
+    userConfig.expenses = config
+
+    localStorage.setItem(`config_${userEmail}`, JSON.stringify(userConfig))
+  },
+
+  getExpensesConfig: (): ExpensesConfig => {
+    const userConfig = configService.loadConfig()
+    return userConfig?.expenses || {}
   },
 
   saveLastPage: (page: string) => {

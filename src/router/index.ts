@@ -26,9 +26,9 @@ const routes = [
         component: () => import('@/modules/accounts/AccountDetailsView.vue')
       },
       {
-        path: '/notas',
-        name: 'notas',
-        component: () => import('@/modules/notes/NotesView.vue')
+        path: '/gastos',
+        name: 'gastos',
+        component: () => import('@/modules/expenses/ExpensesView.vue')
       }
     ]
   },
