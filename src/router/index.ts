@@ -29,6 +29,16 @@ const routes = [
         path: '/gastos',
         name: 'gastos',
         component: () => import('@/modules/expenses/ExpensesView.vue')
+      },
+      {
+        path: '/compras',
+        name: 'compras',
+        component: () => import('@/modules/shopping/ShoppingView.vue')
+      },
+      {
+        path: '/compras/:id',
+        name: 'compras-detalle',
+        component: () => import('@/modules/shopping/ShoppingListDetailView.vue')
       }
     ]
   },
