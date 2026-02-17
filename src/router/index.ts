@@ -3,6 +3,10 @@ import { auth } from '@/database/firebase'
 import { useAuthStore } from '@/modules/auth/auth.store'
 import { onAuthStateChanged, type User } from 'firebase/auth'
 import { createRouter, createWebHistory } from 'vue-router'
+import {
+  saveLastRoute,
+  getLastRoute
+} from '@/modules/shared/services/lastRoute.service'
 
 // Define las rutas. Por ejemplo, incluiremos la ruta de login y otra de presupuesto.
 const routes = [
@@ -57,6 +61,20 @@ const router = createRouter({
   routes
 })
 
+// Flag to track if this is the initial navigation
+let isInitialNavigation = true
+
+// Save current route when user leaves the app
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    const currentPath = router.currentRoute.value.path
+    const currentName = router.currentRoute.value.name as string | undefined
+    if (currentPath !== '/login') {
+      saveLastRoute(currentPath, currentName)
+    }
+  })
+}
+
 const getLocalUser = (): { email?: string } | null => {
   const storedUser = localStorage.getItem('user')
 
@@ -107,6 +125,23 @@ router.beforeEach(async (to, _, next) => {
   // Si hay usuario en localStorage, permitir la navegación inmediatamente
   if (localUser?.email) {
     authStore.setUser(JSON.parse(localStorage.getItem('user') || '{}'))
+
+    // If coming from login, redirect to last route
+    if (to.path === '/login') {
+      const lastRoute = getLastRoute()
+      next(lastRoute || '/')
+      return
+    }
+
+    // On initial navigation to home, redirect to last route if exists
+    if (isInitialNavigation && to.path === '/') {
+      const lastRoute = getLastRoute()
+      if (lastRoute && lastRoute !== '/') {
+        next(lastRoute)
+        return
+      }
+    }
+
     next()
     return
   }
@@ -125,7 +160,17 @@ router.beforeEach(async (to, _, next) => {
     authStore.setLoading(false)
 
     if (to.path === '/login') {
-      next('/')
+      // Redirect to last route or home
+      const lastRoute = getLastRoute()
+      next(lastRoute || '/')
+    } else if (isInitialNavigation && to.path === '/') {
+      // On initial navigation to home, redirect to last route if exists
+      const lastRoute = getLastRoute()
+      if (lastRoute && lastRoute !== '/') {
+        next(lastRoute)
+      } else {
+        next()
+      }
     } else {
       next()
     }
@@ -140,6 +185,20 @@ router.beforeEach(async (to, _, next) => {
     } else {
       next()
     }
+  }
+})
+
+// Save last route after navigation
+router.afterEach(to => {
+  // Skip saving on initial navigation to avoid overwriting
+  if (isInitialNavigation) {
+    isInitialNavigation = false
+    return
+  }
+
+  // Only save if it's not login and user is authenticated
+  if (to.path !== '/login') {
+    saveLastRoute(to.path, to.name as string | undefined)
   }
 })
 

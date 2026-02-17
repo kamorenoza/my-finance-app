@@ -50,6 +50,7 @@ const getBackupPayload = (email: string) => {
   const budget = localStorage.getItem(`budget_${email}`)
   const categories = localStorage.getItem(`categories_${email}`)
   const expenses = localStorage.getItem(`expenses_${email}`)
+  const shoppingLists = localStorage.getItem(`shoppingLists_${email}`)
 
   return {
     device_id: deviceId,
@@ -57,7 +58,8 @@ const getBackupPayload = (email: string) => {
     config_email: config ? JSON.parse(config) : null,
     budget_email: budget ? JSON.parse(budget) : null,
     categories: categories ? JSON.parse(categories) : null,
-    expenses_email: expenses ? JSON.parse(expenses) : null
+    expenses_email: expenses ? JSON.parse(expenses) : null,
+    shoppingLists_email: shoppingLists ? JSON.parse(shoppingLists) : null
   }
 }
 
@@ -77,6 +79,7 @@ const setLocalStorageFromBackup = (
     budget_email?: unknown
     categories?: unknown
     expenses_email?: unknown
+    shoppingLists_email?: unknown
   }
 ) => {
   if (backupData.accounts_email !== undefined) {
@@ -113,6 +116,13 @@ const setLocalStorageFromBackup = (
       JSON.stringify(backupData.expenses_email)
     )
   }
+
+  if (backupData.shoppingLists_email !== undefined) {
+    localStorage.setItem(
+      `shoppingLists_${email}`,
+      JSON.stringify(backupData.shoppingLists_email)
+    )
+  }
 }
 
 const applyBackupIfChanged = (
@@ -124,6 +134,7 @@ const applyBackupIfChanged = (
     budget_email?: unknown
     categories?: unknown
     expenses_email?: unknown
+    shoppingLists_email?: unknown
   }
 ) => {
   const deviceId = getDeviceId()
@@ -137,12 +148,14 @@ const applyBackupIfChanged = (
   const budgetKey = `budget_${email}`
   const categoriesKey = `categories_${email}`
   const expensesKey = `expenses_${email}`
+  const shoppingListsKey = `shoppingLists_${email}`
 
   const currentAccounts = localStorage.getItem(accountsKey)
   const currentConfig = localStorage.getItem(configKey)
   const currentBudget = localStorage.getItem(budgetKey)
   const currentCategories = localStorage.getItem(categoriesKey)
   const currentExpenses = localStorage.getItem(expensesKey)
+  const currentShoppingLists = localStorage.getItem(shoppingListsKey)
 
   const nextAccounts =
     backupData.accounts_email !== undefined
@@ -164,6 +177,10 @@ const applyBackupIfChanged = (
     backupData.expenses_email !== undefined
       ? JSON.stringify(backupData.expenses_email)
       : currentExpenses
+  const nextShoppingLists =
+    backupData.shoppingLists_email !== undefined
+      ? JSON.stringify(backupData.shoppingLists_email)
+      : currentShoppingLists
 
   if (currentAccounts !== nextAccounts && nextAccounts !== null) {
     localStorage.setItem(accountsKey, nextAccounts)
@@ -183,6 +200,13 @@ const applyBackupIfChanged = (
 
   if (currentExpenses !== nextExpenses && nextExpenses !== null) {
     localStorage.setItem(expensesKey, nextExpenses)
+  }
+
+  if (
+    currentShoppingLists !== nextShoppingLists &&
+    nextShoppingLists !== null
+  ) {
+    localStorage.setItem(shoppingListsKey, nextShoppingLists)
   }
 }
 
@@ -218,6 +242,8 @@ export const backupService = {
       config_email?: unknown
       budget_email?: unknown
       categories?: unknown
+      expenses_email?: unknown
+      shoppingLists_email?: unknown
     }
 
     setLocalStorageFromBackup(email, backupData)
@@ -246,6 +272,8 @@ export const backupService = {
           config_email?: unknown
           budget_email?: unknown
           categories?: unknown
+          expenses_email?: unknown
+          shoppingLists_email?: unknown
         }
 
         if (timeoutId) {

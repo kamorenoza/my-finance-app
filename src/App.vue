@@ -26,6 +26,7 @@ let accountsStore: any = null
 let categoryStore: any = null
 let budgetStore: any = null
 let expensesStore: any = null
+let shoppingStore: any = null
 
 const loadStores = async () => {
   if (!accountsStore) {
@@ -49,6 +50,12 @@ const loadStores = async () => {
       '@/modules/expenses/expenses.store'
     )
     expensesStore = useExpensesStore()
+  }
+  if (!shoppingStore) {
+    const { useShoppingStore } = await import(
+      '@/modules/shopping/shopping.store'
+    )
+    shoppingStore = useShoppingStore()
   }
 }
 
@@ -74,6 +81,7 @@ const startBackupSubscription = async (email?: string | null) => {
       categoryStore?.loadCategories()
       budgetStore?.loadEntries()
       expensesStore?.loadExpenses()
+      shoppingStore?.loadShoppingLists()
     })
   }
 }

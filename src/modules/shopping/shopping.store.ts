@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { ShoppingList, ShoppingItem } from './shopping.interface'
 import * as shoppingService from './shopping.service'
+import { backupService } from '@/modules/shared/services/backup.service'
 
 export const useShoppingStore = defineStore('shopping', () => {
   // State
@@ -30,16 +31,19 @@ export const useShoppingStore = defineStore('shopping', () => {
   const addShoppingList = (list: ShoppingList) => {
     shoppingService.addShoppingList(list)
     loadShoppingLists()
+    backupService.queueBackup()
   }
 
   const updateShoppingList = (list: ShoppingList) => {
     shoppingService.updateShoppingList(list)
     loadShoppingLists()
+    backupService.queueBackup()
   }
 
   const deleteShoppingList = (id: string) => {
     shoppingService.deleteShoppingList(id)
     loadShoppingLists()
+    backupService.queueBackup()
   }
 
   const markListAsConverted = (id: string, expenseId: string) => {
@@ -59,16 +63,19 @@ export const useShoppingStore = defineStore('shopping', () => {
   const addItemToList = (listId: string, item: ShoppingItem) => {
     shoppingService.addItemToList(listId, item)
     loadShoppingLists()
+    backupService.queueBackup()
   }
 
   const updateItemInList = (listId: string, item: ShoppingItem) => {
     shoppingService.updateItemInList(listId, item)
     loadShoppingLists()
+    backupService.queueBackup()
   }
 
   const deleteItemFromList = (listId: string, itemId: string) => {
     shoppingService.deleteItemFromList(listId, itemId)
     loadShoppingLists()
+    backupService.queueBackup()
   }
 
   const toggleItemChecked = (listId: string, itemId: string) => {
