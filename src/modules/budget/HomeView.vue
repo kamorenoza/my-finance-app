@@ -48,8 +48,6 @@
         </div>
         <BudgetList :selected-date="currentDate" :filters="currentFilter" />
       </div>
-
-      <AddBudget />
     </div>
 
     <AddBudgetSide v-if="mdAndUp" ref="addBudgetSideRef" />
@@ -190,7 +188,7 @@ const onFilterChange = (filter: {
   &__body {
     height: calc(100dvh - 335px);
     padding: 12px;
-    padding-bottom: 70px;
+    padding-bottom: 20px;
     padding-right: 0;
 
     @media (min-width: 960px) {

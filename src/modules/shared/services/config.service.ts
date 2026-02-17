@@ -16,6 +16,7 @@ export interface BudgetConfig {
   orderBy?: string | null
   collapseAll?: boolean
   expandedGroups?: { [key: string]: boolean }
+  addExpensesToBudget?: boolean
 }
 
 export interface ExpensesConfig {

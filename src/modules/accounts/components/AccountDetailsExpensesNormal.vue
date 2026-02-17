@@ -1,8 +1,6 @@
 <template>
   <div class="account-preview__expenses">
-    <div v-if="allFilteredExpenses.length === 0" class="empty-state">
-      <p>No hay movimientos para mostrar</p>
-    </div>
+    <EmptyState v-if="allFilteredExpenses.length === 0" />
     <template v-else>
       <template v-for="group in getPendingExpensesGrouped" :key="group.label">
         <p
@@ -126,6 +124,7 @@ import { useAccountsStore } from '../accounts.store'
 import type { Expense } from '../accounts.interface'
 import { dateFormatter } from '@/modules/shared/utils'
 import { configService } from '@/modules/shared/services/config.service'
+import EmptyState from '@/modules/shared/components/EmptyState.vue'
 
 interface ExpenseGroup {
   label: string
@@ -703,14 +702,5 @@ watch(
 .slide-leave-to {
   max-height: 0;
   opacity: 0;
-}
-
-.empty-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  color: #999;
-  font-size: 0.95rem;
 }
 </style>

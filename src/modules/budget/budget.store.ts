@@ -4,11 +4,23 @@ import dayjs from 'dayjs'
 import type { BudgetEntry, BudgetModification } from './budget.interface'
 import { budgetService } from './budget.service'
 import { backupService } from '../shared/services/backup.service'
+import { useExpensesStore } from '@/modules/expenses/expenses.store'
+import { configService } from '@/modules/shared/services/config.service'
 
 export const useBudgetStore = defineStore('budget', () => {
   const entries = ref<BudgetEntry[]>(budgetService.loadEntries())
   const selectedDate = ref(dayjs().startOf('month').toDate())
   const selectedEntry = ref<BudgetEntry | null>(null)
+  const addExpensesToBudget = ref(false)
+
+  // Cargar estado del toggle al inicializar
+  const loadConfig = () => {
+    const savedConfig = configService.getBudgetConfig()
+    if (savedConfig.addExpensesToBudget !== undefined) {
+      addExpensesToBudget.value = savedConfig.addExpensesToBudget
+    }
+  }
+  loadConfig()
 
   const loadEntries = () => {
     entries.value = budgetService.loadEntries()
@@ -238,9 +250,31 @@ export const useBudgetStore = defineStore('budget', () => {
   })
 
   const totalExpensesBudget = computed(() => {
-    return filteredEntries.value
+    let total = filteredEntries.value
       .filter(e => e.type === 'gasto')
       .reduce((sum, e) => sum + getDisplayValue(e, selectedDate.value), 0)
+
+    // Agregar gastos del mes si el toggle está activado
+    if (addExpensesToBudget.value) {
+      const expensesStore = useExpensesStore()
+      const month = dayjs(selectedDate.value).startOf('month')
+      const monthEnd = dayjs(selectedDate.value).endOf('month')
+
+      const monthExpensesTotal = expensesStore.expenses
+        .filter(expense => {
+          const expenseDate = dayjs(expense.date)
+          return (
+            (expenseDate.isAfter(month) && expenseDate.isBefore(monthEnd)) ||
+            expenseDate.isSame(month, 'day') ||
+            expenseDate.isSame(monthEnd, 'day')
+          )
+        })
+        .reduce((sum, expense) => sum + expense.value, 0)
+
+      total += monthExpensesTotal
+    }
+
+    return total
   })
 
   const totalIncomesReal = computed(() => {
@@ -252,17 +286,40 @@ export const useBudgetStore = defineStore('budget', () => {
   })
 
   const totalExpensesReal = computed(() => {
-    return filteredEntries.value
+    let total = filteredEntries.value
       .filter(
         e => e.type === 'gasto' && getDisplayIsPaid(e, selectedDate.value)
       )
       .reduce((sum, e) => sum + getDisplayValue(e, selectedDate.value), 0)
+
+    // Agregar gastos del mes si el toggle está activado (todos los expenses se consideran "reales")
+    if (addExpensesToBudget.value) {
+      const expensesStore = useExpensesStore()
+      const month = dayjs(selectedDate.value).startOf('month')
+      const monthEnd = dayjs(selectedDate.value).endOf('month')
+
+      const monthExpensesTotal = expensesStore.expenses
+        .filter(expense => {
+          const expenseDate = dayjs(expense.date)
+          return (
+            (expenseDate.isAfter(month) && expenseDate.isBefore(monthEnd)) ||
+            expenseDate.isSame(month, 'day') ||
+            expenseDate.isSame(monthEnd, 'day')
+          )
+        })
+        .reduce((sum, expense) => sum + expense.value, 0)
+
+      total += monthExpensesTotal
+    }
+
+    return total
   })
 
   return {
     entries,
     selectedDate,
     selectedEntry,
+    addExpensesToBudget,
     loadEntries,
     addEntry,
     updateEntry,

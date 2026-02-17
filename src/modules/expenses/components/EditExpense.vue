@@ -125,13 +125,10 @@ const entry = ref({
 })
 
 const accountOptions = computed(() => {
-  return [
-    { id: null, name: 'Presupuesto' },
-    ...accountsStore.accounts.map(acc => ({
-      id: acc.id,
-      name: acc.name
-    }))
-  ]
+  return accountsStore.accounts.map(acc => ({
+    id: acc.id,
+    name: acc.name
+  }))
 })
 
 const formattedValue = computed(() => {

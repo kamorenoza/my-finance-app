@@ -195,7 +195,6 @@ const currency = (value: number): string =>
   }
 
   &__name {
-    font-family: $font-medium;
     font-size: 0.9rem;
     margin: 0;
     flex-shrink: 1;

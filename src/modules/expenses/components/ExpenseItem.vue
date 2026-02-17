@@ -4,17 +4,13 @@
       <div class="expense-item__info">
         <div class="expense-item__header">
           <p class="expense-item__name">{{ expense.name }}</p>
-          <v-menu>
+          <v-menu v-if="!readOnly && expense.account">
             <template #activator="{ props }">
               <span v-bind="props" class="badge account" @click.stop>
                 {{ accountName }}
               </span>
             </template>
             <v-list density="compact">
-              <v-list-item @click="selectAccount(null)">
-                <v-list-item-title>Presupuesto</v-list-item-title>
-              </v-list-item>
-              <v-divider></v-divider>
               <v-list-item
                 v-for="acc in accounts"
                 :key="acc.id"
@@ -24,6 +20,12 @@
               </v-list-item>
             </v-list>
           </v-menu>
+          <span
+            v-else-if="readOnly && expense.account"
+            class="badge account readonly"
+          >
+            {{ accountName }}
+          </span>
         </div>
         <p v-if="expense.date" class="expense-item__date">{{ displayDate }}</p>
       </div>
@@ -34,7 +36,7 @@
       </div>
     </div>
 
-    <div class="expense-item__actions">
+    <div v-if="!readOnly" class="expense-item__actions">
       <v-btn
         icon
         variant="plain"
@@ -56,9 +58,12 @@ import { useAccountsStore } from '@/modules/accounts/accounts.store'
 
 interface Props {
   expense: Expense
+  readOnly?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  readOnly: false
+})
 
 const emit = defineEmits<{
   edit: [expense: Expense]
@@ -109,6 +114,14 @@ const currency = (value: number): string =>
   margin-bottom: 0px;
   position: relative;
 
+  &:has(.expense-item__actions) {
+    padding-right: 30px;
+  }
+
+  &:not(:has(.expense-item__actions)) {
+    padding-right: 12px;
+  }
+
   &__content {
     display: flex;
     justify-content: space-between;
@@ -133,7 +146,6 @@ const currency = (value: number): string =>
   }
 
   &__name {
-    font-family: $font-medium;
     font-size: 0.9rem;
     margin: 0;
     flex-shrink: 1;
@@ -142,12 +154,13 @@ const currency = (value: number): string =>
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 200px;
+    text-transform: capitalize;
   }
 
   &__amount {
     font-family: $font-medium;
     font-size: 0.9rem;
-    color: #d32f2f;
+    color: $color-red;
     white-space: nowrap;
     flex-shrink: 0;
   }
@@ -192,6 +205,14 @@ const currency = (value: number): string =>
 
     &:hover {
       background-color: #bbdefb;
+    }
+
+    &.readonly {
+      cursor: default;
+
+      &:hover {
+        background-color: $blue-md;
+      }
     }
   }
 }

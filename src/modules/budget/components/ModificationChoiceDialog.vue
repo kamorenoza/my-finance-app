@@ -1,9 +1,11 @@
 <template>
   <v-dialog v-model="visible" max-width="400" persistent>
     <v-card class="modification-dialog">
-      <v-card-title class="general-title">Aplicar cambios para</v-card-title>
-      <v-card-text class="py-4">
-        <p class="text-caption text-medium-emphasis mb-4">
+      <v-card-title class="modification-dialog__title"
+        >Aplicar cambios para</v-card-title
+      >
+      <v-card-text class="modification-dialog__content">
+        <p class="modification-dialog__description">
           ¿A qué periodo deseas aplicar los cambios en "{{ entryName }}"?
         </p>
 
@@ -16,7 +18,7 @@
           >
             <div class="option-content">
               <span class="option-title">Este mes</span>
-              <span class="option-desc text-caption">
+              <span class="option-desc">
                 {{ currentMonthDisplay }}
               </span>
             </div>
@@ -24,27 +26,25 @@
 
           <v-btn
             variant="tonal"
-            class="option-btn mt-2"
+            class="option-btn"
             @click="selectOption('all')"
             block
           >
             <div class="option-content">
               <span class="option-title">Todos los meses</span>
-              <span class="option-desc text-caption"
-                >Pasados, presentes y futuros</span
-              >
+              <span class="option-desc">Pasados, presentes y futuros</span>
             </div>
           </v-btn>
 
           <v-btn
             variant="tonal"
-            class="option-btn mt-2"
+            class="option-btn"
             @click="selectOption('future')"
             block
           >
             <div class="option-content">
               <span class="option-title">De este mes en adelante</span>
-              <span class="option-desc text-caption"
+              <span class="option-desc"
                 >{{ currentMonthDisplay }} y futuros</span
               >
             </div>
@@ -52,9 +52,9 @@
         </div>
       </v-card-text>
 
-      <v-card-actions class="pa-4">
+      <v-card-actions class="modification-dialog__actions">
         <v-spacer />
-        <v-btn class="btn-neutro" @click="cancel">Cancelar</v-btn>
+        <v-btn class="btn-label" @click="cancel">Cancelar</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -63,6 +63,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import dayjs from 'dayjs'
+import 'dayjs/locale/es'
 
 interface Props {
   entryName: string
@@ -79,7 +80,10 @@ const emit = defineEmits<{
 const visible = ref(true)
 
 const currentMonthDisplay = computed(() => {
-  return dayjs(props.referenceDate).format('MMMM YYYY')
+  const date = dayjs(props.referenceDate).locale('es')
+  const month = date.format('MMMM')
+  const year = date.format('YYYY')
+  return `${month.charAt(0).toUpperCase() + month.slice(1)} ${year}`
 })
 
 const selectOption = (scope: 'this' | 'all' | 'future') => {
@@ -95,31 +99,83 @@ const cancel = () => {
 
 <style scoped lang="scss">
 .modification-dialog {
+  background-color: $white;
+  padding: 20px 10px 10px;
+  box-shadow:
+    0px 12px 32px rgba(0, 0, 0, 0.12),
+    0px 2px 8px rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border-radius: 32px !important;
+
+  &__title {
+    font-size: 1rem;
+    font-family: $font-medium;
+    padding: 0 24px 8px;
+  }
+
+  &__content {
+    padding: 8px 24px !important;
+  }
+
+  &__description {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 16px;
+  }
+
+  &__actions {
+    padding: 8px 24px 16px;
+  }
+
+  .btn-label {
+    font-family: $font-medium;
+  }
+
+  .modification-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
   .option-btn {
     height: auto;
-    padding: 12px 16px;
+    padding: 12px 20px;
     text-align: left;
     justify-content: flex-start;
+    background-color: $blue-md !important;
+    border-radius: 26px;
 
     &:hover {
-      background-color: rgba(var(--v-theme-primary), 0.1);
+      background-color: $blue-lg !important;
+    }
+
+    :deep(.v-btn__overlay) {
+      display: none !important;
+    }
+
+    :deep(.v-btn__underlay) {
+      display: none !important;
     }
   }
 
   .option-content {
     display: flex;
     flex-direction: column;
-    gap: 4px;
     width: 100%;
   }
 
   .option-title {
-    font-weight: 600;
     font-size: 0.95rem;
+    font-family: $font-medium;
+    text-transform: uppercase;
+    letter-spacing: normal;
   }
 
   .option-desc {
-    color: rgb(var(--v-theme-on-surface-variant));
+    font-size: 0.8rem;
+    color: $text-gray-md;
+    text-transform: none;
+    letter-spacing: 0.2px;
   }
 }
 </style>

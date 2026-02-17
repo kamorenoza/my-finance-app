@@ -408,8 +408,12 @@ const saveEntry = async () => {
       budgetStore.updateEntryIsPaidForMonth(entry.value.id, entry.value.isPaid)
     }
 
-    if (budgetStore.selectedEntry && hasNameOrValueChanged.value) {
-      // Si es edición y hay cambios en nombre o valor, mostrar opciones
+    if (
+      budgetStore.selectedEntry &&
+      hasNameOrValueChanged.value &&
+      (entry.value.isFixed || (entry.value.repeat && entry.value.repeat > 0))
+    ) {
+      // Si es edición, hay cambios en nombre/valor, y es Fixed o se repite, mostrar opciones
       showModificationDialog.value = true
       return // Esperar a que el usuario elija una opción
     } else if (budgetStore.selectedEntry) {

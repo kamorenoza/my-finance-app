@@ -1,8 +1,8 @@
 <template>
   <div class="budget-list">
-    <div v-if="filteredAndSortedEntries.length === 0" class="empty-state">
-      <p>No hay movimientos para mostrar</p>
-    </div>
+    <EmptyState
+      v-if="filteredAndSortedEntries.length === 0 && monthExpenses.length === 0"
+    />
     <template v-else>
       <template v-if="groupedEntries === null">
         <!-- Sin agrupar -->
@@ -13,13 +13,61 @@
           :reference-date="props.selectedDate || new Date()"
           @edit="onEditEntry"
         />
+
+        <!-- Grupo de Gastos del mes (sin agrupar) -->
+        <div v-if="monthExpenses.length > 0" class="month-expenses-group">
+          <p
+            class="budget-group__header budget-group__header--expenses mb-0"
+            @click="toggleGroup('gastos-del-mes')"
+          >
+            <span class="month-expenses-toggle" @click.stop>
+              <v-switch
+                v-model="addExpensesToBudget"
+                color="success"
+                hide-details
+                density="compact"
+                inset
+              />
+            </span>
+            <span class="budget-group__header-content">
+              <span>Gastos del mes</span>
+              <span class="budget-group__chevron">
+                <v-icon size="17">
+                  {{
+                    expandedGroups['gastos-del-mes'] === false
+                      ? 'mdi-chevron-down'
+                      : 'mdi-chevron-up'
+                  }}
+                </v-icon>
+              </span>
+            </span>
+            <span class="budget-group__total">{{
+              currency(totalMonthExpenses)
+            }}</span>
+          </p>
+          <transition name="slide">
+            <div
+              v-show="expandedGroups['gastos-del-mes'] !== false"
+              class="month-expenses-content"
+            >
+              <div class="month-expenses-list">
+                <ExpenseItem
+                  v-for="expense in monthExpenses"
+                  :key="expense.id"
+                  :expense="expense"
+                  :read-only="true"
+                />
+              </div>
+            </div>
+          </transition>
+        </div>
       </template>
       <template v-else>
         <!-- Agrupado con collapse -->
         <template v-for="group in groupedEntries" :key="group.label">
           <p class="budget-group__header" @click="toggleGroup(group.label)">
             <span class="budget-group__header-content">
-              <span>{{ group.label }}</span>
+              <span>{{ formatGroupName(group.label) }}</span>
               <span class="budget-group__chevron">
                 <v-icon size="17">
                   {{
@@ -46,6 +94,54 @@
             </div>
           </transition>
         </template>
+
+        <!-- Grupo de Gastos del mes -->
+        <div v-if="monthExpenses.length > 0" class="month-expenses-group">
+          <p
+            class="budget-group__header budget-group__header--expenses mb-0"
+            @click="toggleGroup('gastos-del-mes')"
+          >
+            <span class="month-expenses-toggle" @click.stop>
+              <v-switch
+                v-model="addExpensesToBudget"
+                color="success"
+                hide-details
+                density="compact"
+                inset
+              />
+            </span>
+            <span class="budget-group__header-content">
+              <span>Gastos del mes</span>
+              <span class="budget-group__chevron">
+                <v-icon size="17">
+                  {{
+                    expandedGroups['gastos-del-mes'] === false
+                      ? 'mdi-chevron-down'
+                      : 'mdi-chevron-up'
+                  }}
+                </v-icon>
+              </span>
+            </span>
+            <span class="budget-group__total">{{
+              currency(totalMonthExpenses)
+            }}</span>
+          </p>
+          <transition name="slide">
+            <div
+              v-show="expandedGroups['gastos-del-mes'] !== false"
+              class="month-expenses-content"
+            >
+              <div class="month-expenses-list">
+                <ExpenseItem
+                  v-for="expense in monthExpenses"
+                  :key="expense.id"
+                  :expense="expense"
+                  :read-only="true"
+                />
+              </div>
+            </div>
+          </transition>
+        </div>
       </template>
     </template>
   </div>
@@ -60,6 +156,10 @@ import type { BudgetEntry } from '../budget.interface'
 import dayjs from 'dayjs'
 import { configService } from '@/modules/shared/services/config.service'
 import { backupService } from '@/modules/shared/services/backup.service'
+import { useExpensesStore } from '@/modules/expenses/expenses.store'
+import ExpenseItem from '@/modules/expenses/components/ExpenseItem.vue'
+import { dateFormatter } from '@/modules/shared/utils'
+import EmptyState from '@/modules/shared/components/EmptyState.vue'
 
 interface BudgetGroup {
   label: string
@@ -91,8 +191,22 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const store = useBudgetStore()
+const expensesStore = useExpensesStore()
 const expandedGroups = ref<{ [key: string]: boolean }>({})
 const hasLoadedState = ref(false)
+// Usar el estado del toggle desde el store
+const addExpensesToBudget = computed({
+  get: () => store.addExpensesToBudget,
+  set: (value: boolean) => {
+    store.addExpensesToBudget = value
+    const currentConfig = configService.getBudgetConfig()
+    configService.saveBudgetConfig({
+      ...currentConfig,
+      addExpensesToBudget: value
+    })
+    backupService.queueBackup()
+  }
+})
 
 // Cargar estado de grupos expandidos al montar
 onMounted(() => {
@@ -103,6 +217,10 @@ onMounted(() => {
   ) {
     expandedGroups.value = { ...savedConfig.expandedGroups }
     hasLoadedState.value = true
+  }
+  // Colapsar por defecto el grupo de gastos del mes
+  if (expandedGroups.value['gastos-del-mes'] === undefined) {
+    expandedGroups.value['gastos-del-mes'] = false
   }
 })
 
@@ -174,6 +292,17 @@ const filteredAndSortedEntries = computed(() => {
 
   return sorted
 })
+
+// Formatear nombre del grupo (para fechas)
+const formatGroupName = (groupName: string) => {
+  if (props.filters?.groupBy === 'date') {
+    // groupName está en formato 'DD/MM/YYYY', convertir a Date y formatear
+    const [day, month, year] = groupName.split('/')
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    return dateFormatter(date)
+  }
+  return groupName
+}
 
 const calculateGroupTotal = (entries: BudgetEntry[], dateRef: Date): number => {
   return entries.reduce((sum, entry) => {
@@ -257,11 +386,41 @@ watch(
 const onEditEntry = (entry: BudgetEntry) => {
   store.setSelectedEntry(entry)
 }
+
+// Filtrar gastos del mes seleccionado
+const monthExpenses = computed(() => {
+  const month = dayjs(props.selectedDate).startOf('month')
+  const monthEnd = dayjs(props.selectedDate).endOf('month')
+  const searchTerm = props.filters?.search?.toLowerCase() || ''
+
+  return expensesStore.expenses.filter(expense => {
+    const expenseDate = dayjs(expense.date)
+    const dateMatch =
+      (expenseDate.isAfter(month) && expenseDate.isBefore(monthEnd)) ||
+      expenseDate.isSame(month, 'day') ||
+      expenseDate.isSame(monthEnd, 'day')
+
+    // Si no hay búsqueda, retornar solo por fecha
+    if (!searchTerm) {
+      return dateMatch
+    }
+
+    // Aplicar filtro de búsqueda
+    const searchMatch = expense.name.toLowerCase().includes(searchTerm)
+
+    return dateMatch && searchMatch
+  })
+})
+
+// Calcular total de gastos del mes
+const totalMonthExpenses = computed(() => {
+  return monthExpenses.value.reduce((sum, expense) => sum + expense.value, 0)
+})
 </script>
 
 <style scoped lang="scss">
 .budget-list {
-  height: calc(100vh - 480px);
+  height: calc(100vh - 400px);
   overflow-y: scroll;
   padding-bottom: 40px;
   margin-top: 5px;
@@ -270,15 +429,6 @@ const onEditEntry = (entry: BudgetEntry) => {
   @media (min-width: 960px) {
     height: calc(100vh - 220px);
   }
-}
-
-.empty-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  color: #999;
-  font-size: 0.95rem;
 }
 
 .budget-group {
@@ -337,5 +487,26 @@ const onEditEntry = (entry: BudgetEntry) => {
 .slide-leave-to {
   max-height: 0;
   opacity: 0;
+}
+
+.month-expenses-group {
+  margin-top: 10px;
+  padding-top: 0px;
+  border-top: 1px solid $bg-general;
+}
+
+.month-expenses-toggle {
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.month-expenses-list {
+  margin-top: 0px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
 }
 </style>
