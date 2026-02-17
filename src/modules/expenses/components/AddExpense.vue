@@ -15,6 +15,7 @@
           maxlength="12"
           @keyup.enter="goToDesc"
           @focus="scrollIntoView(valueInput)"
+          @blur="resetScroll"
           inputmode="numeric"
           pattern="[0-9]*"
         />
@@ -30,7 +31,8 @@
           :maxlength="100"
           @keyup.enter="saveEntry"
           hide-details
-          @focus="scrollIntoView(valueInput)"
+          @focus="scrollIntoView(descInput)"
+          @blur="resetScroll"
         />
       </div>
 
@@ -66,6 +68,8 @@ const toast = useToastStore()
 const expensesStore = useExpensesStore()
 
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+const isFocused = ref(false) // Track if any input is focused
+let resetTimeout: ReturnType<typeof setTimeout> | null = null // Timer para evitar reset inmediato
 
 const valueInput = ref()
 const descInput = ref()
@@ -111,12 +115,36 @@ const saveEntry = () => {
 }
 
 const scrollIntoView = (refEl: any) => {
-  // Solo scroll en iOS cuando el teclado virtual está presente
-  if (isIOS) {
-    setTimeout(() => {
-      refEl?.$el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }, 100)
+  // Cancelar reset timeout si existe (el usuario está cambiando entre inputs)
+  if (resetTimeout) {
+    clearTimeout(resetTimeout)
+    resetTimeout = null
   }
+
+  // Solo scroll en iOS cuando el teclado virtual está presente
+  // y solo si no estábamos ya enfocados en otro input
+  if (isIOS && !isFocused.value) {
+    setTimeout(() => {
+      // Usar 'nearest' en lugar de 'center' para un scroll menos agresivo
+      refEl?.$el?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest'
+      })
+    }, 300) // Aumentar delay para dar tiempo al teclado de aparecer
+  }
+  isFocused.value = true
+}
+
+const resetScroll = () => {
+  // Usar timeout para dar tiempo a que se enfoque otro input
+  // Si otro input recibe focus, el timeout se cancelará
+  resetTimeout = setTimeout(() => {
+    isFocused.value = false
+    if (isIOS) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }, 200) // Delay para detectar si hay otro focus inmediato
 }
 </script>
 

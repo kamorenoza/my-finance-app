@@ -269,8 +269,8 @@ defineExpose({
 .add-shopping {
   &__fab {
     position: fixed;
-    bottom: 80px;
-    right: 20px;
+    top: 5px;
+    right: 15px;
     z-index: 10;
     height: 40px !important;
     width: 40px !important;
@@ -280,7 +280,8 @@ defineExpose({
 
     @media (min-width: 960px) {
       bottom: 30px;
-      right: 30px;
+      right: 20px;
+      top: 72px;
     }
   }
 }

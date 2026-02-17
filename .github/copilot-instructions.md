@@ -42,6 +42,8 @@ This is a **Vue 3 + TypeScript + Vite** personal finance app with Pinia state ma
 - Import types with `import type { TypeName } from '...'`
 - Use `v-if`/`v-for` with `:key` binding for lists
 - Directives: `v-numeric-only`, `v-currency`, `v-currency-formatter`, `v-date-formatter` (registered in [src/main.ts](src/main.ts))
+- **Component naming:** Components within a module's `components/` folder must be prefixed with the module name (e.g., `BudgetList.vue`, `ExpensesSummary.vue`, `ShoppingList.vue`)
+- **Component file size limit:** Files should not exceed 200 lines. If a component grows beyond this limit, extract logical blocks into separate child components within the module's `components/` folder
 
 **Firebase auth flow:**
 
@@ -93,6 +95,7 @@ This is a **Vue 3 + TypeScript + Vite** personal finance app with Pinia state ma
 - ❌ Call service methods directly from components—always go through the store
 - ❌ Modify Firebase config without confirming credentials
 - ❌ Add authentication to routes without checking [src/router/index.ts](src/router/index.ts) for existing patterns
+- ❌ Create components with more than 200 lines—extract into smaller, focused components instead
 
 ### Dependency Highlights
 

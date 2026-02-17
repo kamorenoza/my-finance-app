@@ -4,19 +4,19 @@
       <div class="shopping-list-card__info">
         <p class="shopping-list-card__name">{{ shoppingList.name }}</p>
         <div class="shopping-list-card__meta">
-          <span class="shopping-list-card__date">
-            {{ formattedDate }}
-          </span>
           <span class="shopping-list-card__items">
             {{ itemsCount }} items
+          </span>
+          <span class="ml-5 shopping-list-card__items">
+            Total: {{ itemsCount }}
           </span>
         </div>
         <div v-if="totalEstimated > 0" class="shopping-list-card__amounts">
           <span class="shopping-list-card__estimated">
-            Est: {{ currency(totalEstimated) }}
+            Est: {{ currencyFormatter(totalEstimated) }}
           </span>
           <span v-if="totalReal > 0" class="shopping-list-card__real">
-            Real: {{ currency(totalReal) }}
+            Real: {{ currencyFormatter(totalReal) }}
           </span>
         </div>
       </div>
@@ -30,7 +30,7 @@
       </div>
     </div>
     <div class="shopping-list-card__actions">
-      <v-icon size="24" color="primary">mdi-chevron-right</v-icon>
+      <v-icon size="24" color="#6faeaa">mdi-chevron-right</v-icon>
     </div>
   </div>
 </template>
@@ -38,7 +38,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ShoppingList } from '../shopping.interface'
-import { dateFormatter } from '@/modules/shared/utils'
+import { currencyFormatter } from '@/modules/shared/utils'
 
 interface Props {
   shoppingList: ShoppingList
@@ -53,10 +53,6 @@ const emit = defineEmits<{
 const openList = () => {
   emit('open', props.shoppingList)
 }
-
-const formattedDate = computed(() => {
-  return dateFormatter(props.shoppingList.createdDate)
-})
 
 const itemsCount = computed(() => {
   return props.shoppingList.items.length
@@ -79,13 +75,6 @@ const totalReal = computed(() => {
     0
   )
 })
-
-const currency = (value: number): string =>
-  new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0
-  }).format(value)
 </script>
 
 <style scoped lang="scss">

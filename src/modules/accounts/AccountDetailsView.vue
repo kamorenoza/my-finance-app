@@ -1,14 +1,6 @@
 <template>
   <div class="account-preview">
-    <div>
-      <v-btn
-        class="account-preview__back"
-        @click="backToAccounts"
-        :ripple="false"
-      >
-        <v-icon left>mdi-arrow-left</v-icon>
-      </v-btn>
-    </div>
+    <PageHeader show-back @back="backToAccounts" />
     <div class="account-preview__content">
       <div class="pr15 account-preview__container">
         <NormalCard
@@ -104,6 +96,7 @@ import AccountDetailsExpensesCreditCard from './components/AccountDetailsExpense
 import CardCreditCard from './components/CardCreditCard.vue'
 import AddAccountExpense from './components/AddAccountExpense.vue'
 import AddAccountExpenseMore from './components/AddAccountExpenseMore.vue'
+import PageHeader from '../shared/components/PageHeader.vue'
 import { currencyFormatter } from '../shared/utils'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import SearchOrderFilter from '@/modules/shared/components/SearchOrderFilter.vue'
@@ -160,8 +153,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateScreenWidth)
 })
 
-const backToAccounts = (event: Event) => {
-  event.stopPropagation()
+const backToAccounts = () => {
   router.push({ name: 'cuentas' })
 }
 
@@ -279,6 +271,7 @@ const getSixMonthsHistory = computed(() => {
     position: absolute;
     top: 5px;
     z-index: 8;
+    display: none;
   }
 
   &__header {
@@ -288,7 +281,8 @@ const getSixMonthsHistory = computed(() => {
     padding: 20px 0 10px;
 
     @media (min-width: 960px) {
-      max-width: 550px;
+      //max-width: 550px;
+      padding-top: 0;
     }
 
     .subtitle {
@@ -309,7 +303,6 @@ const getSixMonthsHistory = computed(() => {
     display: flex;
     flex-direction: column;
     padding-left: 15px;
-    padding-top: 60px;
     height: calc(100dvh - 60px);
     padding-bottom: 10px;
 
@@ -340,8 +333,7 @@ const getSixMonthsHistory = computed(() => {
   }
 
   &__group {
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     margin: 20px 0 10px;
     display: flex;
     justify-content: space-between;
@@ -364,14 +356,13 @@ const getSixMonthsHistory = computed(() => {
     }
 
     .group-total {
-      font-size: 0.85rem;
-      font-weight: 700;
+      font-size: 0.5rem;
     }
   }
 
   &__body {
     @media (min-width: 960px) {
-      max-width: 550px;
+      //max-width: 550px;
     }
   }
 
@@ -510,12 +501,13 @@ const getSixMonthsHistory = computed(() => {
 
   &__container {
     @media (min-width: 960px) {
-      width: 60%;
-      padding-left: 25px;
+      flex-grow: 1;
+      padding-left: 15px;
 
       &:first-child {
-        width: 40%;
+        width: 35%;
         padding-left: 0;
+        flex-grow: 0;
       }
     }
   }
@@ -523,5 +515,9 @@ const getSixMonthsHistory = computed(() => {
 
 .pr15 {
   padding-right: 15px;
+
+  @media (min-width: 960px) {
+    padding-right: 25px;
+  }
 }
 </style>

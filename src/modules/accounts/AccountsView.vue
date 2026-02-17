@@ -1,9 +1,10 @@
 <template>
   <div class="accounts">
-    <div class="general-header">
-      <p class="general-title">Mis cuentas</p>
-      <CategoryManager />
-    </div>
+    <PageHeader title="Mis cuentas">
+      <template #actions>
+        <CategoryManager />
+      </template>
+    </PageHeader>
 
     <div>
       <div class="accounts__bar">
@@ -18,6 +19,7 @@
 
 <script setup lang="ts">
 import CategoryManager from '../categories/CategoryManager.vue'
+import PageHeader from '../shared/components/PageHeader.vue'
 import { configService } from '../shared/services/config.service'
 import AddAccount from './components/AddAccount.vue'
 import CardCarousel from './components/CardCarousel.vue'
@@ -42,6 +44,10 @@ usePreventBack()
     display: flex;
     padding: 0 15px;
     gap: 10px;
+
+    @media (min-width: 960px) {
+      padding: 0;
+    }
   }
 }
 </style>

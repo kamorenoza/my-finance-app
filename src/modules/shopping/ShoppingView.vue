@@ -1,23 +1,13 @@
 <template>
   <div class="shopping">
-    <div class="general-header">
-      <p class="general-title">Listas de compras</p>
-    </div>
+    <PageHeader title="Listas de compras" />
 
     <div class="shopping__content">
-      <div class="shopping__stats">
-        <v-card class="shopping__stat-card">
-          <v-card-text>
-            <div class="stat-label">Listas activas</div>
-            <div class="stat-value">{{ unconvertedCount }}</div>
-          </v-card-text>
-        </v-card>
-        <v-card class="shopping__stat-card">
-          <v-card-text>
-            <div class="stat-label">Total items</div>
-            <div class="stat-value">{{ totalItems }}</div>
-          </v-card-text>
-        </v-card>
+      <div class="shopping__summary-content">
+        <ShoppingSummary
+          :unconverted-count="unconvertedCount"
+          :total-items="totalItems"
+        />
       </div>
 
       <div class="shopping__lists">
@@ -25,29 +15,12 @@
           v-if="shoppingStore.shoppingLists.length === 0"
           message="No hay listas de compras"
         />
-        <div v-else>
-          <!-- Listas no convertidas -->
-          <div v-if="unconvertedLists.length > 0" class="shopping__section">
-            <h3 class="shopping__section-title">Activas</h3>
-            <ShoppingListItem
-              v-for="list in unconvertedLists"
-              :key="list.id"
-              :shopping-list="list"
-              @open="handleOpen"
-            />
-          </div>
-
-          <!-- Listas convertidas -->
-          <div v-if="convertedLists.length > 0" class="shopping__section">
-            <h3 class="shopping__section-title">Convertidas a gastos</h3>
-            <ShoppingListItem
-              v-for="list in convertedLists"
-              :key="list.id"
-              :shopping-list="list"
-              @open="handleOpen"
-            />
-          </div>
-        </div>
+        <ShoppingList
+          v-else
+          :unconverted-lists="unconvertedLists"
+          :converted-lists="convertedLists"
+          @open="handleOpen"
+        />
       </div>
     </div>
 
@@ -59,9 +32,11 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useShoppingStore } from './shopping.store'
-import type { ShoppingList } from './shopping.interface'
-import ShoppingListItem from './components/ShoppingListItem.vue'
+import type { ShoppingList as ShoppingListType } from './shopping.interface'
 import AddShoppingList from './components/AddShoppingList.vue'
+import ShoppingSummary from './components/ShoppingSummary.vue'
+import ShoppingList from './components/ShoppingList.vue'
+import PageHeader from '../shared/components/PageHeader.vue'
 import EmptyState from '@/modules/shared/components/EmptyState.vue'
 
 const router = useRouter()
@@ -79,7 +54,7 @@ const totalItems = computed(() => {
   )
 })
 
-const handleOpen = (list: ShoppingList) => {
+const handleOpen = (list: ShoppingListType) => {
   router.push(`/compras/${list.id}`)
 }
 </script>
@@ -92,56 +67,32 @@ const handleOpen = (list: ShoppingList) => {
 
   @media (min-width: 960px) {
     padding-left: 20px;
+    padding-right: 8px;
   }
 
   &__content {
-    padding: 16px;
+    padding: 0 15px 40px;
 
     @media (min-width: 960px) {
-      max-width: 800px;
-      margin: 0 auto;
+      display: flex;
+      gap: 25px;
+      padding-left: 0;
     }
   }
 
-  &__stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-
-  &__stat-card {
-    background: $blue !important;
-    border-radius: 18px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-
-    .stat-label {
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.9);
-      margin-bottom: 4px;
-    }
-
-    .stat-value {
-      font-size: 18px;
-      font-family: $font-medium;
-      color: white;
+  &__summary-content {
+    @media (min-width: 960px) {
+      width: 25%;
+      flex-shrink: 0;
     }
   }
 
   &__lists {
     margin-top: 20px;
-  }
 
-  &__section {
-    margin-bottom: 24px;
-
-    &-title {
-      font-size: 0.9rem;
-      font-family: $font-medium;
-      color: $text-gray-md;
-      margin: 0 0 12px 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    @media (min-width: 960px) {
+      flex-grow: 1;
+      margin-top: 0;
     }
   }
 }

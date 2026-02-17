@@ -35,7 +35,7 @@ const handlePress = () => {
 <style scoped lang="scss">
 .fab-categories {
   position: absolute;
-  right: 55px;
+  right: 15px;
   display: flex;
   flex-direction: column;
   align-items: center;

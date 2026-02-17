@@ -1,85 +1,31 @@
 <template>
   <div class="expenses">
-    <div class="general-header">
-      <p class="general-title">Gastos del mes</p>
-    </div>
+    <PageHeader title="Gastos del mes" />
     <div class="expenses__selector">
       <MonthYearSelector v-model="selectedDate" />
     </div>
 
     <!-- Total card - visible en mobile encima de filtros -->
     <div class="expenses__total-mobile">
-      <v-card class="expenses__total-card">
-        <v-card-text class="text-center">
-          <div class="expenses__total-label">Total Gastos</div>
-          <div class="expenses__total-amount">
-            {{ currency(totalExpenses) }}
-          </div>
-        </v-card-text>
-      </v-card>
+      <ExpensesSummary :total="totalExpenses" />
     </div>
 
     <div class="expenses__content">
       <!-- Total card - visible en desktop a la izquierda -->
       <div class="expenses__total-desktop">
-        <v-card class="bg-primary expenses__total-card">
-          <v-card-text class="text-center">
-            <div class="expenses__total-label">Total Gastos</div>
-            <div class="expenses__total-amount">
-              {{ currency(totalExpenses) }}
-            </div>
-          </v-card-text>
-        </v-card>
+        <ExpensesSummary :total="totalExpenses" />
       </div>
 
       <!-- Lista de gastos a la derecha en desktop -->
-      <div class="expenses__list">
-        <ExpensesFilter @filterChange="onFilterChange" />
-        <EmptyState v-if="filteredBySearch.length === 0" />
-        <div v-else class="expenses__list-content">
-          <div
-            v-for="(groupExpenses, groupName) in sortedAndGroupedExpenses"
-            :key="groupName"
-            class="expense-group"
-          >
-            <p
-              v-if="filterConfig.groupBy !== 'none' && filterConfig.groupBy"
-              class="expense-group__title"
-              @click="toggleGroup(groupName)"
-            >
-              <span class="expense-group__title-content">
-                <span>{{ formatGroupName(groupName) }}</span>
-                <span class="expense-group__chevron">
-                  <v-icon size="17">
-                    {{
-                      expandedGroups[groupName] === false
-                        ? 'mdi-chevron-down'
-                        : 'mdi-chevron-up'
-                    }}
-                  </v-icon>
-                </span>
-              </span>
-              <span class="expense-group__total">{{
-                currency(groupTotals[groupName] || 0)
-              }}</span>
-            </p>
-            <transition name="slide">
-              <div
-                v-show="expandedGroups[groupName] !== false"
-                class="expense-group__items"
-              >
-                <ExpenseItem
-                  v-for="expense in groupExpenses"
-                  :key="expense.id"
-                  :expense="expense"
-                  @edit="handleEditExpense"
-                  @updateAccount="handleUpdateExpenseAccount"
-                />
-              </div>
-            </transition>
-          </div>
-        </div>
-      </div>
+      <ExpensesList
+        :expenses="filteredBySearch"
+        :groupedExpenses="sortedAndGroupedExpenses"
+        :groupTotals="groupTotals"
+        :groupBy="filterConfig.groupBy ?? null"
+        @filterChange="onFilterChange"
+        @edit="handleEditExpense"
+        @updateAccount="handleUpdateExpenseAccount"
+      />
     </div>
 
     <AddExpense :selectedDate="selectedDate" />
@@ -102,17 +48,15 @@ import type { Expense, AccountReference } from './expenses.interface'
 import MonthYearSelector from '../shared/components/MonthYearSelector.vue'
 import AddExpense from './components/AddExpense.vue'
 import EditExpense from './components/EditExpense.vue'
-import ExpensesFilter from './components/ExpensesFilter.vue'
-import ExpenseItem from './components/ExpenseItem.vue'
-import { dateFormatter } from '@/modules/shared/utils'
-import EmptyState from '@/modules/shared/components/EmptyState.vue'
+import ExpensesSummary from './components/ExpensesSummary.vue'
+import ExpensesList from './components/ExpensesList.vue'
+import PageHeader from '../shared/components/PageHeader.vue'
 
 const selectedDate = ref(new Date())
 const expensesStore = useExpensesStore()
 const search = ref('')
 const selectedExpense = ref<Expense | null>(null)
 const showEditDialog = ref(false)
-const expandedGroups = ref<Record<string, boolean>>({})
 const filterConfig = ref({
   groupBy: expensesStore.filterConfig.groupBy,
   orderBy: expensesStore.filterConfig.orderBy
@@ -219,22 +163,6 @@ const groupTotals = computed(() => {
   return totals
 })
 
-// Formatear nombre del grupo (para fechas)
-const formatGroupName = (groupName: string) => {
-  if (filterConfig.value.groupBy === 'date') {
-    // groupName está en formato 'DD/MM/YYYY', convertir a Date y formatear
-    const [day, month, year] = groupName.split('/')
-    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
-    return dateFormatter(date)
-  }
-  return groupName
-}
-
-// Toggle grupo expandido/colapsado
-const toggleGroup = (groupName: string) => {
-  expandedGroups.value[groupName] = !expandedGroups.value[groupName]
-}
-
 const onFilterChange = (filter: {
   search: string
   groupBy: string | null
@@ -267,13 +195,6 @@ const handleDeleteExpense = (expenseId: string) => {
   expensesStore.deleteExpense(expenseId)
 }
 
-const currency = (value: number): string =>
-  new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0
-  }).format(value)
-
 // Watch filterConfig changes to update backup
 watch(
   () => filterConfig.value,
@@ -299,6 +220,10 @@ watch(
     align-items: center;
     gap: 15px;
     justify-content: center;
+
+    @media (min-width: 960px) {
+      justify-content: start;
+    }
   }
 
   &__total-mobile {
@@ -323,109 +248,11 @@ watch(
     }
   }
 
-  &__total-card {
-    border-radius: 18px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    background: $blue !important;
-  }
-
-  &__total-label {
-    font-size: 13px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.9);
-    letter-spacing: 0.5px;
-  }
-
-  &__total-amount {
-    font-size: 22px;
-    font-family: $font-medium;
-    color: white;
-    padding-right: 10px;
-  }
-
   &__content {
     @media (min-width: 960px) {
       display: flex;
       gap: 20px;
     }
   }
-
-  &__list {
-    flex: 1;
-
-    &-content {
-      height: calc(100vh - 450px);
-      overflow-y: scroll;
-      padding-bottom: 50px;
-    }
-  }
-}
-
-.expense-group {
-  margin-bottom: 20px;
-
-  &__title {
-    font-size: 0.95rem;
-    font-family: $font-medium;
-    padding: 10px 15px;
-    margin: 0;
-    margin-bottom: 5px;
-    border-radius: 12px;
-    color: #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-
-    &-content {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 1;
-    }
-  }
-
-  &__chevron {
-    display: flex;
-    align-items: center;
-    transition: transform 0.2s ease;
-    background-color: $bg-general;
-    border-radius: 100%;
-    margin-left: 3px;
-    width: 20px;
-    height: 20px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  &__total {
-    font-weight: 600;
-    font-size: 0.95rem;
-  }
-
-  &__items {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 0 15px;
-  }
-}
-
-.slide-enter-active,
-.slide-leave-active {
-  transition:
-    max-height 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  max-height: 5000px;
-  overflow: hidden;
-  will-change: max-height, opacity;
-}
-
-.slide-enter-from,
-.slide-leave-to {
-  max-height: 0;
-  opacity: 0;
 }
 </style>

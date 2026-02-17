@@ -590,6 +590,7 @@ watch(
 
     @media (min-width: 960px) {
       height: calc(100dvh - 230px);
+      padding-right: 25px;
     }
 
     .expense-item {
@@ -662,7 +663,7 @@ watch(
     }
 
     .group-total {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 100;
       font-family: $font-medium;
     }

@@ -31,7 +31,7 @@
       </div>
       <div>
         <div class="expense-item__amount">
-          {{ currency(expense.value) }}
+          {{ currencyFormatter(expense.value) }}
         </div>
       </div>
     </div>
@@ -55,6 +55,7 @@ import { computed } from 'vue'
 import type { Expense, AccountReference } from '../expenses.interface'
 import dayjs from 'dayjs'
 import { useAccountsStore } from '@/modules/accounts/accounts.store'
+import { currencyFormatter } from '@/modules/shared/utils'
 
 interface Props {
   expense: Expense
@@ -92,13 +93,6 @@ const selectAccount = (account: any | null) => {
   const accountRef = account ? { id: account.id, name: account.name } : null
   emit('updateAccount', props.expense.id, accountRef)
 }
-
-const currency = (value: number): string =>
-  new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0
-  }).format(value)
 </script>
 
 <style scoped lang="scss">

@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <div class="user-menu" v-if="!isLoginRoute">
+    <!--<div class="user-menu" v-if="!isLoginRoute">
       <v-menu location="bottom">
         <template #activator="{ props }">
           <div class="user-menu__trigger" v-bind="props">
@@ -13,7 +13,7 @@
           </v-list-item>
         </v-list>
       </v-menu>
-    </div>
+    </div>-->
     <div :style="layoutStyle" class="main-div">
       <router-view />
       <BottomMenu />

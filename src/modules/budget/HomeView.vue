@@ -1,8 +1,6 @@
 <template>
   <div class="home">
-    <div class="general-header">
-      <p class="general-title">Mi presupuesto</p>
-    </div>
+    <PageHeader title="Mi presupuesto" />
 
     <div class="home__content">
       <div class="home__header">
@@ -66,6 +64,7 @@ import AddBudget from '@/modules/budget/components/AddBudget.vue'
 import BudgetToggle from '../shared/components/BudgetToggle.vue'
 import BudgetList from './components/BudgetList.vue'
 import SearchOrderFilter from '@/modules/shared/components/SearchOrderFilter.vue'
+import PageHeader from '@/modules/shared/components/PageHeader.vue'
 import { configService } from '@/modules/shared/services/config.service'
 import AddBudgetComplete from './components/AddBudgetComplete.vue'
 import { useBudgetFilter } from './composables/useBudgetFilter'

@@ -1,24 +1,14 @@
 <template>
   <div class="list-detail">
     <!-- Header -->
-    <div class="list-detail__header">
-      <v-btn
-        icon
-        size="small"
-        variant="text"
-        @click="goBack"
-        class="list-detail__back"
-      >
-        <v-icon>mdi-arrow-left</v-icon>
-      </v-btn>
-      <div class="list-detail__title-section">
-        <h2 class="list-detail__title">{{ list?.name }}</h2>
+    <PageHeader :title="list?.name" show-back @back="goBack">
+      <template #actions>
         <p class="list-detail__date">{{ formattedDate }}</p>
-      </div>
-      <v-btn icon size="small" variant="text" @click="openEditList">
-        <v-icon>mdi-pencil</v-icon>
-      </v-btn>
-    </div>
+        <v-btn icon size="small" variant="text" @click="openEditList">
+          <v-icon>mdi-pencil</v-icon>
+        </v-btn>
+      </template>
+    </PageHeader>
 
     <!-- Stats -->
     <div class="list-detail__stats">
@@ -81,6 +71,7 @@ import ShoppingItemCard from '@/modules/shopping/components/ShoppingItemCard.vue
 import AddShoppingItem from '@/modules/shopping/components/AddShoppingItem.vue'
 import AddShoppingItemInline from '@/modules/shopping/components/AddShoppingItemInline.vue'
 import AddShoppingList from '@/modules/shopping/components/AddShoppingList.vue'
+import PageHeader from '../shared/components/PageHeader.vue'
 import EmptyState from '@/modules/shared/components/EmptyState.vue'
 import { generateId, dateFormatter } from '@/modules/shared/utils'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
@@ -204,29 +195,6 @@ onMounted(() => {
   @media (min-width: 960px) {
     max-width: 800px;
     margin: 0 auto;
-  }
-
-  &__header {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-
-  &__back {
-    flex-shrink: 0;
-  }
-
-  &__title-section {
-    flex: 1;
-    min-width: 0;
-  }
-
-  &__title {
-    font-size: 1.25rem;
-    font-family: $font-medium;
-    color: $text-gray;
-    margin: 0 0 4px;
   }
 
   &__date {
