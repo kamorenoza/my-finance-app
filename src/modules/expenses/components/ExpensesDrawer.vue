@@ -1,24 +1,17 @@
 <template>
-  <v-navigation-drawer
+  <SideDrawer
     v-model="drawer"
-    location="right"
-    temporary
-    width="400"
+    :title="isEditing ? 'Editar gasto' : 'Agregar gasto'"
+    :width="420"
     persistent
-    @vue:unmounted="closeDrawer"
-    class="expenses-drawer"
+    @update:model-value="
+      val => {
+        if (!val) closeDrawer()
+      }
+    "
   >
-    <v-card flat>
-      <div class="px-3 pt-3 d-flex align-center justify-space-between">
-        <div class="subtitle">
-          {{ isEditing ? 'Editar gasto' : 'Agregar gasto' }}
-        </div>
-        <v-btn icon variant="text" size="small" @click="closeDrawer">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-      </div>
-
-      <v-card-text>
+    <div class="side-drawer-body">
+      <div class="side-drawer-body__content">
         <v-text-field
           v-model="entry.name"
           class="general-input mb-5"
@@ -54,9 +47,9 @@
           density="comfortable"
           hide-details
         />
-      </v-card-text>
+      </div>
 
-      <v-card-actions class="pr-4 mt-2">
+      <div class="side-drawer-body__actions">
         <v-spacer />
         <v-btn type="button" class="btn-neutro" @click="closeDrawer">
           Cancelar
@@ -69,17 +62,18 @@
         >
           {{ isEditing ? 'Actualizar' : 'Guardar' }}
         </v-btn>
-      </v-card-actions>
+      </div>
 
       <div class="expenses-drawer__delete" v-if="isEditing">
         <p @click="handleDelete">Eliminar gasto</p>
       </div>
-    </v-card>
-  </v-navigation-drawer>
+    </div>
+  </SideDrawer>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import SideDrawer from '@/modules/shared/components/SideDrawer.vue'
 import { useExpensesStore } from '../expenses.store'
 import { useAccountsStore } from '@/modules/accounts/accounts.store'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
@@ -234,18 +228,6 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
-:deep(.expenses-drawer) {
-  z-index: 2400 !important;
-  position: fixed !important;
-}
-
-.expenses-drawer {
-  :deep(.v-navigation-drawer__content) {
-    display: flex;
-    flex-direction: column;
-  }
-}
-
 .subtitle {
   font-size: 1.1rem;
   font-family: $font-medium;

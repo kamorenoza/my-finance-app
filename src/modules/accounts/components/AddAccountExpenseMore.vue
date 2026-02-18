@@ -13,18 +13,19 @@
     </template>
   </v-tooltip>
 
-  <v-navigation-drawer
+  <SideDrawer
     v-model="drawer"
-    location="right"
-    temporary
-    width="350"
+    title="Agregar movimiento"
+    :width="380"
     persistent
-    @vue:unmounted="close"
-    class="expense-more__drawer"
+    @update:model-value="
+      val => {
+        if (!val) close()
+      }
+    "
   >
-    <v-card flat>
-      <div class="px-3 pt-3 d-flex align-center ga-3">
-        <div class="subtitle">Agregar movimiento</div>
+    <div class="side-drawer-body">
+      <div class="side-drawer-body__content">
         <div
           class="expense-more__pill"
           :class="formData.type"
@@ -32,9 +33,6 @@
         >
           {{ formData.type === 'gasto' ? 'Gasto' : 'Ingreso' }}
         </div>
-      </div>
-
-      <v-card-text>
         <v-text-field
           class="general-input mb-5"
           v-model="formData.description"
@@ -121,8 +119,8 @@
           multi-line
           hide-details
         />
-      </v-card-text>
-      <v-card-actions class="pr-4 mt-2">
+      </div>
+      <div class="side-drawer-body__actions">
         <v-spacer />
         <v-btn type="button" class="btn-neutro" @click="close">Cancelar</v-btn>
         <v-btn
@@ -133,17 +131,18 @@
         >
           Guardar
         </v-btn>
-      </v-card-actions>
+      </div>
 
       <div class="expense-more__delete" v-if="editView">
         <p @click="deleteExpense">Eliminar Movimiento</p>
       </div>
-    </v-card>
-  </v-navigation-drawer>
+    </div>
+  </SideDrawer>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import SideDrawer from '@/modules/shared/components/SideDrawer.vue'
 import AddIcon from '@/assets/icons/Add.icon.vue'
 import { colorMdPrimary } from '@/styles/variables.styles'
 import { useAccountsStore } from '../accounts.store'
@@ -308,11 +307,6 @@ watch(
 </script>
 
 <style scoped lang="scss">
-:deep(.expense-more__drawer) {
-  z-index: 2400 !important;
-  position: fixed !important;
-}
-
 .fab-button {
   z-index: 10;
   width: 40px !important;
@@ -337,6 +331,9 @@ watch(
     user-select: none;
     font-size: 0.85rem;
     color: $white;
+    position: absolute;
+    top: 18px;
+    right: 94px;
 
     &.gasto {
       background-color: $color-red;

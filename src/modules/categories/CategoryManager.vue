@@ -13,15 +13,17 @@
     </TooltipFabButton>
   </div>
   <!-- Drawer lateral -->
-  <v-navigation-drawer
+  <SideDrawer
     v-model="drawer"
-    location="right"
-    temporary
-    width="350"
-    :touchless="true"
+    :width="380"
+    @update:model-value="
+      val => {
+        if (!val) drawer = false
+      }
+    "
   >
     <CategoryDrawer @done="drawer = false" @close="drawer = false" />
-  </v-navigation-drawer>
+  </SideDrawer>
 </template>
 
 <script setup lang="ts">
@@ -30,6 +32,7 @@ import CategoryDrawer from '@/modules/categories/components/CategoryDrawer.vue'
 import { colorMdPrimary } from '@/styles/variables.styles'
 import CategoriesIcon from '@/assets/icons/Categories.icon.vue'
 import TooltipFabButton from '@/modules/shared/components/TooltipFabButton.vue'
+import SideDrawer from '@/modules/shared/components/SideDrawer.vue'
 
 const drawer = ref(false)
 

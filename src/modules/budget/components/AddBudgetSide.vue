@@ -1,22 +1,20 @@
 <template>
-  <v-navigation-drawer
+  <SideDrawer
     v-model="drawer"
-    location="right"
-    temporary
-    width="400"
+    title="Agregar presupuesto"
+    :width="420"
     persistent
-    @vue:unmounted="close"
-    class="add-budget__drawer"
+    @update:model-value="
+      val => {
+        if (!val) close()
+      }
+    "
   >
-    <v-card flat>
-      <div class="px-3 pt-3 d-flex align-center ga-3">
-        <div class="subtitle">Agregar presupuesto</div>
+    <div class="side-drawer-body">
+      <div class="side-drawer-body__content">
         <div class="add-budget__pill" :class="entry.type" @click="onTypeChange">
           {{ entry.type === 'gasto' ? 'Gasto' : 'Ingreso' }}
         </div>
-      </div>
-
-      <v-card-text>
         <v-text-field
           v-model="entry.name"
           class="general-input mb-5"
@@ -143,9 +141,9 @@
           multi-line
           hide-details
         />
-      </v-card-text>
+      </div>
 
-      <v-card-actions class="pr-4 mt-2">
+      <div class="side-drawer-body__actions">
         <v-spacer />
         <v-btn type="button" class="btn-neutro" @click="close">Cancelar</v-btn>
         <v-btn
@@ -156,12 +154,12 @@
         >
           Guardar
         </v-btn>
-      </v-card-actions>
+      </div>
 
       <div class="add-budget__delete" v-if="budgetStore.selectedEntry">
         <p @click="deleteExpense">Eliminar Presupuesto</p>
       </div>
-    </v-card>
+    </div>
 
     <ModificationChoiceDialog
       v-if="showModificationDialog"
@@ -170,11 +168,12 @@
       @chosen="handleModificationChoice"
       @cancelled="handleModificationCancel"
     />
-  </v-navigation-drawer>
+  </SideDrawer>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import SideDrawer from '@/modules/shared/components/SideDrawer.vue'
 import dayjs from 'dayjs'
 import { colorWhite } from '@/styles/variables.styles'
 import DateSelector from '@/modules/shared/components/DateSelector.vue'
@@ -515,11 +514,6 @@ const close = () => {
 </script>
 
 <style scoped lang="scss">
-:deep(.add-budget__drawer) {
-  z-index: 2400 !important;
-  position: fixed !important;
-}
-
 .add-budget {
   &__pill {
     padding: 4px 12px;
@@ -529,6 +523,9 @@ const close = () => {
     user-select: none;
     font-size: 0.85rem;
     color: $white;
+    position: absolute;
+    top: 18px;
+    right: 130px;
 
     &.gasto {
       background-color: $color-red;

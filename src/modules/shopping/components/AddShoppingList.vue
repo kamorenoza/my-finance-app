@@ -26,23 +26,19 @@
       </template>
     </v-tooltip>
 
-    <v-navigation-drawer
+    <SideDrawer
       v-model="showDialog"
-      location="right"
-      temporary
-      width="350"
+      :title="isEditing ? 'Editar lista' : 'Nueva lista de compras'"
+      :width="380"
       persistent
-      @vue:unmounted="closeDialog"
-      class="shopping-drawer"
-      :touchless="true"
+      @update:model-value="
+        val => {
+          if (!val) closeDialog()
+        }
+      "
     >
-      <v-card flat>
-        <div class="px-3 pt-7 pb-2">
-          <div class="subtitle">
-            {{ isEditing ? 'Editar' : 'Nueva' }} lista de compras
-          </div>
-        </div>
-        <v-card-text>
+      <div class="side-drawer-body">
+        <div class="side-drawer-body__content">
           <v-text-field
             v-model="form.name"
             label="Nombre de la lista*"
@@ -50,27 +46,27 @@
             hide-details
             class="general-input mb-4"
           />
-        </v-card-text>
-        <v-card-actions class="pr-4 mt-2">
+        </div>
+        <div class="side-drawer-body__actions">
           <v-spacer />
           <v-btn class="btn-neutro" @click="closeDialog">Cancelar</v-btn>
           <v-btn class="btn-primary" @click="save" :disabled="!form.name">
             Guardar
           </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-navigation-drawer>
+        </div>
+      </div>
+    </SideDrawer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import SideDrawer from '@/modules/shared/components/SideDrawer.vue'
 import { useShoppingStore } from '../shopping.store'
 import type { ShoppingList } from '../shopping.interface'
 import { generateId } from '@/modules/shared/utils'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
-import { useConfirm } from '@/modules/shared/composables/useConfirm'
-import { colorMdPrimary, colorPrimary } from '@/styles/variables.styles'
+import { colorMdPrimary } from '@/styles/variables.styles'
 import dayjs from 'dayjs'
 import AddIcon from '@/assets/icons/Add.icon.vue'
 
@@ -84,7 +80,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 const shoppingStore = useShoppingStore()
 const toast = useToastStore()
-const confirm = useConfirm()
 
 const showDialog = ref(false)
 const isEditing = ref(false)
@@ -248,11 +243,6 @@ defineExpose({
 </script>
 
 <style scoped lang="scss">
-:deep(.shopping-drawer) {
-  z-index: 2400 !important;
-  position: fixed !important;
-}
-
 .add-shopping {
   &__fab {
     position: fixed;

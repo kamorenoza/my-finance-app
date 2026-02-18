@@ -149,8 +149,8 @@ const onClose = () => {
 .category-drawer {
   min-width: 280px;
   padding: 16px 15px;
+  padding-bottom: 0;
   padding-right: 0;
-  max-height: 100vh;
   overflow-y: auto;
 
   &__title {

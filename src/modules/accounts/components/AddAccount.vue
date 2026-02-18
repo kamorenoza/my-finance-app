@@ -10,19 +10,19 @@
     </template>
   </TooltipFabButton>
 
-  <v-navigation-drawer
+  <SideDrawer
     v-model="drawer"
-    location="right"
-    temporary
-    width="350"
+    :title="account ? 'Editar cuenta' : 'Agregar cuenta'"
+    :width="380"
     persistent
-    :touchless="true"
+    @update:model-value="
+      val => {
+        if (!val) close()
+      }
+    "
   >
-    <v-card flat>
-      <div class="px-3 pt-3 subtitle">
-        {{ account ? 'Editar cuenta' : 'Agregar cuenta' }}
-      </div>
-      <v-card-text>
+    <div class="side-drawer-body">
+      <div class="side-drawer-body__content">
         <v-text-field
           class="general-input"
           v-model="name"
@@ -88,9 +88,8 @@
           inputmode="numeric"
           pattern="[0-9]*"
         />
-      </v-card-text>
-      <v-card-actions class="pr-4 mt-2">
-        <v-spacer />
+      </div>
+      <div class="side-drawer-body__actions">
         <v-btn type="button" class="btn-neutro" @click="close">Cancelar</v-btn>
         <v-btn
           type="button"
@@ -100,9 +99,9 @@
         >
           Guardar
         </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-navigation-drawer>
+      </div>
+    </div>
+  </SideDrawer>
 </template>
 
 <script setup lang="ts">
@@ -114,6 +113,7 @@ import { colorMdPrimary } from '@/styles/variables.styles'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
 import { ACCOUNTS_TYPES, AccountTypes } from '../accounts.constants'
 import TooltipFabButton from '@/modules/shared/components/TooltipFabButton.vue'
+import SideDrawer from '@/modules/shared/components/SideDrawer.vue'
 
 const props = defineProps<{
   account?: Account
