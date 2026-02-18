@@ -1,61 +1,61 @@
 <template>
-  <v-card class="add-item-inline" @click="handleCardClick">
-    <v-card-text class="add-item-inline__content">
-      <div class="add-item-inline__main">
-        <v-checkbox
-          :model-value="false"
+  <div class="add-item-inline">
+    <v-card class="add-item-inline__card">
+      <div class="add-item-inline__content">
+        <v-text-field
+          v-model="form.name"
+          placeholder="Nombre del artículo"
+          density="comfortable"
           hide-details
-          density="compact"
-          class="add-item-inline__checkbox"
-          disabled
+          class="general-input add-item-inline__name"
+          @keyup.enter="goToAmount"
         />
-        <div class="add-item-inline__inputs">
-          <v-text-field
-            ref="nameInput"
-            v-model="form.name"
-            :placeholder="
-              isActive ? 'Nombre del artículo' : 'Agregar artículo...'
-            "
-            density="compact"
-            hide-details
-            class="add-item-inline__input add-item-inline__name"
-            :readonly="!isActive"
-            @focus="handleFocus"
-            @keyup.enter="goToAmount"
-          />
-          <v-text-field
-            v-if="isActive"
-            ref="amountInput"
-            v-model="formattedAmount"
-            @update:model-value="onInputAmount"
-            placeholder="Monto"
-            density="compact"
-            hide-details
-            prefix="$"
-            class="add-item-inline__input add-item-inline__amount"
-            @keyup.enter="saveItem"
-            @blur="saveItem"
-          />
-        </div>
+        <v-text-field
+          ref="amountInput"
+          v-model="formattedAmount"
+          @update:model-value="onInputAmount"
+          placeholder="Monto"
+          density="comfortable"
+          hide-details
+          prefix="$"
+          class="general-input add-item-inline__amount"
+          maxlength="12"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          @keyup.enter="saveItem"
+          @focus="preventScroll"
+        />
       </div>
-    </v-card-text>
-  </v-card>
+    </v-card>
+    <v-btn
+      icon
+      size="small"
+      class="add-item-inline__btn"
+      :disabled="!canSave"
+      @click="saveItem"
+    >
+      <CheckIcon />
+    </v-btn>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import CheckIcon from '@/assets/icons/Check.icon.vue'
 
 const emit = defineEmits<{
   save: [name: string, amount: number]
 }>()
 
-const nameInput = ref()
 const amountInput = ref()
-const isActive = ref(false)
 
 const form = ref({
   name: '',
   amount: 0
+})
+
+const canSave = computed(() => {
+  return form.value.name.trim() && form.value.amount > 0
 })
 
 const formattedAmount = computed({
@@ -74,23 +74,15 @@ const onInputAmount = (val: string) => {
   form.value.amount = isNaN(numeric) ? 0 : numeric
 }
 
-const handleCardClick = () => {
-  if (!isActive.value) {
-    isActive.value = true
-    setTimeout(() => {
-      nameInput.value?.focus()
-    }, 100)
-  }
-}
-
-const handleFocus = () => {
-  isActive.value = true
-}
-
 const goToAmount = () => {
   if (form.value.name.trim()) {
     amountInput.value?.focus()
   }
+}
+
+const preventScroll = () => {
+  const el = document.querySelector('.list-detail') as HTMLElement
+  if (el) el.scrollLeft = 0
 }
 
 const saveItem = () => {
@@ -105,78 +97,45 @@ const resetForm = () => {
     name: '',
     amount: 0
   }
-  isActive.value = false
 }
 </script>
 
 <style scoped lang="scss">
 .add-item-inline {
-  margin-bottom: 12px;
-  border-radius: 18px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  border: 2px dashed transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  background-color: $bg-item;
+  border-radius: 18px;
+  padding: 8px;
+  scroll-margin: 0;
 
-  &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
-    border-color: $blue;
+  &__card {
+    flex: 1;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
   }
 
   &__content {
-    padding: 12px 16px !important;
-  }
-
-  &__main {
     display: flex;
     align-items: center;
     gap: 8px;
-  }
-
-  &__checkbox {
-    flex-shrink: 0;
-  }
-
-  &__inputs {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  &__input {
-    :deep(.v-field__input) {
-      font-size: 0.95rem;
-      padding: 0;
-      min-height: 0;
-    }
-
-    :deep(.v-field__field) {
-      padding-top: 0;
-      padding-bottom: 0;
-    }
-
-    :deep(.v-field__outline) {
-      display: none;
-    }
-
-    :deep(.v-field) {
-      padding: 0;
-    }
+    padding: 4px 8px;
   }
 
   &__name {
     flex: 1;
+    min-width: 0;
+
+    :deep(.v-field) {
+      background-color: $white;
+    }
 
     :deep(input) {
-      &::placeholder {
-        color: $text-gray-md;
-        opacity: 1;
-      }
-
-      &:read-only::placeholder {
-        color: $text-gray-lg;
-      }
+      scroll-margin: 0;
+      font-size: 16px !important;
     }
   }
 
@@ -184,9 +143,30 @@ const resetForm = () => {
     width: 120px;
     flex-shrink: 0;
 
-    :deep(.v-field__input) {
-      font-family: $font-medium;
-      color: $blue;
+    :deep(.v-field) {
+      background-color: $white;
+    }
+
+    :deep(input) {
+      scroll-margin: 0;
+      font-size: 16px !important;
+    }
+  }
+
+  &__btn {
+    background-color: $color-lg-primary !important;
+    height: 40px;
+    width: 40px;
+    border-radius: 12px;
+    flex-shrink: 0;
+
+    &:disabled {
+      opacity: 0.4;
+    }
+
+    .icon {
+      width: 24px !important;
+      height: 24px !important;
     }
   }
 }

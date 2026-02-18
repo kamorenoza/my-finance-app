@@ -40,14 +40,20 @@ body {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   overflow: hidden;
-  overflow: hidden;
+  overflow-x: hidden !important;
 }
 
 body {
   font-family: 'PoppinsRegular', sans-serif !important;
   font-weight: 400 !important;
-  overflow-x: hidden;
+  overflow-x: hidden !important;
+  max-width: 100vw;
   color: $text-dark;
+}
+
+#app {
+  overflow-x: hidden !important;
+  max-width: 100vw;
 }
 
 .v-application {
@@ -263,6 +269,13 @@ body {
 }
 
 /* Inputs */
+/* iOS Safari: font-size < 16px triggers auto-zoom on focus */
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+
 .general-input {
   font-size: 14px;
 
@@ -277,7 +290,7 @@ body {
   }
 
   .v-field__input {
-    font-size: 14px;
+    font-size: 16px !important;
     padding-left: 0 !important;
   }
 
@@ -315,7 +328,7 @@ body {
   }
 
   .v-field__input {
-    font-size: 14px;
+    font-size: 16px !important;
     padding-left: 0 !important;
   }
 
@@ -359,7 +372,7 @@ body {
   }
 
   .v-field__input {
-    font-size: 14px;
+    font-size: 16px !important;
     padding-left: 0px !important;
     background-color: transparent;
     border-radius: 8px;
@@ -438,7 +451,6 @@ body {
     display: none !important;
   }
 }
-
 
 /* Notification */
 .v-snackbar {

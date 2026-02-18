@@ -1,5 +1,5 @@
 <template>
-  <div class="page-header">
+  <div class="page-header" :class="{ 'page-header--with-back': showBack }">
     <v-btn
       v-if="showBack"
       icon
@@ -10,8 +10,13 @@
     >
       <v-icon>mdi-arrow-left</v-icon>
     </v-btn>
-    <h1 v-if="title" class="page-header__title">{{ title }}</h1>
-    <slot name="actions"></slot>
+    <div class="page-header__title-wrapper">
+      <h1 v-if="title" class="page-header__title">{{ title }}</h1>
+      <slot name="subtitle"></slot>
+    </div>
+    <div class="page-header__actions">
+      <slot name="actions"></slot>
+    </div>
   </div>
 </template>
 
@@ -49,16 +54,34 @@ const handleBack = () => {
     padding-bottom: 25px;
   }
 
+  &--with-back {
+    padding-left: 5px;
+    padding-bottom: 10px;
+    gap: 0;
+  }
+
   &__back {
     flex-shrink: 0;
+  }
+
+  &__title-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
   &__title {
     font-family: $font-medium !important;
     font-size: 16px !important;
     margin: 0;
-    flex: 1;
     font-weight: 100 !important;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
   }
 }
 </style>

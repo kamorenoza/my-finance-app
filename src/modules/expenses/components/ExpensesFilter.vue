@@ -183,6 +183,7 @@ watch([search, selectedType, sortBy], () => {
   @media (min-width: 960px) {
     padding-left: 0;
     gap: 0;
+    padding-right: 15px;
   }
 
   &__view {

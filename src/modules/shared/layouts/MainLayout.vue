@@ -80,6 +80,7 @@ const handleLogout = async () => {
 .main-div {
   position: relative;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 

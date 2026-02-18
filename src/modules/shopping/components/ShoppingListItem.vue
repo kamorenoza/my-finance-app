@@ -94,7 +94,6 @@ const totalReal = computed(() => {
   &:hover {
     background-color: darken($bg-item, 2%);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 
   &__content {

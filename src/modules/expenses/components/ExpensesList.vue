@@ -1,6 +1,10 @@
 <template>
   <div class="expenses__list">
-    <ExpensesFilter @filterChange="handleFilterChange" />
+    <ExpensesFilter @filterChange="handleFilterChange">
+      <template #actions>
+        <slot name="addButton" />
+      </template>
+    </ExpensesFilter>
     <EmptyState v-if="expenses.length === 0" />
     <div v-else class="expenses__list-content">
       <div

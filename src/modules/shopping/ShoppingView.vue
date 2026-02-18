@@ -82,7 +82,7 @@ const handleOpen = (list: ShoppingListType) => {
 
   &__summary-content {
     @media (min-width: 960px) {
-      width: 25%;
+      width: 250px;
       flex-shrink: 0;
     }
   }

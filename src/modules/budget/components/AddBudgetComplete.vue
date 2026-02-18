@@ -690,7 +690,7 @@ watch(
 
   &--focused {
     .add-expense {
-      bottom: -5px;
+      bottom: -10px;
       border-bottom: none;
 
       .add-expense__button {

@@ -18,7 +18,6 @@
       <v-text-field
         v-model="newCategory.name"
         dense
-        autofocus
         class="general-input"
         placeholder="Categoria"
         :maxlength="100"

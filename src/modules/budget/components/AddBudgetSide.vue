@@ -516,20 +516,8 @@ const close = () => {
 
 <style scoped lang="scss">
 :deep(.add-budget__drawer) {
-  position: absolute !important;
-  height: 100%;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  display: none !important;
-
-  .v-overlay {
-    position: absolute !important;
-  }
-
-  @media (min-width: 960px) {
-    display: block !important;
-  }
+  z-index: 2400 !important;
+  position: fixed !important;
 }
 
 .add-budget {

@@ -20,6 +20,7 @@
     width="350"
     persistent
     @vue:unmounted="close"
+    class="expense-more__drawer"
   >
     <v-card flat>
       <div class="px-3 pt-3 d-flex align-center ga-3">
@@ -307,6 +308,11 @@ watch(
 </script>
 
 <style scoped lang="scss">
+:deep(.expense-more__drawer) {
+  z-index: 2400 !important;
+  position: fixed !important;
+}
+
 .fab-button {
   z-index: 10;
   width: 40px !important;

@@ -13,7 +13,13 @@
     </TooltipFabButton>
   </div>
   <!-- Drawer lateral -->
-  <v-navigation-drawer v-model="drawer" location="right" temporary width="350">
+  <v-navigation-drawer
+    v-model="drawer"
+    location="right"
+    temporary
+    width="350"
+    :touchless="true"
+  >
     <CategoryDrawer @done="drawer = false" @close="drawer = false" />
   </v-navigation-drawer>
 </template>

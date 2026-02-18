@@ -502,10 +502,10 @@ const getSixMonthsHistory = computed(() => {
   &__container {
     @media (min-width: 960px) {
       flex-grow: 1;
-      padding-left: 15px;
+      padding-left: 5px;
 
       &:first-child {
-        width: 35%;
+        min-width: 360px;
         padding-left: 0;
         flex-grow: 0;
       }

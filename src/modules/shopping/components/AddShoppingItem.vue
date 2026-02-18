@@ -11,7 +11,6 @@
           density="comfortable"
           hide-details
           class="general-input mb-4"
-          autofocus
         />
         <v-text-field
           v-model="formattedEstimatedAmount"

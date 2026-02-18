@@ -26,43 +26,40 @@
       </template>
     </v-tooltip>
 
-    <v-dialog v-model="showDialog" max-width="400" persistent>
-      <v-card class="shopping-dialog">
-        <v-card-title class="shopping-dialog__title">
-          {{ isEditing ? 'Editar' : 'Nueva' }} lista de compras
-        </v-card-title>
-        <v-card-text class="shopping-dialog__content">
+    <v-navigation-drawer
+      v-model="showDialog"
+      location="right"
+      temporary
+      width="350"
+      persistent
+      @vue:unmounted="closeDialog"
+      class="shopping-drawer"
+      :touchless="true"
+    >
+      <v-card flat>
+        <div class="px-3 pt-7 pb-2">
+          <div class="subtitle">
+            {{ isEditing ? 'Editar' : 'Nueva' }} lista de compras
+          </div>
+        </div>
+        <v-card-text>
           <v-text-field
             v-model="form.name"
             label="Nombre de la lista*"
             density="comfortable"
             hide-details
             class="general-input mb-4"
-            autofocus
           />
         </v-card-text>
-        <v-card-actions class="shopping-dialog__actions">
-          <v-btn
-            v-if="isEditing"
-            class="btn-label"
-            color="error"
-            @click="handleDelete"
-          >
-            Eliminar
-          </v-btn>
+        <v-card-actions class="pr-4 mt-2">
           <v-spacer />
-          <v-btn class="btn-label" @click="closeDialog">Cancelar</v-btn>
-          <v-btn
-            class="btn-label"
-            :color="colorPrimary"
-            @click="save"
-            :disabled="!form.name"
-          >
+          <v-btn class="btn-neutro" @click="closeDialog">Cancelar</v-btn>
+          <v-btn class="btn-primary" @click="save" :disabled="!form.name">
             Guardar
           </v-btn>
         </v-card-actions>
       </v-card>
-    </v-dialog>
+    </v-navigation-drawer>
   </div>
 </template>
 
@@ -245,27 +242,17 @@ const save = () => {
   closeDialog()
 }
 
-const handleDelete = async () => {
-  if (!editingId.value) return
-
-  const confirmed = await confirm({
-    title: 'Eliminar lista',
-    message: '¿Estás seguro de que deseas eliminar esta lista de compras?'
-  })
-
-  if (confirmed && editingId.value) {
-    shoppingStore.deleteShoppingList(editingId.value)
-    toast.success('Lista eliminada')
-    closeDialog()
-  }
-}
-
 defineExpose({
   openEditDialog
 })
 </script>
 
 <style scoped lang="scss">
+:deep(.shopping-drawer) {
+  z-index: 2400 !important;
+  position: fixed !important;
+}
+
 .add-shopping {
   &__fab {
     position: fixed;
@@ -283,34 +270,6 @@ defineExpose({
       right: 20px;
       top: 72px;
     }
-  }
-}
-
-.shopping-dialog {
-  background-color: $white;
-  padding: 20px 10px 10px;
-  box-shadow:
-    0px 12px 32px rgba(0, 0, 0, 0.12),
-    0px 2px 8px rgba(0, 0, 0, 0.06) !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
-  border-radius: 32px !important;
-
-  &__title {
-    font-size: 1rem;
-    font-family: $font-medium;
-    padding: 0 24px 8px;
-  }
-
-  &__content {
-    padding: 8px 24px !important;
-  }
-
-  &__actions {
-    padding: 8px 24px 16px;
-  }
-
-  .btn-label {
-    font-family: $font-medium;
   }
 }
 </style>

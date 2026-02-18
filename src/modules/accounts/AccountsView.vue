@@ -47,6 +47,7 @@ usePreventBack()
 
     @media (min-width: 960px) {
       padding: 0;
+      padding-right: 15px;
     }
   }
 }

@@ -25,7 +25,24 @@
         @filterChange="onFilterChange"
         @edit="handleEditExpense"
         @updateAccount="handleUpdateExpenseAccount"
-      />
+      >
+        <template #addButton>
+          <div class="expenses__add-btn" v-if="mdAndUp">
+            <v-tooltip text="Agregar gasto" location="left">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  :color="colorMdPrimary"
+                  class="btn-fab fab-button"
+                  @click="openAddExpenseDrawer"
+                  v-bind="props"
+                >
+                  <AddIcon class="icon" />
+                </v-btn>
+              </template>
+            </v-tooltip>
+          </div>
+        </template>
+      </ExpensesList>
     </div>
 
     <AddExpense :selectedDate="selectedDate" />
@@ -36,11 +53,14 @@
       @save="handleSaveEditExpense"
       @delete="handleDeleteExpense"
     />
+
+    <ExpensesDrawer ref="expensesDrawerRef" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useDisplay } from 'vuetify'
 import { useExpensesStore } from './expenses.store'
 import { backupService } from '@/modules/shared/services/backup.service'
 import dayjs from 'dayjs'
@@ -50,13 +70,19 @@ import AddExpense from './components/AddExpense.vue'
 import EditExpense from './components/EditExpense.vue'
 import ExpensesSummary from './components/ExpensesSummary.vue'
 import ExpensesList from './components/ExpensesList.vue'
+import ExpensesDrawer from './components/ExpensesDrawer.vue'
 import PageHeader from '../shared/components/PageHeader.vue'
+import AddIcon from '@/assets/icons/Add.icon.vue'
+import { colorMdPrimary } from '@/styles/variables.styles'
+
+const { mdAndUp } = useDisplay()
 
 const selectedDate = ref(new Date())
 const expensesStore = useExpensesStore()
 const search = ref('')
 const selectedExpense = ref<Expense | null>(null)
 const showEditDialog = ref(false)
+const expensesDrawerRef = ref()
 const filterConfig = ref({
   groupBy: expensesStore.filterConfig.groupBy,
   orderBy: expensesStore.filterConfig.orderBy
@@ -183,8 +209,22 @@ const handleUpdateExpenseAccount = (
 }
 
 const handleEditExpense = (expense: Expense) => {
-  selectedExpense.value = expense
-  showEditDialog.value = true
+  if (mdAndUp.value) {
+    // Open drawer on desktop
+    if (expensesDrawerRef.value) {
+      expensesDrawerRef.value.openEditDrawer(expense)
+    }
+  } else {
+    // Open dialog on mobile
+    selectedExpense.value = expense
+    showEditDialog.value = true
+  }
+}
+
+const openAddExpenseDrawer = () => {
+  if (expensesDrawerRef.value) {
+    expensesDrawerRef.value.openDrawer(selectedDate.value)
+  }
 }
 
 const handleSaveEditExpense = (updatedExpense: Expense) => {
@@ -251,7 +291,18 @@ watch(
   &__content {
     @media (min-width: 960px) {
       display: flex;
-      gap: 20px;
+      gap: 10px;
+    }
+  }
+
+  &__add-btn {
+    .btn-fab {
+      width: 40px !important;
+      height: 40px !important;
+      border-radius: 12px !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   }
 }

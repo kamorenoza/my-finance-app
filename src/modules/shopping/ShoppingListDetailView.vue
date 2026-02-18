@@ -3,48 +3,54 @@
     <!-- Header -->
     <PageHeader :title="list?.name" show-back @back="goBack">
       <template #actions>
-        <p class="list-detail__date">{{ formattedDate }}</p>
-        <v-btn icon size="small" variant="text" @click="openEditList">
-          <v-icon>mdi-pencil</v-icon>
+        <v-btn
+          class="list-detail__action"
+          size="small"
+          variant="text"
+          @click="openEditList"
+        >
+          <EditIcon />
+        </v-btn>
+        <v-btn
+          class="list-detail__action delete"
+          size="small"
+          variant="text"
+          @click="handleDeleteList"
+        >
+          <TrashIcon />
         </v-btn>
       </template>
     </PageHeader>
 
-    <!-- Stats -->
-    <div class="list-detail__stats">
-      <div class="stat-item">
-        <span class="stat-label">Items</span>
-        <span class="stat-value">{{ list?.items.length || 0 }}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Completados</span>
-        <span class="stat-value">{{ completedCount }}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Estimado</span>
-        <span class="stat-value">{{ currency(totalEstimated) }}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Real</span>
-        <span class="stat-value">{{ currency(totalReal) }}</span>
-      </div>
-    </div>
-
-    <!-- Items list -->
-    <div class="list-detail__items">
-      <AddShoppingItemInline @save="handleAddItemInline" />
-
-      <EmptyState
-        v-if="!list || list.items.length === 0"
-        message="No hay artículos en esta lista"
+    <span class="list-detail__date">{{ formattedDate }}</span>
+    <div class="list-detail__content">
+      <!-- Stats -->
+      <ShoppingStats
+        :total-items="list?.items.length || 0"
+        :completed-count="completedCount"
+        :total-list="totalEstimated"
+        :total-completed="totalReal"
       />
-      <ShoppingItemCard
-        v-for="item in list?.items"
-        :key="item.id"
-        :item="item"
-        @edit="handleEditItem"
-        @toggleChecked="handleToggleChecked"
-      />
+
+      <!-- Items list -->
+      <div class="list-detail__items">
+        <AddShoppingItemInline @save="handleAddItemInline" />
+
+        <EmptyState
+          v-if="!list || list.items.length === 0"
+          message="No hay artículos en esta lista"
+        />
+
+        <div class="list-detail__scroll" v-else>
+          <ShoppingItemCard
+            v-for="item in list?.items"
+            :key="item.id"
+            :item="item"
+            @edit="handleEditItem"
+            @toggleChecked="handleToggleChecked"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- Modals -->
@@ -71,15 +77,20 @@ import ShoppingItemCard from '@/modules/shopping/components/ShoppingItemCard.vue
 import AddShoppingItem from '@/modules/shopping/components/AddShoppingItem.vue'
 import AddShoppingItemInline from '@/modules/shopping/components/AddShoppingItemInline.vue'
 import AddShoppingList from '@/modules/shopping/components/AddShoppingList.vue'
+import ShoppingStats from '@/modules/shopping/components/ShoppingStats.vue'
 import PageHeader from '../shared/components/PageHeader.vue'
 import EmptyState from '@/modules/shared/components/EmptyState.vue'
 import { generateId, dateFormatter } from '@/modules/shared/utils'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
+import { useConfirm } from '@/modules/shared/composables/useConfirm'
+import EditIcon from '@/assets/icons/Edit.icon.vue'
+import TrashIcon from '@/assets/icons/Trash.icon.vue'
 
 const router = useRouter()
 const route = useRoute()
 const shoppingStore = useShoppingStore()
 const toast = useToastStore()
+const confirm = useConfirm()
 
 const addItemRef = ref()
 const editListRef = ref()
@@ -171,12 +182,19 @@ const handleToggleChecked = (itemId: string) => {
   shoppingStore.toggleItemChecked(listId.value, itemId)
 }
 
-const currency = (value: number): string =>
-  new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0
-  }).format(value)
+const handleDeleteList = async () => {
+  const confirmed = await confirm({
+    title: 'Eliminar lista',
+    message: `¿Estás seguro de que deseas eliminar la lista "${list.value?.name}"?`,
+    confirmColor: 'red'
+  })
+
+  if (confirmed) {
+    shoppingStore.deleteShoppingList(listId.value)
+    toast.success('Lista eliminada')
+    router.push('/compras')
+  }
+}
 
 onMounted(() => {
   if (!list.value) {
@@ -188,58 +206,64 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .list-detail {
-  padding: 16px;
   position: relative;
   min-height: calc(100vh - 95px);
+  overflow-x: hidden;
 
   @media (min-width: 960px) {
-    max-width: 800px;
-    margin: 0 auto;
+    max-width: 950px;
   }
 
   &__date {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: $text-gray-md;
     margin: 0;
-  }
+    position: absolute;
+    top: 48px;
+    left: 45px;
 
-  &__stats {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 24px;
-
-    @media (min-width: 600px) {
-      grid-template-columns: repeat(4, 1fr);
-    }
-
-    .stat-item {
-      background: $white;
-      border-radius: 18px;
-      padding: 16px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .stat-label {
-      font-size: 0.75rem;
-      color: $text-gray-md;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .stat-value {
-      font-size: 1.1rem;
-      font-family: $font-medium;
-      color: $blue;
+    @media (min-width: 960px) {
+      left: 40px;
+      top: 53px;
     }
   }
 
   &__items {
     margin-bottom: 80px;
+    padding: 0 0 40px;
+
+    @media (min-width: 960px) {
+      flex-grow: 1;
+      margin-top: 25px;
+    }
+  }
+
+  &__action {
+    background-color: $color-lg-primary;
+    height: 40px;
+    width: 40px;
+    border-radius: 12px;
+    padding: 0;
+    min-width: 0;
+
+    .icon {
+      width: 26px !important;
+      height: 26px !important;
+    }
+
+    &.delete {
+      background-color: $red-md;
+    }
+  }
+
+  &__content {
+    @media (min-width: 960px) {
+      display: flex;
+      gap: 25px;
+    }
+  }
+
+  &__scroll {
   }
 }
 </style>

@@ -1,12 +1,12 @@
 <template>
-  <v-card class="expenses-summary">
-    <v-card-text class="text-center">
+  <div class="expenses-summary">
+    <div class="text-center">
       <div class="expenses-summary__label">Total Gastos</div>
       <div class="expenses-summary__amount">
         {{ formattedTotal }}
       </div>
-    </v-card-text>
-  </v-card>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -30,8 +30,8 @@ const formattedTotal = computed(() => {
 <style lang="scss" scoped>
 .expenses-summary {
   border-radius: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   background: $blue !important;
+  padding: 20px 0;
 
   &__label {
     font-size: 13px;
