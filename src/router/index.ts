@@ -2,7 +2,7 @@
 import { auth } from '@/database/firebase'
 import { useAuthStore } from '@/modules/auth/auth.store'
 import { onAuthStateChanged, type User } from 'firebase/auth'
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import {
   saveLastRoute,
   getLastRoute
@@ -62,7 +62,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory('/my-finance-app/'),
   routes
 })
 
