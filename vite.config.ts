@@ -72,8 +72,8 @@ export default defineConfig({
         theme_color: '#7a5fff',
         background_color: '#f9f9f9',
         display: 'standalone',
-        scope: '/',
-        start_url: '/',
+        scope: '/my-finance-app/',
+        start_url: '/my-finance-app/#/',
         icons: [
           {
             src: 'pwa-192x192.png',
