@@ -1,0 +1,1 @@
+const a="#9e9e9e",s="#8971ad",e="#ede8f3",c="#6faeaa",F="#FFFFFF",b="#3ab35a",f="#1c1c1e",d="#67707b",t="#cb4f47",o="#7f96cc",r="#62aeaa",g="#be9172";export{F as a,s as b,a as c,o as d,e,c as f,b as g,r as h,g as i,f as j,t as r,d as t};
