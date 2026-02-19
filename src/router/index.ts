@@ -43,6 +43,11 @@ const routes = [
         path: '/compras/:id',
         name: 'compras-detalle',
         component: () => import('@/modules/shopping/ShoppingListDetailView.vue')
+      },
+      {
+        path: '/usuario',
+        name: 'usuario',
+        component: () => import('@/modules/user/UserView.vue')
       }
     ]
   },

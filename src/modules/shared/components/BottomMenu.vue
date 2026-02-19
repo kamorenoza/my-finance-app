@@ -43,9 +43,9 @@
               :color="isActive('/cuentas') ? colorPrimary : colorGrey"
             />
             <UserIcon
-              v-if="item.path === '/user'"
+              v-if="item.path === '/usuario'"
               class="side-menu-icon-user"
-              :color="isActive('/user') ? colorPrimary : colorGrey"
+              :color="isActive('/usuario') ? colorPrimary : colorGrey"
             />
             <ShoppingIcon
               v-if="item.path === '/compras'"
@@ -125,14 +125,14 @@
         </v-col>
 
         <v-col cols="2">
-          <div class="menu-btn">
-            <div class="menu-item" @click="router.push('/user')">
+          <div class="menu-btn" :class="{ active: isActive('/usuario') }">
+            <div class="menu-item" @click="router.push('/usuario')">
               <UserIcon
                 class="menu-icon-user"
-                :color="isActive('/user') ? colorPrimary : colorGrey"
+                :color="isActive('/usuario') ? colorPrimary : colorGrey"
               />
             </div>
-            <span :class="['menu-label', { active: isActive('/user') }]">
+            <span :class="['menu-label', { active: isActive('/usuario') }]">
               Usuario
             </span>
           </div>
@@ -272,6 +272,7 @@ const hideBottomMenu = computed(() => {
   cursor: pointer;
   width: 61px;
   margin: auto;
+  padding-bottom: 3px;
 
   &.active {
     background-color: $color-lg-primary;

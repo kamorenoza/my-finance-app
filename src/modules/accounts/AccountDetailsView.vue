@@ -110,13 +110,24 @@ const router = useRouter()
 const accountId = route.params.id as string
 const account = computed(() => store.getAccountById(accountId)!)
 
+// Load configuration synchronously in setup so collapseAll starts at the correct
+// value and never mutates during mount (which would wrongly trigger the child watcher)
+const savedConfig = configService.getAccountConfig(accountId)
+
 const currentFilter = ref({
   search: '',
-  groupBy: account.value.type === 'TC' ? 'none' : ('category' as string | null),
-  orderBy: null as string | null,
+  groupBy:
+    savedConfig.groupBy !== undefined
+      ? savedConfig.groupBy
+      : account.value.type === 'TC'
+        ? 'none'
+        : ('category' as string | null),
+  orderBy: (savedConfig.orderBy !== undefined ? savedConfig.orderBy : null) as
+    | string
+    | null,
   initDate: null as Date | null,
   endDate: null as Date | null,
-  collapseAll: false
+  collapseAll: savedConfig.collapseAll ?? false
 })
 
 const screenWidth = ref(window.innerWidth)
@@ -129,23 +140,7 @@ const updateScreenWidth = () => {
   screenWidth.value = window.innerWidth
 }
 
-// Load configuration when component mounts
 onMounted(() => {
-  if (account.value.type === 'TC') {
-    currentFilter.value.groupBy = 'none'
-  }
-
-  const savedConfig = configService.getAccountConfig(accountId)
-  if (savedConfig.groupBy !== undefined) {
-    currentFilter.value.groupBy = savedConfig.groupBy
-  }
-  if (savedConfig.orderBy !== undefined) {
-    currentFilter.value.orderBy = savedConfig.orderBy
-  }
-  if (savedConfig.collapseAll !== undefined) {
-    currentFilter.value.collapseAll = savedConfig.collapseAll
-  }
-
   window.addEventListener('resize', updateScreenWidth)
 })
 
@@ -161,7 +156,9 @@ const backToAccounts = () => {
 watch(
   () => currentFilter.value,
   newFilter => {
+    const existing = configService.getAccountConfig(accountId)
     configService.saveAccountConfig(accountId, {
+      ...existing,
       groupBy: newFilter.groupBy,
       orderBy: newFilter.orderBy,
       collapseAll: newFilter.collapseAll

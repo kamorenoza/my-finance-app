@@ -155,19 +155,28 @@ const accountId = props.accountId
 const expandedPendingGroups = ref<{ [key: string]: boolean }>({})
 const expandedCompletedGroups = ref<{ [key: string]: boolean }>({})
 const showCompleted = ref(false)
-const hasLoadedState = ref(false)
 
 onMounted(() => {
-  // Cargar estado guardado de grupos expandidos
+  // Inicializar grupos desde config guardada; para grupos nuevos, usar el estado
+  // actual de collapseAll como default. Se hace aquí (no en watcher immediate)
+  // para que el estado persistido tenga precedencia sobre collapseAll.
   const savedConfig = configService.getAccountConfig(accountId)
-  if (
-    savedConfig.expandedGroups &&
-    Object.keys(savedConfig.expandedGroups).length > 0
-  ) {
-    expandedPendingGroups.value = { ...savedConfig.expandedGroups }
-    expandedCompletedGroups.value = { ...savedConfig.expandedGroups }
-    hasLoadedState.value = true
-  }
+  const savedGroups = savedConfig.expandedGroups || {}
+  const defaultExpanded = !props.filters.collapseAll
+
+  getPendingExpensesGrouped.value.forEach(group => {
+    expandedPendingGroups.value[group.label] =
+      savedGroups[group.label] !== undefined
+        ? savedGroups[group.label]
+        : defaultExpanded
+  })
+
+  getCompletedExpensesGrouped.value.forEach(group => {
+    expandedCompletedGroups.value[group.label] =
+      savedGroups[group.label] !== undefined
+        ? savedGroups[group.label]
+        : defaultExpanded
+  })
 
   showCompleted.value = getPendingExpensesGrouped.value.length === 0
   emit('updateExpenses', allFilteredExpenses.value)
@@ -530,53 +539,41 @@ const getCompletedExpensesGrouped = computed((): ExpenseGroup[] => {
   ]
 })
 
-// Watcher para manejar collapseAll
+// Watcher para manejar collapseAll — solo se dispara cuando el usuario
+// cambia el toggle activamente (no en el mount inicial)
 watch(
   () => props.filters.collapseAll,
-  (collapseAll, oldValue) => {
-    // Solo ejecutar si hay un cambio real (no undefined -> true al montar)
-    if (collapseAll && oldValue !== undefined) {
-      // Colapsar todos los grupos
-      getPendingExpensesGrouped.value.forEach(group => {
-        expandedPendingGroups.value[group.label] = false
-      })
-      getCompletedExpensesGrouped.value.forEach(group => {
-        expandedCompletedGroups.value[group.label] = false
-      })
-      saveExpandedGroups()
-    }
+  collapseAll => {
+    const isExpanded = !collapseAll
+    getPendingExpensesGrouped.value.forEach(group => {
+      expandedPendingGroups.value[group.label] = isExpanded
+    })
+    getCompletedExpensesGrouped.value.forEach(group => {
+      expandedCompletedGroups.value[group.label] = isExpanded
+    })
+    saveExpandedGroups()
   }
 )
 
-// Watcher en getPendingExpensesGrouped para aplicar collapseAll SOLO si no hay estado guardado
-watch(
-  getPendingExpensesGrouped,
-  groups => {
-    // Solo aplicar collapseAll si no se ha cargado estado previo
-    if (props.filters.collapseAll && !hasLoadedState.value) {
-      groups.forEach(group => {
-        expandedPendingGroups.value[group.label] = false
-      })
-      saveExpandedGroups()
+// Watcher para manejar grupos nuevos que aparezcan después del mount
+// (p.ej. al agregar un gasto con categoría nueva). Sin immediate.
+watch(getPendingExpensesGrouped, groups => {
+  const defaultExpanded = !props.filters.collapseAll
+  groups.forEach(group => {
+    if (expandedPendingGroups.value[group.label] === undefined) {
+      expandedPendingGroups.value[group.label] = defaultExpanded
     }
-  },
-  { immediate: true }
-)
+  })
+})
 
-// Watcher en getCompletedExpensesGrouped para aplicar collapseAll SOLO si no hay estado guardado
-watch(
-  getCompletedExpensesGrouped,
-  groups => {
-    // Solo aplicar collapseAll si no se ha cargado estado previo
-    if (props.filters.collapseAll && !hasLoadedState.value) {
-      groups.forEach(group => {
-        expandedCompletedGroups.value[group.label] = false
-      })
-      saveExpandedGroups()
+watch(getCompletedExpensesGrouped, groups => {
+  const defaultExpanded = !props.filters.collapseAll
+  groups.forEach(group => {
+    if (expandedCompletedGroups.value[group.label] === undefined) {
+      expandedCompletedGroups.value[group.label] = defaultExpanded
     }
-  },
-  { immediate: true }
-)
+  })
+})
 </script>
 
 <style scoped lang="scss">

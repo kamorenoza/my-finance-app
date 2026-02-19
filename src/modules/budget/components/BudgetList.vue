@@ -78,7 +78,6 @@ const props = withDefaults(defineProps<Props>(), {
 const store = useBudgetStore()
 const expensesStore = useExpensesStore()
 const expandedGroups = ref<{ [key: string]: boolean }>({})
-const hasLoadedState = ref(false)
 // Usar el estado del toggle desde el store
 const addExpensesToBudget = computed(() => store.addExpensesToBudget)
 
@@ -100,7 +99,6 @@ onMounted(() => {
     Object.keys(savedConfig.expandedGroups).length > 0
   ) {
     expandedGroups.value = { ...savedConfig.expandedGroups }
-    hasLoadedState.value = true
   }
   // Colapsar por defecto el grupo de gastos del mes
   if (expandedGroups.value['gastos-del-mes'] === undefined) {
@@ -127,10 +125,9 @@ watch(
 )
 
 const toggleGroup = (groupLabel: string) => {
-  expandedGroups.value[groupLabel] =
-    expandedGroups.value[groupLabel] !== false ? false : true
-
-  // Guardar el estado
+  const current = expandedGroups.value[groupLabel]
+  // undefined = expanded by default, so toggling means collapsing
+  expandedGroups.value[groupLabel] = current === false ? true : false
   saveExpandedGroups()
 }
 
@@ -219,32 +216,34 @@ const groupedEntries = computed((): BudgetGroup[] | null => {
   }))
 })
 
-// Watcher para manejar collapseAll (solo cuando cambia, no al iniciar)
+// Watcher para manejar collapseAll cuando cambia
 watch(
   () => props.filters?.collapseAll,
   (collapseAll, oldValue) => {
-    // Solo ejecutar si hay un cambio real (no undefined -> true al montar)
-    if (collapseAll && oldValue !== undefined && groupedEntries.value) {
-      // Colapsar todos los grupos
-      groupedEntries.value.forEach(group => {
-        expandedGroups.value[group.label] = false
-      })
-      saveExpandedGroups()
-    }
+    if (oldValue === undefined) return // skip initial call
+    if (!groupedEntries.value) return
+
+    const isExpanded = !collapseAll
+    groupedEntries.value.forEach(group => {
+      expandedGroups.value[group.label] = isExpanded
+    })
+    expandedGroups.value['gastos-del-mes'] = isExpanded
+    saveExpandedGroups()
   }
 )
 
-// Watcher en groupedEntries para aplicar collapseAll SOLO si no hay estado guardado
+// Watcher en groupedEntries para aplicar collapseAll a grupos nuevos (ej: cambio de mes)
 watch(
   groupedEntries,
   groups => {
-    // Solo aplicar collapseAll si no se ha cargado estado previo
-    if (props.filters?.collapseAll && groups && !hasLoadedState.value) {
-      groups.forEach(group => {
-        expandedGroups.value[group.label] = false
-      })
-      saveExpandedGroups()
-    }
+    if (!groups) return
+    const isCollapsed = props.filters?.collapseAll
+    groups.forEach(group => {
+      if (expandedGroups.value[group.label] === undefined) {
+        // Nuevo grupo sin estado previo: aplicar collapseAll
+        expandedGroups.value[group.label] = !isCollapsed
+      }
+    })
   },
   { immediate: true }
 )

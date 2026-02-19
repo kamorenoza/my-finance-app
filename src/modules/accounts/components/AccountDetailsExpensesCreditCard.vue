@@ -77,18 +77,18 @@ const store = useAccountsStore()
 const accountId = props.accountId
 const expandedGroups = ref<{ [key: string]: boolean }>({})
 const showCompleted = ref(false)
-const hasLoadedState = ref(false)
 
 onMounted(() => {
-  // Cargar estado guardado de grupos expandidos
   const savedConfig = configService.getAccountConfig(accountId)
-  if (
-    savedConfig.expandedGroups &&
-    Object.keys(savedConfig.expandedGroups).length > 0
-  ) {
-    expandedGroups.value = { ...savedConfig.expandedGroups }
-    hasLoadedState.value = true
-  }
+  const savedExpandedGroups = savedConfig.expandedGroups || {}
+  const defaultExpanded = !props.filters.collapseAll
+
+  getPendingExpensesGrouped.value.forEach((group: any) => {
+    expandedGroups.value[group.label] =
+      savedExpandedGroups[group.label] !== undefined
+        ? savedExpandedGroups[group.label]
+        : defaultExpanded
+  })
 
   showCompleted.value = getPendingExpensesGrouped.value.length === 0
   emit('updateExpenses', pendingExpenses.value)
@@ -348,35 +348,28 @@ const getPendingExpensesGrouped = computed(() => {
   ] as any
 })
 
-// Watcher para manejar collapseAll (solo cuando cambia, no al iniciar)
+// Watcher para manejar collapseAll — solo se dispara cuando el usuario
+// cambia el toggle activamente (no en el mount inicial)
 watch(
   () => props.filters.collapseAll,
-  (collapseAll, oldValue) => {
-    // Solo ejecutar si hay un cambio real (no undefined -> true al montar)
-    if (collapseAll && oldValue !== undefined) {
-      // Colapsar todos los grupos
-      getPendingExpensesGrouped.value.forEach((group: any) => {
-        expandedGroups.value[group.label] = false
-      })
-      saveExpandedGroups()
-    }
+  collapseAll => {
+    const isExpanded = !collapseAll
+    getPendingExpensesGrouped.value.forEach((group: any) => {
+      expandedGroups.value[group.label] = isExpanded
+    })
+    saveExpandedGroups()
   }
 )
 
-// Watcher en getPendingExpensesGrouped para aplicar collapseAll SOLO si no hay estado guardado
-watch(
-  getPendingExpensesGrouped,
-  groups => {
-    // Solo aplicar collapseAll si no se ha cargado estado previo
-    if (props.filters.collapseAll && !hasLoadedState.value) {
-      groups.forEach((group: any) => {
-        expandedGroups.value[group.label] = false
-      })
-      saveExpandedGroups()
+// Watcher para grupos nuevos que aparezcan después del mount. Sin immediate.
+watch(getPendingExpensesGrouped, groups => {
+  const defaultExpanded = !props.filters.collapseAll
+  groups.forEach((group: any) => {
+    if (expandedGroups.value[group.label] === undefined) {
+      expandedGroups.value[group.label] = defaultExpanded
     }
-  },
-  { immediate: true }
-)
+  })
+})
 </script>
 
 <style scoped lang="scss">
