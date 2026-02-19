@@ -84,8 +84,24 @@ export const useShoppingStore = defineStore('shopping', () => {
       const item = list.items.find(i => i.id === itemId)
       if (item) {
         item.checked = !item.checked
+        item.checkedAt = item.checked ? new Date().toISOString() : null
         updateShoppingList(list)
       }
+    }
+  }
+
+  const reorderItems = (listId: string, orderedIds: string[]) => {
+    const list = shoppingLists.value.find(l => l.id === listId)
+    if (list) {
+      const checked = list.items.filter(i => i.checked)
+      const pendingMap = new Map(
+        list.items.filter(i => !i.checked).map(i => [i.id, i])
+      )
+      const reordered = orderedIds
+        .map(id => pendingMap.get(id))
+        .filter(Boolean) as typeof list.items
+      list.items = [...reordered, ...checked]
+      updateShoppingList(list)
     }
   }
 
@@ -110,6 +126,7 @@ export const useShoppingStore = defineStore('shopping', () => {
     addItemToList,
     updateItemInList,
     deleteItemFromList,
-    toggleItemChecked
+    toggleItemChecked,
+    reorderItems
   }
 })

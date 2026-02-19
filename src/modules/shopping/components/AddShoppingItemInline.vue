@@ -3,14 +3,6 @@
     <v-card class="add-item-inline__card">
       <div class="add-item-inline__content">
         <v-text-field
-          v-model="form.name"
-          placeholder="Nombre del artículo"
-          density="comfortable"
-          hide-details
-          class="general-input add-item-inline__name"
-          @keyup.enter="goToAmount"
-        />
-        <v-text-field
           ref="amountInput"
           v-model="formattedAmount"
           @update:model-value="onInputAmount"
@@ -25,12 +17,19 @@
           @keyup.enter="saveItem"
           @focus="preventScroll"
         />
+        <v-text-field
+          v-model="form.name"
+          placeholder="Descripción"
+          density="comfortable"
+          hide-details
+          class="general-input add-item-inline__name"
+          @keyup.enter="goToAmount"
+        />
       </div>
     </v-card>
     <v-btn
-      icon
-      size="small"
-      class="add-item-inline__btn"
+      :ripple="false"
+      class="btn-fab add-item-inline__save"
       :disabled="!canSave"
       @click="saveItem"
     >
@@ -105,7 +104,7 @@ const resetForm = () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   background-color: $bg-item;
   border-radius: 18px;
   padding: 8px;
@@ -126,21 +125,6 @@ const resetForm = () => {
   }
 
   &__name {
-    flex: 1;
-    min-width: 0;
-
-    :deep(.v-field) {
-      background-color: $white;
-    }
-
-    :deep(input) {
-      scroll-margin: 0;
-      font-size: 16px !important;
-    }
-  }
-
-  &__amount {
-    width: 120px;
     flex-shrink: 0;
 
     :deep(.v-field) {
@@ -149,7 +133,23 @@ const resetForm = () => {
 
     :deep(input) {
       scroll-margin: 0;
-      font-size: 16px !important;
+      font-size: 14px !important;
+      padding: 0;
+    }
+  }
+
+  &__amount {
+    flex: 1;
+    min-width: 100px;
+
+    :deep(.v-field) {
+      background-color: $white;
+    }
+
+    :deep(input) {
+      scroll-margin: 0;
+      font-size: 14px !important;
+      padding: 0;
     }
   }
 
@@ -168,6 +168,25 @@ const resetForm = () => {
       width: 24px !important;
       height: 24px !important;
     }
+  }
+
+  &__save {
+    background: $color-md-primary;
+
+    &:disabled {
+      opacity: 0.6;
+    }
+  }
+}
+
+.btn-fab {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 12px !important;
+
+  .icon {
+    width: 30px;
+    height: 30px;
   }
 }
 </style>

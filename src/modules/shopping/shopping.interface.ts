@@ -1,9 +1,9 @@
 export interface ShoppingItem {
   id: string
   name: string
-  estimatedAmount: number
-  realAmount: number
+  amount: number
   checked: boolean
+  checkedAt?: string | null
   converted: boolean
   expenseId: string | null
 }

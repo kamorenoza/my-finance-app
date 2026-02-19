@@ -226,7 +226,7 @@ const hideBottomMenu = computed(() => {
   left: 0;
   right: 0;
   background: #ffffff;
-  height: 95px;
+  height: 90px;
   z-index: 1000;
   padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
   padding-left: 7px;

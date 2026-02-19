@@ -1,55 +1,51 @@
 <template>
-  <v-card class="shopping-item">
-    <v-card-text class="shopping-item__content">
+  <div class="shopping-item">
+    <div class="shopping-item__content">
+      <v-icon v-if="dragMode" class="drag-handle" size="20"
+        >mdi-drag-vertical</v-icon
+      >
       <div class="shopping-item__main">
-        <v-checkbox
-          :model-value="item.checked"
-          @update:model-value="$emit('toggleChecked', item.id)"
-          hide-details
-          density="compact"
+        <button
           class="shopping-item__checkbox"
-        />
+          :class="{ 'shopping-item__checkbox--checked': item.checked }"
+          @click.stop="$emit('toggleChecked', item.id)"
+        >
+          <v-icon v-if="item.checked" size="16" color="white">mdi-check</v-icon>
+        </button>
         <div class="shopping-item__info">
           <div
             class="shopping-item__name"
             :class="{ 'shopping-item__name--checked': item.checked }"
           >
-            {{ item.name }}
-          </div>
-          <div class="shopping-item__amounts">
-            <span class="shopping-item__label">Estimado:</span>
-            <span class="shopping-item__value">{{
-              currency(item.estimatedAmount)
-            }}</span>
-            <span
-              v-if="item.realAmount > 0"
-              class="shopping-item__label shopping-item__label--real"
-            >
-              Real:
-            </span>
-            <span
-              v-if="item.realAmount > 0"
-              class="shopping-item__value shopping-item__value--real"
-            >
-              {{ currency(item.realAmount) }}
-            </span>
+            <p>
+              {{ item.name }}
+              <span class="shopping-item__value">
+                {{ currency(item.amount) }}
+              </span>
+            </p>
           </div>
         </div>
       </div>
       <div class="shopping-item__actions">
-        <v-btn icon size="small" variant="text" @click="$emit('edit', item)">
-          <v-icon size="20">mdi-pencil</v-icon>
+        <v-btn
+          class="shopping-item__edit-btn"
+          variant="text"
+          @click.stop="$emit('edit', item)"
+        >
+          <EditIcon />
         </v-btn>
       </div>
-    </v-card-text>
-  </v-card>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import type { ShoppingItem } from '../shopping.interface'
+import EditIcon from '@/assets/icons/Edit.icon.vue'
 
 interface Props {
   item: ShoppingItem
+  dragMode?: boolean
 }
 
 defineProps<Props>()
@@ -71,20 +67,24 @@ const currency = (value: number): string =>
 .shopping-item {
   margin-bottom: 12px;
   border-radius: 18px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
   transition: all 0.2s ease;
-
-  &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
-  }
+  box-shadow: none !important;
 
   &__content {
-    padding: 12px 16px !important;
+    padding: 0 2px !important;
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
-
+  .drag-handle {
+    flex-shrink: 0;
+    color: #c8c8c8;
+    cursor: grab;
+    margin-right: 2px;
+    &:active {
+      cursor: grabbing;
+    }
+  }
   &__main {
     display: flex;
     align-items: center;
@@ -94,6 +94,22 @@ const currency = (value: number): string =>
 
   &__checkbox {
     flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid #c8c8c8;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+
+    &--checked {
+      background-color: rgba($color-primary, 0.6);
+      border-color: transparent !important;
+    }
   }
 
   &__info {
@@ -105,7 +121,6 @@ const currency = (value: number): string =>
     font-size: 0.95rem;
     font-family: $font-medium;
     color: $text-gray;
-    margin-bottom: 4px;
     transition: all 0.2s ease;
 
     &--checked {
@@ -134,6 +149,7 @@ const currency = (value: number): string =>
     font-size: 0.85rem;
     font-family: $font-medium;
     color: $blue;
+    padding-left: 5px;
 
     &--real {
       color: $green;
@@ -143,6 +159,20 @@ const currency = (value: number): string =>
   &__actions {
     flex-shrink: 0;
     margin-left: 8px;
+  }
+
+  &__edit-btn {
+    background-color: $color-lg-primary;
+    height: 32px !important;
+    width: 32px !important;
+    border-radius: 12px !important;
+    padding: 0 !important;
+    min-width: 0 !important;
+
+    .icon {
+      width: 23px !important;
+      height: 23px !important;
+    }
   }
 }
 </style>

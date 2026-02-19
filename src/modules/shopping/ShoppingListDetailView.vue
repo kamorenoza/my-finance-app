@@ -28,13 +28,24 @@
       <ShoppingStats
         :total-items="list?.items.length || 0"
         :completed-count="completedCount"
-        :total-list="totalEstimated"
-        :total-completed="totalReal"
+        :total-list="totalPending"
+        :total-completed="totalCompleted"
       />
 
       <!-- Items list -->
       <div class="list-detail__items">
         <AddShoppingItemInline @save="handleAddItemInline" />
+
+        <div v-if="list && list.items.length > 0" class="list-detail__toolbar">
+          <button
+            class="list-detail__reorder-btn"
+            :class="{ 'list-detail__reorder-btn--active': reorderMode }"
+            @click="reorderMode = !reorderMode"
+          >
+            <v-icon size="16">mdi-swap-vertical</v-icon>
+            {{ reorderMode ? 'Listo' : 'Reorganizar' }}
+          </button>
+        </div>
 
         <EmptyState
           v-if="!list || list.items.length === 0"
@@ -42,8 +53,25 @@
         />
 
         <div class="list-detail__scroll" v-else>
+          <draggable
+            :list="pendingItems"
+            item-key="id"
+            handle=".drag-handle"
+            @end="handleReorder"
+            ghost-class="drag-ghost"
+          >
+            <template #item="{ element }">
+              <ShoppingItemCard
+                :key="element.id"
+                :item="element"
+                :drag-mode="reorderMode"
+                @edit="handleEditItem"
+                @toggleChecked="handleToggleChecked"
+              />
+            </template>
+          </draggable>
           <ShoppingItemCard
-            v-for="item in list?.items"
+            v-for="item in checkedItems"
             :key="item.id"
             :item="item"
             @edit="handleEditItem"
@@ -66,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useShoppingStore } from '@/modules/shopping/shopping.store'
 import type {
@@ -80,6 +108,7 @@ import AddShoppingList from '@/modules/shopping/components/AddShoppingList.vue'
 import ShoppingStats from '@/modules/shopping/components/ShoppingStats.vue'
 import PageHeader from '../shared/components/PageHeader.vue'
 import EmptyState from '@/modules/shared/components/EmptyState.vue'
+import draggable from 'vuedraggable'
 import { generateId, dateFormatter } from '@/modules/shared/utils'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
 import { useConfirm } from '@/modules/shared/composables/useConfirm'
@@ -94,6 +123,7 @@ const confirm = useConfirm()
 
 const addItemRef = ref()
 const editListRef = ref()
+const reorderMode = ref(false)
 
 const listId = computed(() => route.params.id as string)
 
@@ -111,21 +141,69 @@ const completedCount = computed(() => {
   return list.value.items.filter((item: ShoppingItem) => item.checked).length
 })
 
-const totalEstimated = computed(() => {
+const totalPending = computed(() => {
   if (!list.value) return 0
-  return list.value.items.reduce(
-    (sum: number, item: ShoppingItem) => sum + item.estimatedAmount,
-    0
-  )
+  return list.value.items
+    .filter((item: ShoppingItem) => !item.checked)
+    .reduce(
+      (sum: number, item: ShoppingItem) =>
+        sum + ((item.amount ?? (item as any).estimatedAmount) || 0),
+      0
+    )
 })
 
-const totalReal = computed(() => {
+const totalCompleted = computed(() => {
   if (!list.value) return 0
-  return list.value.items.reduce(
-    (sum: number, item: ShoppingItem) => sum + item.realAmount,
-    0
-  )
+  return list.value.items
+    .filter((item: ShoppingItem) => item.checked)
+    .reduce(
+      (sum: number, item: ShoppingItem) =>
+        sum + ((item.amount ?? (item as any).estimatedAmount) || 0),
+      0
+    )
 })
+
+const pendingItems = ref<ShoppingItem[]>([])
+
+watch(
+  () => list.value?.items,
+  items => {
+    if (!items) return
+    const incoming = items.filter((i: ShoppingItem) => !i.checked)
+    const currentIds = pendingItems.value.map(i => i.id)
+    const incomingIds = incoming.map(i => i.id)
+    const sameSet =
+      currentIds.length === incomingIds.length &&
+      incomingIds.every(id => currentIds.includes(id))
+    if (!sameSet) {
+      pendingItems.value = incoming
+    } else {
+      // Update item data without changing order
+      pendingItems.value = currentIds.map(
+        id => incoming.find(i => i.id === id)!
+      )
+    }
+  },
+  { immediate: true, deep: true }
+)
+
+const checkedItems = computed<ShoppingItem[]>(() => {
+  if (!list.value) return []
+  return list.value.items
+    .filter((i: ShoppingItem) => i.checked)
+    .sort((a: ShoppingItem, b: ShoppingItem) => {
+      const dateA = a.checkedAt ? new Date(a.checkedAt).getTime() : 0
+      const dateB = b.checkedAt ? new Date(b.checkedAt).getTime() : 0
+      return dateB - dateA
+    })
+})
+
+const handleReorder = () => {
+  shoppingStore.reorderItems(
+    listId.value,
+    pendingItems.value.map((i: ShoppingItem) => i.id)
+  )
+}
 
 const goBack = () => {
   router.push('/compras')
@@ -147,8 +225,7 @@ const handleAddItemInline = (name: string, amount: number) => {
   const newItem: ShoppingItem = {
     id: generateId(),
     name,
-    estimatedAmount: amount,
-    realAmount: 0,
+    amount,
     checked: false,
     converted: false,
     expenseId: null
@@ -223,18 +300,46 @@ onMounted(() => {
     left: 45px;
 
     @media (min-width: 960px) {
-      left: 40px;
-      top: 53px;
+      left: 45px;
+      top: 47px;
     }
   }
 
   &__items {
     margin-bottom: 80px;
-    padding: 0 0 40px;
+    padding: 0 15px 40px;
 
     @media (min-width: 960px) {
       flex-grow: 1;
       margin-top: 25px;
+      padding: 0 0 40px;
+    }
+  }
+
+  &__toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+  }
+
+  &__reorder-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    font-family: $font-medium;
+    color: $text-gray-md;
+    background: transparent;
+    border: 1px solid #e0e0e0;
+    border-radius: 20px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &--active {
+      color: $color-primary;
+      border-color: $color-primary;
+      background-color: rgba($color-md-primary, 0.08);
     }
   }
 
@@ -262,8 +367,11 @@ onMounted(() => {
       gap: 25px;
     }
   }
+}
 
-  &__scroll {
-  }
+.drag-ghost {
+  opacity: 0.4;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 18px;
 }
 </style>

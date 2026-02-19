@@ -4,19 +4,8 @@
       <div class="shopping-list-card__info">
         <p class="shopping-list-card__name">{{ shoppingList.name }}</p>
         <div class="shopping-list-card__meta">
-          <span class="shopping-list-card__items">
-            {{ itemsCount }} items
-          </span>
-          <span class="ml-5 shopping-list-card__items">
-            Total: {{ itemsCount }}
-          </span>
-        </div>
-        <div v-if="totalEstimated > 0" class="shopping-list-card__amounts">
-          <span class="shopping-list-card__estimated">
-            Est: {{ currencyFormatter(totalEstimated) }}
-          </span>
-          <span v-if="totalReal > 0" class="shopping-list-card__real">
-            Real: {{ currencyFormatter(totalReal) }}
+          <span v-if="total > 0" class="shopping-list-card__items">
+            Total: {{ currencyFormatter(total) }}
           </span>
         </div>
       </div>
@@ -25,7 +14,7 @@
           Convertido
         </span>
         <span v-if="completedItems > 0" class="badge progress">
-          {{ completedItems }}/{{ itemsCount }}
+          {{ completedItems }}/{{ shoppingList.items.length }}
         </span>
       </div>
     </div>
@@ -54,26 +43,22 @@ const openList = () => {
   emit('open', props.shoppingList)
 }
 
-const itemsCount = computed(() => {
-  return props.shoppingList.items.length
+const pendingCount = computed(() => {
+  return props.shoppingList.items.filter(item => !item.checked).length
 })
 
 const completedItems = computed(() => {
   return props.shoppingList.items.filter(item => item.checked).length
 })
 
-const totalEstimated = computed(() => {
-  return props.shoppingList.items.reduce(
-    (sum, item) => sum + item.estimatedAmount,
-    0
-  )
-})
-
-const totalReal = computed(() => {
-  return props.shoppingList.items.reduce(
-    (sum, item) => sum + item.realAmount,
-    0
-  )
+const total = computed(() => {
+  return props.shoppingList.items
+    .filter(item => !item.checked)
+    .reduce(
+      (sum, item) =>
+        sum + ((item.amount ?? (item as any).estimatedAmount) || 0),
+      0
+    )
 })
 </script>
 
@@ -84,7 +69,7 @@ const totalReal = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
+  padding: 20px 16px;
   background-color: $bg-item;
   border-radius: 16px;
   margin-bottom: 12px;
@@ -93,7 +78,6 @@ const totalReal = computed(() => {
 
   &:hover {
     background-color: darken($bg-item, 2%);
-    transform: translateY(-2px);
   }
 
   &__content {
@@ -107,8 +91,8 @@ const totalReal = computed(() => {
   &__info {
     display: flex;
     flex-direction: column;
-    gap: 6px;
     min-width: 0;
+    gap: 4px;
     flex: 1;
   }
 
@@ -124,8 +108,9 @@ const totalReal = computed(() => {
   &__meta {
     display: flex;
     gap: 12px;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: $text-gray-md;
+    font-family: $font-medium;
   }
 
   &__date,
@@ -137,7 +122,7 @@ const totalReal = computed(() => {
   &__amounts {
     display: flex;
     gap: 12px;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
   }
 
   &__estimated {

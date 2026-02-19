@@ -13,18 +13,9 @@
           class="general-input mb-4"
         />
         <v-text-field
-          v-model="formattedEstimatedAmount"
-          @update:model-value="onInputEstimated"
-          label="Monto estimado*"
-          density="comfortable"
-          hide-details
-          prefix="$"
-          class="general-input mb-4"
-        />
-        <v-text-field
-          v-model="formattedRealAmount"
-          @update:model-value="onInputReal"
-          label="Monto real"
+          v-model="formattedAmount"
+          @update:model-value="onInputAmount"
+          label="Monto*"
           density="comfortable"
           hide-details
           prefix="$"
@@ -32,25 +23,26 @@
         />
       </v-card-text>
       <v-card-actions class="item-dialog__actions">
-        <v-btn
-          v-if="isEditing"
-          class="btn-label"
-          color="error"
-          @click="handleDelete"
-        >
-          Eliminar
-        </v-btn>
-        <v-spacer />
         <v-btn class="btn-label" @click="closeDialog">Cancelar</v-btn>
         <v-btn
           class="btn-label"
           :color="colorPrimary"
           @click="save"
-          :disabled="!form.name || form.estimatedAmount === 0"
+          :disabled="!form.name || form.amount === 0"
         >
           Guardar
         </v-btn>
       </v-card-actions>
+      <div v-if="isEditing" class="item-dialog__delete">
+        <v-btn
+          class="btn-label item-dialog__delete-btn"
+          variant="text"
+          color="error"
+          @click="handleDelete"
+        >
+          Eliminar artículo
+        </v-btn>
+      </div>
     </v-card>
   </v-dialog>
 </template>
@@ -59,12 +51,15 @@
 import { ref, computed } from 'vue'
 import type { ShoppingItem } from '../shopping.interface'
 import { colorPrimary, colorMdPrimary } from '@/styles/variables.styles'
+import { useConfirm } from '@/modules/shared/composables/useConfirm'
 
 interface Props {
   listId: string
 }
 
 const props = defineProps<Props>()
+
+const confirm = useConfirm()
 
 const emit = defineEmits<{
   save: [item: ShoppingItem]
@@ -82,28 +77,17 @@ let tooltipAutoHideTimeout: ReturnType<typeof setTimeout> | null = null
 
 const form = ref({
   name: '',
-  estimatedAmount: 0,
-  realAmount: 0
+  amount: 0
 })
 
-const formattedEstimatedAmount = computed(() => {
-  if (form.value.estimatedAmount === 0) return ''
-  return form.value.estimatedAmount.toLocaleString('es-CO')
+const formattedAmount = computed(() => {
+  if (!form.value.amount || form.value.amount === 0) return ''
+  return form.value.amount.toLocaleString('es-CO')
 })
 
-const formattedRealAmount = computed(() => {
-  if (form.value.realAmount === 0) return ''
-  return form.value.realAmount.toLocaleString('es-CO')
-})
-
-const onInputEstimated = (val: string) => {
+const onInputAmount = (val: string) => {
   const numeric = Number(val.replace(/[^\d]/g, ''))
-  form.value.estimatedAmount = isNaN(numeric) ? 0 : numeric
-}
-
-const onInputReal = (val: string) => {
-  const numeric = Number(val.replace(/[^\d]/g, ''))
-  form.value.realAmount = isNaN(numeric) ? 0 : numeric
+  form.value.amount = isNaN(numeric) ? 0 : numeric
 }
 
 const openDialog = () => {
@@ -113,10 +97,10 @@ const openDialog = () => {
 }
 
 const openEditDialog = (item: ShoppingItem) => {
+  const legacyItem = item as any
   form.value = {
     name: item.name,
-    estimatedAmount: item.estimatedAmount,
-    realAmount: item.realAmount
+    amount: item.amount ?? legacyItem.estimatedAmount ?? 0
   }
   editingId.value = item.id
   isEditing.value = true
@@ -131,23 +115,21 @@ const closeDialog = () => {
 const resetForm = () => {
   form.value = {
     name: '',
-    estimatedAmount: 0,
-    realAmount: 0
+    amount: 0
   }
   editingId.value = null
   isEditing.value = false
 }
 
 const save = () => {
-  if (!form.value.name || form.value.estimatedAmount === 0) {
+  if (!form.value.name || form.value.amount === 0) {
     return
   }
 
   const item: ShoppingItem = {
     id: editingId.value || '',
     name: form.value.name,
-    estimatedAmount: form.value.estimatedAmount,
-    realAmount: form.value.realAmount,
+    amount: form.value.amount,
     checked: false,
     converted: false,
     expenseId: null
@@ -157,10 +139,17 @@ const save = () => {
   closeDialog()
 }
 
-const handleDelete = () => {
+const handleDelete = async () => {
   if (editingId.value) {
-    emit('delete', editingId.value)
-    closeDialog()
+    const confirmed = await confirm({
+      title: 'Eliminar artículo',
+      message: `¿Estás seguro de que deseas eliminar <strong>${form.value.name}</strong>?`,
+      confirmColor: 'red'
+    })
+    if (confirmed) {
+      emit('delete', editingId.value)
+      closeDialog()
+    }
   }
 }
 
@@ -290,7 +279,24 @@ defineExpose({
   }
 
   &__actions {
-    padding: 8px 24px 16px;
+    padding: 8px 24px 8px;
+    justify-content: flex-end;
+  }
+
+  &__delete {
+    display: flex;
+    justify-content: center;
+    padding: 10px 24px 0px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    margin-top: 4px;
+  }
+
+  &__delete-btn {
+    text-transform: none;
+
+    :deep(.v-btn__content) {
+      font-size: 0.9rem !important;
+    }
   }
 
   .btn-label {

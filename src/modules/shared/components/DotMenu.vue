@@ -4,6 +4,7 @@
     location="bottom end"
     :close-on-content-click="false"
     v-if="items?.length && items.length > 0"
+    :z-index="2600"
   >
     <template #activator="{ props }">
       <v-btn
