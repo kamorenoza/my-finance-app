@@ -62,7 +62,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHashHistory('/my-finance-app/'),
+  history: createWebHashHistory(),
   routes
 })
 
