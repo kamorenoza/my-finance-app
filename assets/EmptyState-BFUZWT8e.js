@@ -1,1 +1,0 @@
-import{e as s,E as a,H as e,W as t,G as o}from"./vue-vendor-CQiCTXSV.js";import{_ as m}from"./index-B8_2VSAt.js";const p={class:"empty-state"},r=m(s({__name:"EmptyState",props:{message:{default:"No hay movimientos para mostrar"}},setup:s=>(s,m)=>(o(),a("div",p,[e("p",null,t(s.message),1)]))}),[["__scopeId","data-v-bf15cccc"]]);export{r as E};
