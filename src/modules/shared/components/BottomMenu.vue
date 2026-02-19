@@ -174,7 +174,7 @@ const items = [
   { path: '/cuentas', icon: ExpenseHandIcon, label: 'Cuentas' },
   { path: '/gastos', icon: 'mdi-cash-multiple', label: 'Gastos' },
   { path: '/compras', icon: 'mdi-format-list-bulleted', label: 'Compras' },
-  { path: '/user', icon: 'mdi-notebook-edit', label: 'Usuario' }
+  { path: '/usuario', icon: 'mdi-user', label: 'Usuario' }
 ]
 
 onMounted(() => {

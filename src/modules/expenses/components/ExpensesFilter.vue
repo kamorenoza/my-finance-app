@@ -91,7 +91,7 @@ const orderByOptions: OrderByOption[] = [
   { label: 'Menor monto', filter: 'lowest' }
 ]
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   searchLabel: 'Buscar por nombre'
 })
 

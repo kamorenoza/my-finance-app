@@ -43,10 +43,6 @@ const openList = () => {
   emit('open', props.shoppingList)
 }
 
-const pendingCount = computed(() => {
-  return props.shoppingList.items.filter(item => !item.checked).length
-})
-
 const completedItems = computed(() => {
   return props.shoppingList.items.filter(item => item.checked).length
 })

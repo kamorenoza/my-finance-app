@@ -44,6 +44,10 @@ const handleLogout = async () => {
   flex-direction: column;
   height: 100%;
 
+  @media (min-width: 960px) {
+    padding: 0 24px;
+  }
+
   &__content {
     padding: 16px;
   }

@@ -74,7 +74,7 @@ interface Props {
   showFab?: boolean
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   showFab: true
 })
 

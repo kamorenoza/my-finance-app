@@ -6,6 +6,7 @@ import vuetify from 'vite-plugin-vuetify'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: process.env.NODE_ENV === 'production' ? '/my-finance-app/' : '/',
   plugins: [
     vue(),
     vuetify({ autoImport: true }),

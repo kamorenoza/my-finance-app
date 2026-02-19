@@ -50,14 +50,14 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { ShoppingItem } from '../shopping.interface'
-import { colorPrimary, colorMdPrimary } from '@/styles/variables.styles'
+import { colorPrimary } from '@/styles/variables.styles'
 import { useConfirm } from '@/modules/shared/composables/useConfirm'
 
 interface Props {
   listId: string
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 const confirm = useConfirm()
 
@@ -69,11 +69,6 @@ const emit = defineEmits<{
 const showDialog = ref(false)
 const isEditing = ref(false)
 const editingId = ref<string | null>(null)
-const tooltipVisible = ref(false)
-const isLongPress = ref(false)
-let longPressResetTimeout: ReturnType<typeof setTimeout> | null = null
-let longPressTimeout: ReturnType<typeof setTimeout> | null = null
-let tooltipAutoHideTimeout: ReturnType<typeof setTimeout> | null = null
 
 const form = ref({
   name: '',
@@ -151,88 +146,6 @@ const handleDelete = async () => {
       closeDialog()
     }
   }
-}
-
-const showTooltip = (fromTouch = false) => {
-  tooltipVisible.value = true
-  if (fromTouch) {
-    isLongPress.value = true
-    if (tooltipAutoHideTimeout) {
-      clearTimeout(tooltipAutoHideTimeout)
-    }
-    tooltipAutoHideTimeout = setTimeout(() => {
-      hideTooltip()
-    }, 1500)
-  } else if (tooltipAutoHideTimeout) {
-    clearTimeout(tooltipAutoHideTimeout)
-  }
-}
-
-const hideTooltip = () => {
-  tooltipVisible.value = false
-  if (tooltipAutoHideTimeout) {
-    clearTimeout(tooltipAutoHideTimeout)
-  }
-  if (longPressResetTimeout) {
-    clearTimeout(longPressResetTimeout)
-  }
-  longPressResetTimeout = setTimeout(() => {
-    isLongPress.value = false
-  }, 300)
-}
-
-const startLongPress = () => {
-  if (longPressTimeout) {
-    clearTimeout(longPressTimeout)
-  }
-  longPressTimeout = setTimeout(() => {
-    showTooltip(true)
-  }, 500)
-}
-
-const endLongPress = () => {
-  if (longPressTimeout) {
-    clearTimeout(longPressTimeout)
-  }
-  if (isLongPress.value) {
-    hideTooltip()
-  }
-}
-
-const onPointerDown = (event: PointerEvent) => {
-  if (event.pointerType === 'touch') {
-    startLongPress()
-  }
-}
-
-const onPointerEnter = (event: PointerEvent) => {
-  if (event.pointerType === 'mouse') {
-    showTooltip(false)
-  }
-}
-
-const onPointerUp = (event: PointerEvent) => {
-  if (event.pointerType === 'touch') {
-    endLongPress()
-  } else if (event.pointerType === 'mouse') {
-    hideTooltip()
-  }
-}
-
-const onPointerLeave = (event: PointerEvent) => {
-  if (event.pointerType === 'mouse') {
-    hideTooltip()
-  } else if (event.pointerType === 'touch') {
-    endLongPress()
-  }
-}
-
-const handlePress = () => {
-  if (isLongPress.value) {
-    isLongPress.value = false
-    return
-  }
-  openDialog()
 }
 
 defineExpose({
