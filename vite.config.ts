@@ -16,7 +16,7 @@ export default defineConfig({
         'favicon.svg',
         'favicon.ico',
         'robots.txt',
-        'apple-touch-icon.png'
+        'apple-touch-icon-v2.png'
       ],
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
