@@ -49,9 +49,12 @@ const formattedDate = computed(() => {
   if (!selected.value) return 'Seleccionar fecha'
 
   const date = new Date(selected.value)
-  const day = date.getDate().toString().padStart(2, '0')
-  const month = date.toLocaleDateString('es-ES', { month: 'long' })
-  const year = date.getFullYear()
+  const day = date.getUTCDate().toString().padStart(2, '0')
+  const month = date.toLocaleDateString('es-ES', {
+    month: 'long',
+    timeZone: 'UTC'
+  })
+  const year = date.getUTCFullYear()
   return `${day} ${month.charAt(0).toUpperCase() + month.slice(1)} ${year}`
 })
 

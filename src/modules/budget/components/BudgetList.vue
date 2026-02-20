@@ -18,16 +18,18 @@
       />
       <BudgetGroupedView
         v-else
-        :groups="groupedEntries"
+        :groups="orderedGroupEntries!"
         :reference-date="props.selectedDate || new Date()"
         :group-by="props.filters?.groupBy ?? null"
         :month-expenses="monthExpenses"
         :total-month-expenses="totalMonthExpenses"
         :add-expenses-to-budget="addExpensesToBudget"
         :expanded-groups="expandedGroups"
+        :reorder-mode="reorderMode"
         @edit="onEditEntry"
         @toggle-group="toggleGroup"
         @update:add-expenses-to-budget="updateAddExpensesToBudget"
+        @reorder="handleGroupReorder"
       />
     </template>
   </div>
@@ -62,6 +64,7 @@ interface Props {
     endDate?: Date | null
     collapseAll?: boolean
   }
+  reorderMode?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -72,12 +75,14 @@ const props = withDefaults(defineProps<Props>(), {
     orderBy: null,
     initDate: null,
     endDate: null
-  })
+  }),
+  reorderMode: false
 })
 
 const store = useBudgetStore()
 const expensesStore = useExpensesStore()
 const expandedGroups = ref<{ [key: string]: boolean }>({})
+const savedGroupOrders = ref<Record<string, string[]>>({})
 // Usar el estado del toggle desde el store
 const addExpensesToBudget = computed(() => store.addExpensesToBudget)
 
@@ -99,6 +104,10 @@ onMounted(() => {
     Object.keys(savedConfig.expandedGroups).length > 0
   ) {
     expandedGroups.value = { ...savedConfig.expandedGroups }
+  }
+  // Cargar orden de grupos guardado
+  if (savedConfig.groupOrders) {
+    savedGroupOrders.value = savedConfig.groupOrders
   }
   // Colapsar por defecto el grupo de gastos del mes
   if (expandedGroups.value['gastos-del-mes'] === undefined) {
@@ -215,6 +224,31 @@ const groupedEntries = computed((): BudgetGroup[] | null => {
     total: calculateGroupTotal(entries, props.selectedDate || new Date())
   }))
 })
+
+// Aplicar el orden guardado a los grupos
+const orderedGroupEntries = computed((): BudgetGroup[] | null => {
+  if (!groupedEntries.value) return null
+  const groupBy = props.filters?.groupBy || 'none'
+  const savedOrder = savedGroupOrders.value[groupBy] || []
+  if (!savedOrder.length) return groupedEntries.value
+  const orderMap = new Map(savedOrder.map((label, idx) => [label, idx]))
+  return [...groupedEntries.value].sort((a, b) => {
+    const ia = orderMap.has(a.label) ? orderMap.get(a.label)! : Infinity
+    const ib = orderMap.has(b.label) ? orderMap.get(b.label)! : Infinity
+    return ia - ib
+  })
+})
+
+const handleGroupReorder = (newLabels: string[]) => {
+  const groupBy = props.filters?.groupBy || 'none'
+  savedGroupOrders.value = { ...savedGroupOrders.value, [groupBy]: newLabels }
+  const currentConfig = configService.getBudgetConfig()
+  configService.saveBudgetConfig({
+    ...currentConfig,
+    groupOrders: savedGroupOrders.value
+  })
+  backupService.queueBackup()
+}
 
 // Watcher para manejar collapseAll cuando cambia
 watch(

@@ -106,7 +106,7 @@
                     }"
                   >
                     <component
-                      :is="getIcon((item.raw as any).category?.icon)"
+                      :is="getIcon((item.raw as any).icon)"
                       :color="colorWhite"
                     />
                   </div>
@@ -126,7 +126,7 @@
                   }"
                 >
                   <component
-                    :is="getIcon((item.raw as any).category?.icon)"
+                    :is="getIcon((item.raw as any).icon)"
                     :color="colorWhite"
                   />
                 </div>

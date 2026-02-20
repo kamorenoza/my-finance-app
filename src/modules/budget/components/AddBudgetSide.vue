@@ -47,6 +47,7 @@
           label="Categoría"
           density="comfortable"
           hide-details
+          :menu-props="{ zIndex: 2500 }"
         >
           <template v-slot:item="{ props, item }">
             <v-list-item
@@ -55,13 +56,17 @@
               :prepend-avatar="undefined"
             >
               <template v-slot:prepend>
-                <v-avatar size="24" :color="(item.raw as any).backgroundColor">
+                <div
+                  class="add-budget__cat"
+                  :style="{
+                    backgroundColor: (item.raw as any).backgroundColor
+                  }"
+                >
                   <component
-                    :is="getIcon((item.raw as any).category?.icon)"
+                    :is="getIcon((item.raw as any).icon)"
                     :color="colorWhite"
-                    size="14"
                   />
-                </v-avatar>
+                </div>
               </template>
               <v-list-item-title>{{
                 (item.raw as any).name
@@ -71,13 +76,15 @@
 
           <template v-slot:selection="{ item }">
             <div class="d-flex align-center ga-2">
-              <v-avatar size="20" :color="(item.raw as any).backgroundColor">
+              <div
+                class="add-budget__cat"
+                :style="{ backgroundColor: (item.raw as any).backgroundColor }"
+              >
                 <component
-                  :is="getIcon((item.raw as any).category?.icon)"
+                  :is="getIcon((item.raw as any).icon)"
                   :color="colorWhite"
-                  size="12"
                 />
-              </v-avatar>
+              </div>
               {{ (item.raw as any).name }}
             </div>
           </template>
@@ -515,6 +522,22 @@ const close = () => {
 
 <style scoped lang="scss">
 .add-budget {
+  &__cat {
+    width: 25px;
+    height: 25px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 5px;
+    flex-shrink: 0;
+
+    :deep(.icon) {
+      width: 18px !important;
+      height: 18px !important;
+    }
+  }
+
   &__pill {
     padding: 4px 12px;
     border-radius: 16px;

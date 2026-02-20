@@ -1,4 +1,15 @@
-import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore'
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  setDoc,
+  where
+} from 'firebase/firestore'
 import { db } from '@/database/firestore'
 
 const getStoredBackupDate = (email: string) =>
@@ -210,6 +221,49 @@ const applyBackupIfChanged = (
   }
 }
 
+// ─── Weekly backup ────────────────────────────────────────────────────────────
+
+/** Document ID safe for Firestore: e.g. "2026-02-20T15-30-00-000Z" */
+const toWeeklyDocId = (date: Date) => date.toISOString().replace(/[:.]/g, '-')
+
+/** Parse the document ID back to a Date */
+const fromWeeklyDocId = (id: string) =>
+  new Date(id.replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/, 'T$1:$2:$3.$4Z'))
+
+const checkAndRunWeeklyBackup = async (email: string) => {
+  const colRef = collection(db, 'weekly_backup_email')
+  const userQuery = query(
+    colRef,
+    where('email', '==', email),
+    orderBy('created_at', 'desc'),
+    limit(1)
+  )
+  const snapshot = await getDocs(userQuery)
+
+  let shouldBackup = true
+
+  if (!snapshot.empty) {
+    const latestDoc = snapshot.docs[0]
+    const latestDate = fromWeeklyDocId(latestDoc.id)
+    const diffMs = Date.now() - latestDate.getTime()
+    const diffDays = diffMs / (1000 * 60 * 60 * 24)
+    shouldBackup = diffDays >= 7
+  }
+
+  if (shouldBackup) {
+    const now = new Date()
+    const docId = toWeeklyDocId(now)
+    const payload = getBackupPayload(email)
+    await setDoc(doc(db, 'weekly_backup_email', docId), {
+      ...payload,
+      email,
+      created_at: now.toISOString()
+    })
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+
 export const backupService = {
   runBackupIfNeeded: async (email: string | null | undefined) => {
     if (!email || !shouldRunBackup(email)) {
@@ -317,5 +371,13 @@ export const backupService = {
         }
       }, delayMs)
     }
-  })()
+  })(),
+  checkAndRunWeeklyBackup: async (email: string | null | undefined) => {
+    if (!email) return
+    try {
+      await checkAndRunWeeklyBackup(email)
+    } catch (error) {
+      console.error('Error running weekly backup', error)
+    }
+  }
 }

@@ -7,6 +7,8 @@ export const useConfirm = () => {
     title: string
     message: string
     confirmColor?: string
+    confirmText?: string
+    cancelText?: string
   }): Promise<boolean> => {
     return new Promise(resolve => {
       const container = document.createElement('div')

@@ -17,6 +17,7 @@ export interface BudgetConfig {
   collapseAll?: boolean
   expandedGroups?: { [key: string]: boolean }
   addExpensesToBudget?: boolean
+  groupOrders?: Record<string, string[]>
 }
 
 export interface ExpensesConfig {

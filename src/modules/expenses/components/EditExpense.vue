@@ -86,12 +86,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import type { Expense, AccountReference } from '../expenses.interface'
 import dayjs from 'dayjs'
 import DateSelector from '@/modules/shared/components/DateSelector.vue'
 import { useAccountsStore } from '@/modules/accounts/accounts.store'
 import { useConfirm } from '@/modules/shared/composables/useConfirm'
+import { AccountTypes } from '@/modules/accounts/accounts.constants'
 
 interface Props {
   modelValue: boolean
@@ -121,8 +122,34 @@ const entry = ref({
   name: '',
   value: 0,
   selectedAccount: null as AccountReference | null,
-  date: dayjs().format('YYYY-MM-DD')
+  date: dayjs().format('YYYY-MM-DD'),
+  isPending: false
 })
+
+// Flag to skip account watcher during programmatic data fill
+let skipAccountWatch = false
+
+watch(
+  () => entry.value.selectedAccount,
+  async newAccount => {
+    if (skipAccountWatch) return
+    if (!newAccount) {
+      entry.value.isPending = false
+      return
+    }
+    const account = accountsStore.accounts.find(a => a.id === newAccount.id)
+    if (account?.type === AccountTypes.normal) {
+      entry.value.isPending = await confirm({
+        title: '¿Gasto pendiente?',
+        message: '¿Este gasto está pendiente de aplicar a la cuenta?',
+        confirmText: 'Sí',
+        cancelText: 'No'
+      })
+    } else {
+      entry.value.isPending = false
+    }
+  }
+)
 
 const accountOptions = computed(() => {
   return accountsStore.accounts.map(acc => ({
@@ -174,13 +201,18 @@ const goToValue = () => {
 const close = () => {
   isFocused.value = false
   emit('update:modelValue', false)
+  skipAccountWatch = true
   entry.value = {
     id: '',
     name: '',
     value: 0,
     selectedAccount: null,
-    date: dayjs().format('YYYY-MM-DD')
+    date: dayjs().format('YYYY-MM-DD'),
+    isPending: false
   }
+  nextTick(() => {
+    skipAccountWatch = false
+  })
 }
 
 const saveEntry = () => {
@@ -191,7 +223,8 @@ const saveEntry = () => {
     name: entry.value.name,
     value: entry.value.value,
     account: entry.value.selectedAccount || null,
-    date: entry.value.date
+    date: entry.value.date,
+    isPending: entry.value.isPending
   }
 
   emit('save', updatedExpense)
@@ -214,14 +247,18 @@ const deleteExpense = async () => {
 
 const fillData = () => {
   if (props.expense) {
-    const presupuestoOption: AccountReference | null = null
+    skipAccountWatch = true
     entry.value = {
       id: props.expense.id,
       name: props.expense.name,
       value: props.expense.value,
-      selectedAccount: props.expense.account || presupuestoOption,
-      date: dayjs(props.expense.date).format('YYYY-MM-DD')
+      selectedAccount: props.expense.account || null,
+      date: dayjs(props.expense.date).format('YYYY-MM-DD'),
+      isPending: props.expense.isPending ?? false
     }
+    nextTick(() => {
+      skipAccountWatch = false
+    })
   }
 }
 

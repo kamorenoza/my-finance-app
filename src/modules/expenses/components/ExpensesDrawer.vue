@@ -46,6 +46,7 @@
           label="Cuenta"
           density="comfortable"
           hide-details
+          :menu-props="{ zIndex: 2500 }"
         />
       </div>
 
@@ -72,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import SideDrawer from '@/modules/shared/components/SideDrawer.vue'
 import { useExpensesStore } from '../expenses.store'
 import { useAccountsStore } from '@/modules/accounts/accounts.store'
@@ -81,6 +82,7 @@ import { useConfirm } from '@/modules/shared/composables/useConfirm'
 import DateSelector from '@/modules/shared/components/DateSelector.vue'
 import dayjs from 'dayjs'
 import type { Expense, AccountReference } from '../expenses.interface'
+import { AccountTypes } from '@/modules/accounts/accounts.constants'
 
 const expensesStore = useExpensesStore()
 const accountsStore = useAccountsStore()
@@ -95,8 +97,34 @@ const entry = ref({
   name: '',
   value: null as number | null,
   selectedAccount: null as AccountReference | null,
-  date: dayjs().format('YYYY-MM-DD')
+  date: dayjs().format('YYYY-MM-DD'),
+  isPending: false
 })
+
+// Flag to skip the account watcher when programmatically setting form data
+let skipAccountWatch = false
+
+watch(
+  () => entry.value.selectedAccount,
+  async newAccount => {
+    if (skipAccountWatch) return
+    if (!newAccount) {
+      entry.value.isPending = false
+      return
+    }
+    const account = accountsStore.accounts.find(a => a.id === newAccount.id)
+    if (account?.type === AccountTypes.normal) {
+      entry.value.isPending = await confirm({
+        title: '¿Gasto pendiente?',
+        message: '¿Este gasto está pendiente de aplicar a la cuenta?',
+        confirmText: 'Sí',
+        cancelText: 'No'
+      })
+    } else {
+      entry.value.isPending = false
+    }
+  }
+)
 
 const accountOptions = computed(() => {
   return accountsStore.accounts.map(acc => ({
@@ -138,27 +166,37 @@ const onChangeDate = (date: Date) => {
 const openDrawer = (selectedDate?: Date) => {
   isEditing.value = false
   currentExpenseId.value = null
+  skipAccountWatch = true
   entry.value = {
     name: '',
     value: null,
     selectedAccount: null,
     date: selectedDate
       ? dayjs(selectedDate).format('YYYY-MM-DD')
-      : dayjs().format('YYYY-MM-DD')
+      : dayjs().format('YYYY-MM-DD'),
+    isPending: false
   }
   drawer.value = true
+  nextTick(() => {
+    skipAccountWatch = false
+  })
 }
 
 const openEditDrawer = (expense: Expense) => {
   isEditing.value = true
   currentExpenseId.value = expense.id
+  skipAccountWatch = true
   entry.value = {
     name: expense.name,
     value: expense.value,
     selectedAccount: expense.account || null,
-    date: dayjs(expense.date).format('YYYY-MM-DD')
+    date: dayjs(expense.date).format('YYYY-MM-DD'),
+    isPending: expense.isPending ?? false
   }
   drawer.value = true
+  nextTick(() => {
+    skipAccountWatch = false
+  })
 }
 
 const closeDrawer = () => {
@@ -166,12 +204,17 @@ const closeDrawer = () => {
   setTimeout(() => {
     isEditing.value = false
     currentExpenseId.value = null
+    skipAccountWatch = true
     entry.value = {
       name: '',
       value: null,
       selectedAccount: null,
-      date: dayjs().format('YYYY-MM-DD')
+      date: dayjs().format('YYYY-MM-DD'),
+      isPending: false
     }
+    nextTick(() => {
+      skipAccountWatch = false
+    })
   }, 300)
 }
 
@@ -185,7 +228,8 @@ const saveEntry = () => {
       name: entry.value.name,
       value: entry.value.value,
       account: entry.value.selectedAccount,
-      date: new Date(entry.value.date)
+      date: new Date(entry.value.date),
+      isPending: entry.value.isPending
     })
     toast.success('Gasto actualizado')
   } else {
@@ -194,7 +238,8 @@ const saveEntry = () => {
       name: entry.value.name,
       value: entry.value.value,
       account: entry.value.selectedAccount,
-      date: new Date(entry.value.date)
+      date: new Date(entry.value.date),
+      isPending: entry.value.isPending
     })
     toast.success('Gasto guardado')
   }

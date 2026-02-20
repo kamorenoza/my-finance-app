@@ -307,7 +307,7 @@ onMounted(() => {
 
   &__items {
     margin-bottom: 80px;
-    padding: 0 15px 40px;
+    padding: 0 0 40px;
 
     @media (min-width: 960px) {
       flex-grow: 1;
@@ -320,6 +320,7 @@ onMounted(() => {
     display: flex;
     justify-content: flex-end;
     margin-bottom: 8px;
+    padding: 0 15px;
   }
 
   &__reorder-btn {
@@ -366,6 +367,12 @@ onMounted(() => {
       display: flex;
       gap: 25px;
     }
+  }
+
+  &__scroll {
+    height: calc(100vh - 408px);
+    overflow-y: scroll;
+    padding: 0 15px 40px;
   }
 }
 

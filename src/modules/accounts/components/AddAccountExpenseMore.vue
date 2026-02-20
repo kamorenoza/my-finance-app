@@ -65,6 +65,7 @@
           label="Categoría"
           density="comfortable"
           hide-details
+          :menu-props="{ zIndex: 2500 }"
         >
           <template v-slot:item="{ props, item }">
             <v-list-item
@@ -73,11 +74,17 @@
               :prepend-avatar="undefined"
             >
               <template v-slot:prepend>
-                <v-avatar size="24" :color="(item.raw as any).backgroundColor">
-                  <v-icon size="14" :color="(item.raw as any).iconColor">
-                    {{ (item.raw as any).icon }}
-                  </v-icon>
-                </v-avatar>
+                <div
+                  class="expense-more__cat"
+                  :style="{
+                    backgroundColor: (item.raw as any).backgroundColor
+                  }"
+                >
+                  <component
+                    :is="getIcon((item.raw as any).icon)"
+                    :color="colorWhite"
+                  />
+                </div>
               </template>
               <v-list-item-title>{{
                 (item.raw as any).name
@@ -87,11 +94,15 @@
 
           <template v-slot:selection="{ item }">
             <div class="d-flex align-center ga-2">
-              <v-avatar size="20" :color="(item.raw as any).backgroundColor">
-                <v-icon size="12" :color="(item.raw as any).iconColor">
-                  {{ (item.raw as any).icon }}
-                </v-icon>
-              </v-avatar>
+              <div
+                class="expense-more__cat"
+                :style="{ backgroundColor: (item.raw as any).backgroundColor }"
+              >
+                <component
+                  :is="getIcon((item.raw as any).icon)"
+                  :color="colorWhite"
+                />
+              </div>
               {{ (item.raw as any).name }}
             </div>
           </template>
@@ -144,7 +155,7 @@
 import { ref, computed, watch } from 'vue'
 import SideDrawer from '@/modules/shared/components/SideDrawer.vue'
 import AddIcon from '@/assets/icons/Add.icon.vue'
-import { colorMdPrimary } from '@/styles/variables.styles'
+import { colorMdPrimary, colorWhite } from '@/styles/variables.styles'
 import { useAccountsStore } from '../accounts.store'
 import { useCategoryStore } from '../../categories/categories.store'
 import { accountService } from '../accounts.service'
@@ -153,6 +164,7 @@ import { generateId } from '../../shared/utils'
 import DateSelector from '@/modules/shared/components/DateSelector.vue'
 import { useConfirm } from '@/modules/shared/composables/useConfirm'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
+import { getIcon } from '@/modules/categories/categories.constants'
 
 interface Props {
   accountId: string
@@ -341,6 +353,22 @@ watch(
 
     &.ingreso {
       background-color: $color-green;
+    }
+  }
+
+  &__cat {
+    width: 25px;
+    height: 25px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 5px;
+    flex-shrink: 0;
+
+    :deep(.icon) {
+      width: 18px !important;
+      height: 18px !important;
     }
   }
 

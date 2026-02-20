@@ -8,14 +8,16 @@
       <v-card-text class="confirm-message" v-html="message" />
       <v-card-actions>
         <v-spacer />
-        <v-btn class="btn-label" @click="onCancel">Cancelar</v-btn>
+        <v-btn class="btn-label" @click="onCancel">{{
+          cancelText || 'Cancelar'
+        }}</v-btn>
         <v-btn
           class="btn-label"
           :color="confirmColor || colorPrimary"
           text
           @click="onConfirm"
         >
-          Confirmar
+          {{ confirmText || 'Confirmar' }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -30,6 +32,8 @@ const props = defineProps<{
   title: string
   message: string
   confirmColor?: string
+  confirmText?: string
+  cancelText?: string
   onConfirm: () => void
   onCancel: () => void
 }>()

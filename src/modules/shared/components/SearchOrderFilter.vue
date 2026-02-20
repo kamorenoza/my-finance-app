@@ -222,7 +222,6 @@ watch([search, selectedType, sortBy, initDate, endDate, collapseAll], () => {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  margin-bottom: 10px;
   width: 100%;
 
   @media (min-width: 960px) {

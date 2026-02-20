@@ -88,37 +88,25 @@ const startBackupSubscription = async (email?: string | null) => {
 
 const runRestoreAndBackup = async () => {
   const email = authStore.user?.email
-  const wasLoadingInitially = authStore.loading
 
-  await backupService.restoreBackupIfAvailable(email)
-  await backupService.runBackupIfNeeded(email)
-
+  // Start real-time subscription — onSnapshot fires immediately with current
+  // Firebase data and applies it in the background (acts as the restore)
   await startBackupSubscription(email)
 
-  // Solo finalizar el estado de carga si estaba en loading
-  // (si no estaba en loading, es porque ya había datos locales)
-  if (wasLoadingInitially) {
-    authStore.setLoading(false)
-  }
+  // Weekly backup only — fire-and-forget, never blocks startup
+  backupService.checkAndRunWeeklyBackup(email)
 
+  authStore.setLoading(false)
   isInitializing.value = false
 }
 
 onMounted(async () => {
-  // Solo ejecutar si ya hay un usuario autenticado
   if (!authStore.user?.email) {
     isInitializing.value = false
     return
   }
 
-  // Si está en loading (no hay datos locales), esperar la restauración
-  // Si no está en loading (hay datos locales), ejecutar en segundo plano
-  if (authStore.loading) {
-    await runRestoreAndBackup()
-  } else {
-    runRestoreAndBackup() // Sin await - en segundo plano
-    isInitializing.value = false
-  }
+  runRestoreAndBackup() // always fire-and-forget, sets isInitializing/loading when done
 })
 
 watch(

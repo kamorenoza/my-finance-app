@@ -104,11 +104,11 @@ const resetForm = () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
   background-color: $bg-item;
   border-radius: 18px;
   padding: 8px;
   scroll-margin: 0;
+  margin: 0 15px 10px;
 
   &__card {
     flex: 1;

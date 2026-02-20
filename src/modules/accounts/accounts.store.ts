@@ -112,14 +112,14 @@ export const useAccountsStore = defineStore('accounts', {
       backupService.queueBackup()
     },
 
-    addExpense(expense: Expense, accountId?: string) {
+    addExpense(expense: Expense, accountId?: string, existingId?: string) {
       if (!accountId) {
         throw new Error('Error al crear el movimiento')
       }
 
       const newExpense: Expense = {
         ...expense,
-        id: generateId()
+        id: existingId || generateId()
       }
       const currentIndex = this.currentIndexAccount
       accountService.addExpenseToAccount(accountId, newExpense)

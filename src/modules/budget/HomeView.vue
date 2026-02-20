@@ -44,7 +44,22 @@
             </v-tooltip>
           </div>
         </div>
-        <BudgetList :selected-date="currentDate" :filters="currentFilter" />
+        <div>
+          <button
+            v-if="canReorder"
+            class="home__reorder-btn"
+            :class="{ 'home__reorder-btn--active': reorderMode }"
+            @click="reorderMode = !reorderMode"
+          >
+            <v-icon size="16">mdi-swap-vertical</v-icon>
+            {{ reorderMode ? 'Listo' : 'Reorganizar' }}
+          </button>
+        </div>
+        <BudgetList
+          :selected-date="currentDate"
+          :filters="currentFilter"
+          :reorder-mode="reorderMode"
+        />
       </div>
     </div>
 
@@ -96,6 +111,12 @@ const currentFilter = ref({
   collapseAll: false
 })
 
+const reorderMode = ref(false)
+const canReorder = computed(() => {
+  const g = currentFilter.value.groupBy
+  return !!g && g !== 'none' && g !== 'date'
+})
+
 // Usar el composable para obtener movimientos filtrados
 const { filteredAndSortedEntries } = useBudgetFilter({
   selectedDate: currentDate,
@@ -130,6 +151,16 @@ watch(
     backupService.queueBackup()
   },
   { deep: true }
+)
+
+// Reset reorder mode when groupBy changes to a non-reorderable option
+watch(
+  () => currentFilter.value.groupBy,
+  groupBy => {
+    if (!groupBy || groupBy === 'none' || groupBy === 'date') {
+      reorderMode.value = false
+    }
+  }
 )
 
 const onFilterChange = (filter: {
@@ -209,8 +240,34 @@ const onFilterChange = (filter: {
     display: flex;
     gap: 10px;
     padding-right: 15px;
+    align-items: center;
+    margin-bottom: 10px;
     @media (min-width: 960px) {
       padding: 0;
+    }
+  }
+
+  &__reorder-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    font-family: $font-medium;
+    color: $text-gray-md;
+    background: transparent;
+    border: 1px solid #e0e0e0;
+    border-radius: 20px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    margin-left: auto;
+    margin-right: 15px;
+
+    &--active {
+      color: $color-primary;
+      border-color: $color-primary;
+      background-color: rgba($color-primary, 0.06);
     }
   }
 

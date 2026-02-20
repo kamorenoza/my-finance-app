@@ -1,39 +1,58 @@
 <template>
   <div>
-    <!-- Agrupado con collapse -->
-    <template v-for="group in groups" :key="group.label">
-      <p
-        class="budget-group__header"
-        @click="$emit('toggleGroup', group.label)"
-      >
-        <span class="budget-group__header-content">
-          <span>{{ formatGroupName(group.label) }}</span>
-          <span class="budget-group__chevron">
-            <v-icon size="17">
-              {{
-                expandedGroups[group.label] === false
-                  ? 'mdi-chevron-down'
-                  : 'mdi-chevron-up'
-              }}
-            </v-icon>
-          </span>
-        </span>
-        <span class="budget-group__total">{{
-          currency(Math.abs(group.total))
-        }}</span>
-      </p>
-      <transition name="slide">
-        <div v-show="expandedGroups[group.label] !== false">
-          <BudgetItem
-            v-for="entry in group.entries"
-            :key="entry.id"
-            :entry="entry"
-            :reference-date="referenceDate"
-            @edit="$emit('edit', entry)"
-          />
+    <!-- Agrupado con collapse + drag-and-drop -->
+    <draggable
+      v-model="localGroups"
+      item-key="label"
+      handle=".drag-handle"
+      ghost-class="drag-ghost"
+      :disabled="!reorderMode"
+      @end="onReorderEnd"
+    >
+      <template #item="{ element: group }">
+        <div :key="group.label">
+          <p
+            class="budget-group__header"
+            :class="{ 'budget-group__header--reorder': reorderMode }"
+            @click="!reorderMode && $emit('toggleGroup', group.label)"
+          >
+            <span class="budget-group__header-content">
+              <v-icon
+                v-if="reorderMode"
+                class="drag-handle"
+                size="18"
+                color="#bbb"
+                >mdi-drag</v-icon
+              >
+              <span>{{ formatGroupName(group.label) }}</span>
+              <span v-if="!reorderMode" class="budget-group__chevron">
+                <v-icon size="17">
+                  {{
+                    expandedGroups[group.label] === false
+                      ? 'mdi-chevron-down'
+                      : 'mdi-chevron-up'
+                  }}
+                </v-icon>
+              </span>
+            </span>
+            <span class="budget-group__total">{{
+              currency(Math.abs(group.total))
+            }}</span>
+          </p>
+          <transition name="slide">
+            <div v-show="!reorderMode && expandedGroups[group.label] !== false">
+              <BudgetItem
+                v-for="entry in group.entries"
+                :key="entry.id"
+                :entry="entry"
+                :reference-date="referenceDate"
+                @edit="$emit('edit', entry)"
+              />
+            </div>
+          </transition>
         </div>
-      </transition>
-    </template>
+      </template>
+    </draggable>
 
     <!-- Grupo de Gastos del mes -->
     <BudgetMonthExpenses
@@ -50,10 +69,12 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import type { BudgetEntry } from '../budget.interface'
 import type { Expense } from '@/modules/expenses/expenses.interface'
 import BudgetItem from './BudgetItem.vue'
 import BudgetMonthExpenses from './BudgetMonthExpenses.vue'
+import draggable from 'vuedraggable'
 import { dateFormatter } from '@/modules/shared/utils'
 
 interface BudgetGroup {
@@ -70,20 +91,52 @@ interface Props {
   totalMonthExpenses: number
   addExpensesToBudget: boolean
   expandedGroups: Record<string, boolean>
+  reorderMode?: boolean
 }
 
 interface Emits {
   (e: 'edit', entry: BudgetEntry): void
   (e: 'toggleGroup', groupName: string): void
   (e: 'update:addExpensesToBudget', value: boolean): void
+  (e: 'reorder', labels: string[]): void
 }
 
-const props = defineProps<Props>()
-defineEmits<Emits>()
+const props = withDefaults(defineProps<Props>(), {
+  reorderMode: false
+})
+const emit = defineEmits<Emits>()
+
+// Local copy for drag-and-drop — kept in sync with props when not reordering
+const localGroups = ref<BudgetGroup[]>([...props.groups])
+
+watch(
+  () => props.groups,
+  newGroups => {
+    if (!props.reorderMode) {
+      localGroups.value = [...newGroups]
+    }
+  },
+  { deep: true }
+)
+
+watch(
+  () => props.reorderMode,
+  reordering => {
+    if (!reordering) {
+      localGroups.value = [...props.groups]
+    }
+  }
+)
+
+const onReorderEnd = () => {
+  emit(
+    'reorder',
+    localGroups.value.map(g => g.label)
+  )
+}
 
 const formatGroupName = (groupName: string) => {
   if (props.groupBy === 'date') {
-    // groupName está en formato 'DD/MM/YYYY', convertir a Date y formatear
     const [day, month, year] = groupName.split('/')
     const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
     return dateFormatter(date)
@@ -115,6 +168,11 @@ const currency = (value: number): string =>
     color: #333;
     font-weight: normal;
 
+    &--reorder {
+      cursor: default;
+      background-color: $bg-input;
+    }
+
     &-content {
       display: flex;
       align-items: center;
@@ -142,6 +200,20 @@ const currency = (value: number): string =>
     font-weight: normal;
     font-family: $font-medium;
   }
+}
+
+.drag-handle {
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.drag-ghost {
+  opacity: 0.4;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
 }
 
 .slide-enter-active,

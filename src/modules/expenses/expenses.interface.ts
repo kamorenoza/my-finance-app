@@ -9,4 +9,5 @@ export interface Expense {
   value: number
   account: AccountReference | null
   date?: string | Date
+  isPending?: boolean
 }
