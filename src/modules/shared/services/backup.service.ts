@@ -1,10 +1,9 @@
-import {
+﻿import {
   collection,
   doc,
   getDoc,
   getDocs,
   limit,
-  onSnapshot,
   orderBy,
   query,
   setDoc,
@@ -12,19 +11,15 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/database/firestore'
 
-const getStoredBackupDate = (email: string) =>
-  localStorage.getItem(`backup_${email}`)
+// --- last_updated helpers -----------------------------------------------------
 
-const setStoredBackupDate = (email: string, dateValue: string) => {
-  localStorage.setItem(`backup_${email}`, dateValue)
-}
+const getLocalLastUpdated = (email: string): string | null =>
+  localStorage.getItem(`backup_last_updated_${email}`)
 
-const shouldRunBackup = (email: string) => {
-  const storedDate = getStoredBackupDate(email)
-  const today = new Date().toISOString().split('T')[0]
+const setLocalLastUpdated = (email: string, timestamp: string) =>
+  localStorage.setItem(`backup_last_updated_${email}`, timestamp)
 
-  return !storedDate || storedDate < today
-}
+// -----------------------------------------------------------------------------
 
 const getLocalUserEmail = () => {
   const storedUser = localStorage.getItem('user')
@@ -42,20 +37,7 @@ const getLocalUserEmail = () => {
   }
 }
 
-const getDeviceId = () => {
-  const storedId = localStorage.getItem('backup_device_id')
-
-  if (storedId) {
-    return storedId
-  }
-
-  const newId = `device_${Math.random().toString(36).slice(2)}_${Date.now()}`
-  localStorage.setItem('backup_device_id', newId)
-  return newId
-}
-
 const getBackupPayload = (email: string) => {
-  const deviceId = getDeviceId()
   const accounts = localStorage.getItem(`accounts_${email}`)
   const config = localStorage.getItem(`config_${email}`)
   const budget = localStorage.getItem(`budget_${email}`)
@@ -64,7 +46,6 @@ const getBackupPayload = (email: string) => {
   const shoppingLists = localStorage.getItem(`shoppingLists_${email}`)
 
   return {
-    device_id: deviceId,
     accounts_email: accounts ? JSON.parse(accounts) : null,
     config_email: config ? JSON.parse(config) : null,
     budget_email: budget ? JSON.parse(budget) : null,
@@ -75,11 +56,10 @@ const getBackupPayload = (email: string) => {
 }
 
 const saveBackup = async (email: string) => {
-  const payload = getBackupPayload(email)
+  const now = new Date().toISOString()
+  const payload = { ...getBackupPayload(email), last_updated: now }
   await setDoc(doc(db, 'backup', email), payload, { merge: true })
-
-  const today = new Date().toISOString().split('T')[0]
-  setStoredBackupDate(email, today)
+  setLocalLastUpdated(email, now)
 }
 
 const setLocalStorageFromBackup = (
@@ -136,92 +116,7 @@ const setLocalStorageFromBackup = (
   }
 }
 
-const applyBackupIfChanged = (
-  email: string,
-  backupData: {
-    device_id?: string
-    accounts_email?: unknown
-    config_email?: unknown
-    budget_email?: unknown
-    categories?: unknown
-    expenses_email?: unknown
-    shoppingLists_email?: unknown
-  }
-) => {
-  const deviceId = getDeviceId()
-
-  if (backupData.device_id && backupData.device_id === deviceId) {
-    return
-  }
-
-  const accountsKey = `accounts_${email}`
-  const configKey = `config_${email}`
-  const budgetKey = `budget_${email}`
-  const categoriesKey = `categories_${email}`
-  const expensesKey = `expenses_${email}`
-  const shoppingListsKey = `shoppingLists_${email}`
-
-  const currentAccounts = localStorage.getItem(accountsKey)
-  const currentConfig = localStorage.getItem(configKey)
-  const currentBudget = localStorage.getItem(budgetKey)
-  const currentCategories = localStorage.getItem(categoriesKey)
-  const currentExpenses = localStorage.getItem(expensesKey)
-  const currentShoppingLists = localStorage.getItem(shoppingListsKey)
-
-  const nextAccounts =
-    backupData.accounts_email !== undefined
-      ? JSON.stringify(backupData.accounts_email)
-      : currentAccounts
-  const nextConfig =
-    backupData.config_email !== undefined
-      ? JSON.stringify(backupData.config_email)
-      : currentConfig
-  const nextBudget =
-    backupData.budget_email !== undefined
-      ? JSON.stringify(backupData.budget_email)
-      : currentBudget
-  const nextCategories =
-    backupData.categories !== undefined
-      ? JSON.stringify(backupData.categories)
-      : currentBudget
-  const nextExpenses =
-    backupData.expenses_email !== undefined
-      ? JSON.stringify(backupData.expenses_email)
-      : currentExpenses
-  const nextShoppingLists =
-    backupData.shoppingLists_email !== undefined
-      ? JSON.stringify(backupData.shoppingLists_email)
-      : currentShoppingLists
-
-  if (currentAccounts !== nextAccounts && nextAccounts !== null) {
-    localStorage.setItem(accountsKey, nextAccounts)
-  }
-
-  if (currentConfig !== nextConfig && nextConfig !== null) {
-    localStorage.setItem(configKey, nextConfig)
-  }
-
-  if (currentBudget !== nextBudget && nextBudget !== null) {
-    localStorage.setItem(budgetKey, nextBudget)
-  }
-
-  if (currentCategories !== nextCategories && nextCategories !== null) {
-    localStorage.setItem(categoriesKey, nextCategories)
-  }
-
-  if (currentExpenses !== nextExpenses && nextExpenses !== null) {
-    localStorage.setItem(expensesKey, nextExpenses)
-  }
-
-  if (
-    currentShoppingLists !== nextShoppingLists &&
-    nextShoppingLists !== null
-  ) {
-    localStorage.setItem(shoppingListsKey, nextShoppingLists)
-  }
-}
-
-// ─── Weekly backup ────────────────────────────────────────────────────────────
+// --- Weekly backup -----------------------------------------------------------
 
 /** Document ID safe for Firestore: e.g. "2026-02-20T15-30-00-000Z" */
 const toWeeklyDocId = (date: Date) => date.toISOString().replace(/[:.]/g, '-')
@@ -262,16 +157,65 @@ const checkAndRunWeeklyBackup = async (email: string) => {
   }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
+
+// Module-level debounce state shared between queueBackup and flushPendingBackup
+let _queueTimeoutId: ReturnType<typeof setTimeout> | null = null
+let _hasPendingBackup = false
 
 export const backupService = {
-  runBackupIfNeeded: async (email: string | null | undefined) => {
-    if (!email || !shouldRunBackup(email)) {
-      return
-    }
+  /**
+   * Checks Firebase last_updated against localStorage last_updated.
+   * If Firebase is newer (another device made changes), pulls all data from
+   * Firebase into localStorage.
+   * Returns true if localStorage was updated from Firebase, false otherwise.
+   */
+  checkAndSyncIfNeeded: async (
+    email: string | null | undefined
+  ): Promise<boolean> => {
+    if (!email) return false
 
-    await saveBackup(email)
+    try {
+      const snapshot = await getDoc(doc(db, 'backup', email))
+
+      if (!snapshot.exists()) return false
+
+      const backupData = snapshot.data() as {
+        last_updated?: string
+        accounts_email?: unknown
+        config_email?: unknown
+        budget_email?: unknown
+        categories?: unknown
+        expenses_email?: unknown
+        shoppingLists_email?: unknown
+      }
+
+      const firebaseLastUpdated = backupData.last_updated ?? null
+      const localLastUpdated = getLocalLastUpdated(email)
+
+      // Pull from Firebase if: no local timestamp, or Firebase is strictly newer
+      if (
+        !localLastUpdated ||
+        (firebaseLastUpdated && firebaseLastUpdated > localLastUpdated)
+      ) {
+        setLocalStorageFromBackup(email, backupData)
+        // Always persist a local timestamp so we don't keep re-pulling on every
+        // open. If Firebase has no last_updated (old backup), use epoch so any
+        // future real Firebase timestamp will still be considered newer.
+        setLocalLastUpdated(
+          email,
+          firebaseLastUpdated ?? new Date(0).toISOString()
+        )
+        return true
+      }
+
+      return false
+    } catch (error) {
+      console.error('Error checking sync status', error)
+      return false
+    }
   },
+
   runBackupNow: async (email: string | null | undefined) => {
     if (!email) {
       return
@@ -279,99 +223,50 @@ export const backupService = {
 
     await saveBackup(email)
   },
-  restoreBackupIfAvailable: async (email: string | null | undefined) => {
-    if (!email) {
-      return
+
+  queueBackup: (delayMs = 300) => {
+    if (_queueTimeoutId) {
+      clearTimeout(_queueTimeoutId)
     }
 
-    const snapshot = await getDoc(doc(db, 'backup', email))
+    _hasPendingBackup = true
 
-    if (!snapshot.exists()) {
-      return
-    }
+    _queueTimeoutId = setTimeout(async () => {
+      _hasPendingBackup = false
+      _queueTimeoutId = null
+      const email = getLocalUserEmail()
 
-    const backupData = snapshot.data() as {
-      device_id?: string
-      accounts_email?: unknown
-      config_email?: unknown
-      budget_email?: unknown
-      categories?: unknown
-      expenses_email?: unknown
-      shoppingLists_email?: unknown
-    }
-
-    setLocalStorageFromBackup(email, backupData)
-  },
-  subscribeToBackup: (
-    email: string | null | undefined,
-    onChange?: () => void,
-    onError?: (error: Error) => void
-  ) => {
-    if (!email) {
-      return () => null
-    }
-
-    let timeoutId: ReturnType<typeof setTimeout> | null = null
-
-    return onSnapshot(
-      doc(db, 'backup', email),
-      snapshot => {
-        if (!snapshot.exists()) {
-          return
-        }
-
-        const backupData = snapshot.data() as {
-          device_id?: string
-          accounts_email?: unknown
-          config_email?: unknown
-          budget_email?: unknown
-          categories?: unknown
-          expenses_email?: unknown
-          shoppingLists_email?: unknown
-        }
-
-        if (timeoutId) {
-          clearTimeout(timeoutId)
-        }
-
-        timeoutId = setTimeout(() => {
-          applyBackupIfChanged(email, backupData)
-          onChange?.()
-        }, 500)
-      },
-      error => {
-        if (onError) {
-          onError(error as Error)
-          return
-        }
-
-        console.error('Error syncing backup in realtime', error)
-      }
-    )
-  },
-  queueBackup: (() => {
-    let timeoutId: ReturnType<typeof setTimeout> | null = null
-
-    return (delayMs = 800) => {
-      if (timeoutId) {
-        clearTimeout(timeoutId)
+      if (!email) {
+        return
       }
 
-      timeoutId = setTimeout(async () => {
-        const email = getLocalUserEmail()
+      try {
+        await saveBackup(email)
+      } catch (error) {
+        console.error('Error running queued backup', error)
+      }
+    }, delayMs)
+  },
 
-        if (!email) {
-          return
-        }
+  flushPendingBackup: async () => {
+    if (!_hasPendingBackup) return
 
-        try {
-          await saveBackup(email)
-        } catch (error) {
-          console.error('Error running queued backup', error)
-        }
-      }, delayMs)
+    if (_queueTimeoutId) {
+      clearTimeout(_queueTimeoutId)
+      _queueTimeoutId = null
     }
-  })(),
+
+    _hasPendingBackup = false
+    const email = getLocalUserEmail()
+    if (!email) return
+
+    try {
+      await saveBackup(email)
+    } catch (error) {
+      console.error('Error flushing pending backup', error)
+    }
+  },
+
   checkAndRunWeeklyBackup: async (email: string | null | undefined) => {
     if (!email) return
     try {

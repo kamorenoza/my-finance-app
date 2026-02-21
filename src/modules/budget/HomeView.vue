@@ -70,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch, computed } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useDisplay } from 'vuetify'
 import MonthYearSelector from '@/modules/shared/components/MonthYearSelector.vue'
 import CategoryManager from '@/modules/categories/CategoryManager.vue'
@@ -102,13 +102,21 @@ const openAddBudgetDrawer = () => {
   }
 }
 
+// Load configuration synchronously in setup so values are correct from the start
+// and never mutate during mount (which would wrongly trigger the deep watcher and call queueBackup)
+const savedBudgetConfig = configService.getBudgetConfig()
+
 const currentFilter = ref({
   search: '',
-  groupBy: 'category' as string | null,
-  orderBy: null as string | null,
+  groupBy: (savedBudgetConfig.groupBy !== undefined
+    ? savedBudgetConfig.groupBy
+    : 'category') as string | null,
+  orderBy: (savedBudgetConfig.orderBy !== undefined
+    ? savedBudgetConfig.orderBy
+    : null) as string | null,
   initDate: null as Date | null,
   endDate: null as Date | null,
-  collapseAll: false
+  collapseAll: savedBudgetConfig.collapseAll ?? false
 })
 
 const reorderMode = ref(false)
@@ -123,20 +131,6 @@ const { filteredAndSortedEntries } = useBudgetFilter({
   search: computed(() => currentFilter.value.search),
   initDate: computed(() => currentFilter.value.initDate),
   endDate: computed(() => currentFilter.value.endDate)
-})
-
-onMounted(() => {
-  // Load configuration when component mounts
-  const savedConfig = configService.getBudgetConfig()
-  if (savedConfig.groupBy !== undefined) {
-    currentFilter.value.groupBy = savedConfig.groupBy
-  }
-  if (savedConfig.orderBy !== undefined) {
-    currentFilter.value.orderBy = savedConfig.orderBy
-  }
-  if (savedConfig.collapseAll !== undefined) {
-    currentFilter.value.collapseAll = savedConfig.collapseAll
-  }
 })
 
 // Save configuration when filter changes

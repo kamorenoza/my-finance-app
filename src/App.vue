@@ -66,41 +66,49 @@ if (user) {
   isInitializing.value = false
 }
 
-let unsubscribeBackup: (() => void) | null = null
+const initStoresAndSync = async (email?: string | null) => {
+  if (!email) return
 
-const startBackupSubscription = async (email?: string | null) => {
-  if (unsubscribeBackup) {
-    unsubscribeBackup()
-    unsubscribeBackup = null
-  }
+  await loadStores()
 
-  if (email) {
-    await loadStores()
-    unsubscribeBackup = backupService.subscribeToBackup(email, () => {
-      accountsStore?.loadAccounts()
-      categoryStore?.loadCategories()
-      budgetStore?.loadEntries()
-      expensesStore?.loadExpenses()
-      shoppingStore?.loadShoppingLists()
-    })
+  // Compare timestamps: if Firebase is newer, pull data then reload stores
+  const dataUpdated = await backupService.checkAndSyncIfNeeded(email)
+  if (dataUpdated) {
+    accountsStore?.loadAccounts()
+    categoryStore?.loadCategories()
+    budgetStore?.loadEntries()
+    expensesStore?.loadExpenses()
+    shoppingStore?.loadShoppingLists()
   }
 }
 
 const runRestoreAndBackup = async () => {
   const email = authStore.user?.email
 
-  // Start real-time subscription — onSnapshot fires immediately with current
-  // Firebase data and applies it in the background (acts as the restore)
-  await startBackupSubscription(email)
+  // Check if Firebase has newer data (another device updated) and sync if so
+  await initStoresAndSync(email)
 
-  // Weekly backup only — fire-and-forget, never blocks startup
+  // Weekly backup — fire-and-forget, never blocks startup
   backupService.checkAndRunWeeklyBackup(email)
 
   authStore.setLoading(false)
   isInitializing.value = false
 }
 
+const handleAppHide = () => {
+  if (document.visibilityState === 'hidden') {
+    backupService.flushPendingBackup()
+  }
+}
+
+const handlePageHide = () => {
+  backupService.flushPendingBackup()
+}
+
 onMounted(async () => {
+  document.addEventListener('visibilitychange', handleAppHide)
+  window.addEventListener('pagehide', handlePageHide)
+
   if (!authStore.user?.email) {
     isInitializing.value = false
     return
@@ -124,10 +132,8 @@ watch(
 )
 
 onBeforeUnmount(() => {
-  if (unsubscribeBackup) {
-    unsubscribeBackup()
-    unsubscribeBackup = null
-  }
+  document.removeEventListener('visibilitychange', handleAppHide)
+  window.removeEventListener('pagehide', handlePageHide)
 })
 </script>
 
