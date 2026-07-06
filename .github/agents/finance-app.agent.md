@@ -60,6 +60,16 @@ const getUserEmail = () => {
 ```
 Ver [src/modules/accounts/accounts.service.ts](src/modules/accounts/accounts.service.ts).
 
+**Backup en la nube (OBLIGATORIO validar):**
+Toda la data persistente se respalda en Firestore vía [src/modules/shared/services/backup.service.ts](src/modules/shared/services/backup.service.ts). El backup NO es automático por clave: solo respalda las claves listadas explícitamente en `getBackupPayload`, `setLocalStorageFromBackup` y el tipo de `backupData` en `checkAndSyncIfNeeded`.
+
+:warning: **SIEMPRE que agregues, cambies o renombres una clave de localStorage** (ej. `general_income_${email}`, `budget_categories_${email}`), DEBES verificar que quede reflejada en el backup, actualizando las TRES partes:
+1. `getBackupPayload` → leer la clave y agregarla al objeto de retorno.
+2. `setLocalStorageFromBackup` → escribirla de vuelta + agregarla al tipo del parámetro `backupData`.
+3. `checkAndSyncIfNeeded` → agregarla al tipo de `backupData`.
+
+Si una clave persistente no está en el backup, NO sincroniza entre dispositivos (bug silencioso). Tras cualquier cambio persistente, también confirma que la action del store dispara `backupService.queueBackup()`.
+
 **Store Pinia** — ver [src/modules/accounts/accounts.store.ts](src/modules/accounts/accounts.store.ts):
 - `state()` carga datos iniciales desde el service.
 - `getters` filtran/computan (ej. `filteredAccounts`).
@@ -109,6 +119,7 @@ Nota: hay artefactos PWA en `dev-dist/`; cuidado con el caché del service worke
 - :x: Crear estilos/colores/botones/fuentes nuevos cuando ya existen equivalentes.
 - :x: Componentes de más de 200 líneas.
 - :x: Agregar rutas sin respetar el patrón y guard de auth existentes.
+- :x: Agregar/renombrar una clave de localStorage sin reflejarla en el backup (`backup.service.ts`).
 
 ## Flujo de trabajo
 
@@ -118,6 +129,7 @@ Nota: hay artefactos PWA en `dev-dist/`; cuidado con el caché del service worke
 4. **VALIDACIÓN OBLIGATORIA (siempre al final):**
    - Ejecuta `npm run build` para verificar errores de TypeScript y compilación.
    - Si hay errores, corrígelos antes de dar por terminada la tarea.
+   - **Backup**: si el cambio tocó data persistente, verifica que TODA clave de localStorage nueva/modificada quede guardada en el backup (`getBackupPayload`, `setLocalStorageFromBackup` y el tipo de `checkAndSyncIfNeeded` en `backup.service.ts`) y que la action dispare `backupService.queueBackup()`.
    - Muestra el resultado de la validación al usuario.
    - Solo considera el trabajo completo cuando el build pase sin errores.
 5. Responde en español, breve y al punto.

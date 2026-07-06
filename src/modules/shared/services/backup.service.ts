@@ -41,6 +41,8 @@ const getBackupPayload = (email: string) => {
   const accounts = localStorage.getItem(`accounts_${email}`)
   const config = localStorage.getItem(`config_${email}`)
   const budget = localStorage.getItem(`budget_${email}`)
+  const budgetCategories = localStorage.getItem(`budget_categories_${email}`)
+  const generalIncome = localStorage.getItem(`general_income_${email}`)
   const categories = localStorage.getItem(`categories_${email}`)
   const expenses = localStorage.getItem(`expenses_${email}`)
   const shoppingLists = localStorage.getItem(`shoppingLists_${email}`)
@@ -49,6 +51,8 @@ const getBackupPayload = (email: string) => {
     accounts_email: accounts ? JSON.parse(accounts) : null,
     config_email: config ? JSON.parse(config) : null,
     budget_email: budget ? JSON.parse(budget) : null,
+    budget_categories_email: budgetCategories ? JSON.parse(budgetCategories) : null,
+    general_income_email: generalIncome ? JSON.parse(generalIncome) : null,
     categories: categories ? JSON.parse(categories) : null,
     expenses_email: expenses ? JSON.parse(expenses) : null,
     shoppingLists_email: shoppingLists ? JSON.parse(shoppingLists) : null
@@ -68,6 +72,8 @@ const setLocalStorageFromBackup = (
     accounts_email?: unknown
     config_email?: unknown
     budget_email?: unknown
+    budget_categories_email?: unknown
+    general_income_email?: unknown
     categories?: unknown
     expenses_email?: unknown
     shoppingLists_email?: unknown
@@ -91,6 +97,20 @@ const setLocalStorageFromBackup = (
     localStorage.setItem(
       `budget_${email}`,
       JSON.stringify(backupData.budget_email)
+    )
+  }
+
+  if (backupData.budget_categories_email !== undefined) {
+    localStorage.setItem(
+      `budget_categories_${email}`,
+      JSON.stringify(backupData.budget_categories_email)
+    )
+  }
+
+  if (backupData.general_income_email !== undefined) {
+    localStorage.setItem(
+      `general_income_${email}`,
+      JSON.stringify(backupData.general_income_email)
     )
   }
 
@@ -185,6 +205,8 @@ export const backupService = {
         accounts_email?: unknown
         config_email?: unknown
         budget_email?: unknown
+        budget_categories_email?: unknown
+        general_income_email?: unknown
         categories?: unknown
         expenses_email?: unknown
         shoppingLists_email?: unknown
