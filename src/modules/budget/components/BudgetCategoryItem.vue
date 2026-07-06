@@ -118,7 +118,7 @@ const available = computed(() => {
 })
 
 const progressPercentage = computed(() => {
-  const percentage = (spent.value / displayBudget.value) * 100
+  const percentage = (paidSpent.value / displayBudget.value) * 100
   return Math.min(percentage, 100)
 })
 

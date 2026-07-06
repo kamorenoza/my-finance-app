@@ -203,9 +203,14 @@ export const useBudgetStore = defineStore('budget', () => {
   const getDisplayIsPaid = (entry: BudgetEntry, dateRef: Date): boolean => {
     const month = dayjs(dateRef).format('YYYY-MM')
     const modification = entry.modifications?.find(m => m.month === month)
-    return modification && modification.isPaid !== undefined
-      ? modification.isPaid
-      : entry.isPaid
+    if (modification && modification.isPaid !== undefined) {
+      return modification.isPaid
+    }
+    // Sin modificación mensual el estado es independiente por mes:
+    // solo el mes de origen usa el isPaid base; los demás meses (recurrentes)
+    // inician como pendientes hasta marcarse explícitamente.
+    const originMonth = dayjs(entry.date).format('YYYY-MM')
+    return month === originMonth ? entry.isPaid : false
   }
 
   // Helper para obtener el value considerando modificaciones mensuales

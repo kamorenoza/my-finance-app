@@ -128,8 +128,10 @@ const displayIsPaid = computed(() => {
     return modification.isPaid
   }
 
-  // Si no hay modificación, usar el isPaid base
-  return props.entry.isPaid
+  // Sin modificación: estado independiente por mes. Solo el mes de origen usa
+  // el isPaid base; los demás meses (recurrentes) inician como pendientes.
+  const originMonth = dayjs(props.entry.date).format('YYYY-MM')
+  return month === originMonth ? props.entry.isPaid : false
 })
 
 // Calcular la fecha a mostrar basándose en referenceDate pero con el día de entry.date

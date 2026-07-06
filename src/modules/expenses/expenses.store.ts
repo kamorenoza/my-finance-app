@@ -30,7 +30,7 @@ export const useExpensesStore = defineStore('expenses', () => {
     category: null,
     type: 'gasto',
     isFixed: false,
-    isPaid: true,
+    isPaid: !expense.isPending,
     budgetCategoryId: expense.budgetCategoryId ?? null
   })
 
