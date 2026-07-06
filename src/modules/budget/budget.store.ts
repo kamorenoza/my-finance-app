@@ -1,7 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import dayjs from 'dayjs'
-import type { BudgetEntry, BudgetModification } from './budget.interface'
+import type {
+  BudgetEntry,
+  BudgetModification,
+  BudgetCategory,
+  BudgetCategoryModification,
+  GeneralIncome
+} from './budget.interface'
 import { budgetService } from './budget.service'
 import { backupService } from '../shared/services/backup.service'
 import { useExpensesStore } from '@/modules/expenses/expenses.store'
@@ -12,6 +18,10 @@ export const useBudgetStore = defineStore('budget', () => {
   const selectedDate = ref(dayjs().startOf('month').toDate())
   const selectedEntry = ref<BudgetEntry | null>(null)
   const addExpensesToBudget = ref(false)
+
+  // Nuevos estados para presupuesto por categorías
+  const budgetCategories = ref<BudgetCategory[]>(budgetService.loadBudgetCategories())
+  const generalIncomes = ref<GeneralIncome[]>(budgetService.loadGeneralIncome())
 
   // Cargar estado del toggle al inicializar
   const loadConfig = () => {
@@ -315,11 +325,217 @@ export const useBudgetStore = defineStore('budget', () => {
     return total
   })
 
+  // Budget Categories Actions
+  const loadBudgetCategories = () => {
+    budgetCategories.value = budgetService.loadBudgetCategories()
+  }
+
+  const addBudgetCategory = (category: BudgetCategory) => {
+    budgetService.addBudgetCategory(category)
+    budgetCategories.value.push(category)
+    backupService.queueBackup()
+  }
+
+  const updateBudgetCategory = (updated: BudgetCategory) => {
+    const index = budgetCategories.value.findIndex(c => c.id === updated.id)
+    if (index !== -1) {
+      budgetCategories.value[index] = updated
+      budgetService.updateBudgetCategory(updated)
+      backupService.queueBackup()
+    }
+  }
+
+  const deleteBudgetCategory = (id: string) => {
+    budgetCategories.value = budgetCategories.value.filter(c => c.id !== id)
+    budgetService.deleteBudgetCategory(id)
+    backupService.queueBackup()
+  }
+
+  // Nombre de la categoría considerando modificaciones mensuales
+  const getCategoryDisplayName = (
+    category: BudgetCategory,
+    dateRef: Date
+  ): string => {
+    const month = dayjs(dateRef).format('YYYY-MM')
+    const mods = category.modifications || []
+    const thisMod = mods.find(
+      m => m.month === month && m.appliedTo === 'this' && m.name !== undefined
+    )
+    if (thisMod) return thisMod.name as string
+    const future = mods
+      .filter(
+        m => m.appliedTo === 'future' && m.name !== undefined && m.month <= month
+      )
+      .sort((a, b) => (a.month < b.month ? 1 : -1))
+    if (future.length) return future[0].name as string
+    return category.name
+  }
+
+  // Presupuesto asignado considerando modificaciones mensuales
+  const getCategoryDisplayBudget = (
+    category: BudgetCategory,
+    dateRef: Date
+  ): number => {
+    const month = dayjs(dateRef).format('YYYY-MM')
+    const mods = category.modifications || []
+    const thisMod = mods.find(
+      m =>
+        m.month === month &&
+        m.appliedTo === 'this' &&
+        m.budgetedAmount !== undefined
+    )
+    if (thisMod) return thisMod.budgetedAmount as number
+    const future = mods
+      .filter(
+        m =>
+          m.appliedTo === 'future' &&
+          m.budgetedAmount !== undefined &&
+          m.month <= month
+      )
+      .sort((a, b) => (a.month < b.month ? 1 : -1))
+    if (future.length) return future[0].budgetedAmount as number
+    return category.budgetedAmount
+  }
+
+  const updateBudgetCategoryWithModification = (
+    updated: BudgetCategory,
+    appliedTo: 'this' | 'all' | 'future'
+  ) => {
+    const index = budgetCategories.value.findIndex(c => c.id === updated.id)
+    if (index === -1) return
+    const category = budgetCategories.value[index]
+    const month = dayjs(selectedDate.value).format('YYYY-MM')
+
+    if (!category.modifications) category.modifications = []
+
+    const currentName = getCategoryDisplayName(category, selectedDate.value)
+    const currentBudget = getCategoryDisplayBudget(category, selectedDate.value)
+    const nameChanged = updated.name !== currentName
+    const budgetChanged = updated.budgetedAmount !== currentBudget
+
+    // color, icono y orden no dependen del mes
+    category.color = updated.color
+    category.icon = updated.icon
+    category.order = updated.order
+
+    if (appliedTo === 'all') {
+      category.modifications = []
+      category.name = updated.name
+      category.budgetedAmount = updated.budgetedAmount
+    } else if (appliedTo === 'this') {
+      let mod = category.modifications.find(
+        m => m.month === month && m.appliedTo === 'this'
+      )
+      if (!mod) {
+        mod = { month, appliedTo: 'this' }
+        category.modifications.push(mod)
+      }
+      if (nameChanged) mod.name = updated.name
+      if (budgetChanged) mod.budgetedAmount = updated.budgetedAmount
+    } else if (appliedTo === 'future') {
+      category.modifications = category.modifications.filter(
+        m => !(m.month === month && m.appliedTo === 'future')
+      )
+      const futureMod: BudgetCategoryModification = {
+        month,
+        appliedTo: 'future'
+      }
+      if (nameChanged) futureMod.name = updated.name
+      if (budgetChanged) futureMod.budgetedAmount = updated.budgetedAmount
+      category.modifications.push(futureMod)
+    }
+
+    budgetCategories.value[index] = { ...category }
+    budgetService.updateBudgetCategory(category)
+    backupService.queueBackup()
+  }
+
+  // General Income Actions
+  const loadGeneralIncome = () => {
+    generalIncomes.value = budgetService.loadGeneralIncome()
+  }
+
+  const addGeneralIncome = (income: GeneralIncome) => {
+    budgetService.addGeneralIncome(income)
+    generalIncomes.value.push(income)
+    backupService.queueBackup()
+  }
+
+  const updateGeneralIncome = (updated: GeneralIncome) => {
+    const index = generalIncomes.value.findIndex(i => i.id === updated.id)
+    if (index !== -1) {
+      generalIncomes.value[index] = updated
+      budgetService.updateGeneralIncome(updated)
+      backupService.queueBackup()
+    }
+  }
+
+  const deleteGeneralIncome = (id: string) => {
+    generalIncomes.value = generalIncomes.value.filter(i => i.id !== id)
+    budgetService.deleteGeneralIncome(id)
+    backupService.queueBackup()
+  }
+
+  // Filtrar ingresos generales por mes
+  const filteredGeneralIncomes = computed(() => {
+    const selectedMonth = dayjs(selectedDate.value)
+    return generalIncomes.value.filter(income => {
+      const incomeMonth = dayjs(income.date)
+
+      if (income.isFixed) {
+        return incomeMonth.isSameOrBefore(selectedMonth, 'month')
+      }
+
+      if (income.repeat && income.repeat > 0) {
+        const endMonth = incomeMonth.add(income.repeat - 1, 'month')
+        return (
+          selectedMonth.isSameOrAfter(incomeMonth, 'month') &&
+          selectedMonth.isSameOrBefore(endMonth, 'month')
+        )
+      }
+
+      return incomeMonth.isSame(selectedMonth, 'month')
+    })
+  })
+
+  // Totales para modo por categorías
+  const totalGeneralIncome = computed(() => {
+    return filteredGeneralIncomes.value.reduce((sum, income) => sum + income.value, 0)
+  })
+
+  const getCategoryTotal = (categoryId: string) => {
+    return filteredEntries.value
+      .filter(e => e.budgetCategoryId === categoryId)
+      .reduce((sum, e) => {
+        const value = getDisplayValue(e, selectedDate.value)
+        return e.type === 'ingreso' ? sum + value : sum - value
+      }, 0)
+  }
+
+  const getCategorySpent = (categoryId: string) => {
+    return filteredEntries.value
+      .filter(e => e.budgetCategoryId === categoryId && e.type === 'gasto')
+      .reduce((sum, e) => sum + getDisplayValue(e, selectedDate.value), 0)
+  }
+
+  const getCategoryPaidSpent = (categoryId: string) => {
+    return filteredEntries.value
+      .filter(
+        e =>
+          e.budgetCategoryId === categoryId &&
+          e.type === 'gasto' &&
+          getDisplayIsPaid(e, selectedDate.value)
+      )
+      .reduce((sum, e) => sum + getDisplayValue(e, selectedDate.value), 0)
+  }
+
   return {
     entries,
     selectedDate,
     selectedEntry,
     addExpensesToBudget,
+    budgetCategories,
+    generalIncomes,
     loadEntries,
     addEntry,
     updateEntry,
@@ -335,6 +551,24 @@ export const useBudgetStore = defineStore('budget', () => {
     totalIncomesBudget,
     totalExpensesBudget,
     totalIncomesReal,
-    totalExpensesReal
+    totalExpensesReal,
+    // Categorías de presupuesto
+    loadBudgetCategories,
+    addBudgetCategory,
+    updateBudgetCategory,
+    updateBudgetCategoryWithModification,
+    getCategoryDisplayName,
+    getCategoryDisplayBudget,
+    deleteBudgetCategory,
+    // Ingresos generales
+    loadGeneralIncome,
+    addGeneralIncome,
+    updateGeneralIncome,
+    deleteGeneralIncome,
+    filteredGeneralIncomes,
+    totalGeneralIncome,
+    getCategoryTotal,
+    getCategorySpent,
+    getCategoryPaidSpent
   }
 })

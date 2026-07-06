@@ -1,11 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import dayjs from 'dayjs'
 import type { Expense, AccountReference } from './expenses.interface'
+import type { BudgetEntry } from '@/modules/budget/budget.interface'
 import { expensesService } from './expenses.service'
 import { generateId } from '@/modules/shared/utils'
 import { backupService } from '@/modules/shared/services/backup.service'
 import { configService } from '@/modules/shared/services/config.service'
 import { useAccountsStore } from '@/modules/accounts/accounts.store'
+import { useBudgetStore } from '@/modules/budget/budget.store'
 
 export const useExpensesStore = defineStore('expenses', () => {
   const expenses = ref<Expense[]>(expensesService.loadExpenses())
@@ -13,6 +16,43 @@ export const useExpensesStore = defineStore('expenses', () => {
 
   const loadExpenses = () => {
     expenses.value = expensesService.loadExpenses()
+  }
+
+  // --- Sincronización con presupuesto por categoría ---
+  const isByCategoryMode = () =>
+    configService.getBudgetCalculationMode() === 'byCategory'
+
+  const buildBudgetEntry = (expense: Expense): BudgetEntry => ({
+    id: expense.id,
+    name: expense.name,
+    value: expense.value,
+    date: dayjs(expense.date).format('YYYY-MM-DD'),
+    category: null,
+    type: 'gasto',
+    isFixed: false,
+    isPaid: true,
+    budgetCategoryId: expense.budgetCategoryId ?? null
+  })
+
+  const syncBudgetEntryOnAdd = (expense: Expense) => {
+    if (!isByCategoryMode()) return
+    useBudgetStore().addEntry(buildBudgetEntry(expense))
+  }
+
+  const syncBudgetEntryOnUpdate = (expense: Expense) => {
+    if (!isByCategoryMode()) return
+    const budgetStore = useBudgetStore()
+    const exists = budgetStore.entries.find(e => e.id === expense.id)
+    if (exists) {
+      budgetStore.updateEntry(buildBudgetEntry(expense))
+    } else {
+      budgetStore.addEntry(buildBudgetEntry(expense))
+    }
+  }
+
+  const syncBudgetEntryOnDelete = (expenseId: string) => {
+    if (!isByCategoryMode()) return
+    useBudgetStore().deleteEntry(expenseId)
   }
 
   const addExpense = (expense: Omit<Expense, 'id'>) => {
@@ -44,6 +84,7 @@ export const useExpensesStore = defineStore('expenses', () => {
       }
     }
 
+    syncBudgetEntryOnAdd(newExpense)
     backupService.queueBackup()
   }
 
@@ -91,6 +132,7 @@ export const useExpensesStore = defineStore('expenses', () => {
         })
       }
 
+      syncBudgetEntryOnUpdate(updated)
       backupService.queueBackup()
     }
   }
@@ -108,6 +150,7 @@ export const useExpensesStore = defineStore('expenses', () => {
 
       expenses.value.splice(index, 1)
       expensesService.deleteExpense(expenseId)
+      syncBudgetEntryOnDelete(expenseId)
       backupService.queueBackup()
     }
   }

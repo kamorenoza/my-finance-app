@@ -1,7 +1,7 @@
 <template>
   <SideDrawer
     v-model="drawer"
-    title="Agregar presupuesto"
+    :title="drawerTitle"
     :width="420"
     persistent
     @update:model-value="
@@ -12,7 +12,12 @@
   >
     <div class="side-drawer-body">
       <div class="side-drawer-body__content">
-        <div class="add-budget__pill" :class="entry.type" @click="onTypeChange">
+        <div
+          v-if="!isBudgetByCategoryMode"
+          class="add-budget__pill"
+          :class="entry.type"
+          @click="onTypeChange"
+        >
           {{ entry.type === 'gasto' ? 'Gasto' : 'Ingreso' }}
         </div>
         <v-text-field
@@ -39,6 +44,7 @@
         />
 
         <v-select
+          v-if="!isBudgetByCategoryMode"
           class="general-input mb-5"
           v-model="entry.category"
           :items="categories"
@@ -87,6 +93,30 @@
               </div>
               {{ (item.raw as any).name }}
             </div>
+          </template>
+        </v-select>
+
+        <!-- Selector de categoría de presupuesto (solo en modo por categorías) -->
+        <v-select
+          v-if="isBudgetByCategoryMode"
+          class="general-input mb-5"
+          v-model="entry.budgetCategoryId"
+          :items="budgetCategoryOptions"
+          item-title="name"
+          item-value="id"
+          label="Categoría de presupuesto"
+          density="comfortable"
+          hide-details
+          :menu-props="{ zIndex: 2500 }"
+          clearable
+        >
+          <template v-slot:prepend-item>
+            <v-list-item
+              title="Otros (sin categoría)"
+              :value="null"
+              @click="entry.budgetCategoryId = null"
+            />
+            <v-divider />
           </template>
         </v-select>
 
@@ -164,7 +194,7 @@
       </div>
 
       <div class="add-budget__delete" v-if="budgetStore.selectedEntry">
-        <p @click="deleteExpense">Eliminar Presupuesto</p>
+        <p @click="deleteExpense">{{ isBudgetByCategoryMode ? 'Eliminar gasto' : 'Eliminar Presupuesto' }}</p>
       </div>
     </div>
 
@@ -192,6 +222,7 @@ import { generateId } from '@/modules/shared/utils'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
 import { getIcon } from '@/modules/categories/categories.constants'
 import { useConfirm } from '@/modules/shared/composables/useConfirm'
+import { configService } from '@/modules/shared/services/config.service'
 
 const emit = defineEmits(['closeEditExpense'])
 
@@ -200,7 +231,15 @@ const categoryStore = useCategoryStore()
 const toast = useToastStore()
 const confirm = useConfirm()
 
+// Detectar si estamos en modo por categorías
+const isBudgetByCategoryMode = computed(() => {
+  return configService.getBudgetCalculationMode() === 'byCategory'
+})
+
+const budgetCategoryOptions = computed(() => budgetStore.budgetCategories)
+
 const drawer = ref(false)
+const drawerTitle = ref('Agregar presupuesto')
 const showModificationDialog = ref(false)
 const modificationChoice = ref<'this' | 'all' | 'future' | null>(null)
 const originalEntry = ref<BudgetEntry | null>(null)
@@ -214,10 +253,12 @@ const entry = ref({
   repeat: undefined as number | undefined,
   comments: '',
   date: dayjs(budgetStore.selectedDate).format('YYYY-MM-DD'),
-  category: null as any
+  category: null as any,
+  budgetCategoryId: null as string | null | undefined
 })
 
-const openDrawer = () => {
+const openDrawer = (title = 'Agregar presupuesto') => {
+  drawerTitle.value = title
   drawer.value = true
 }
 
@@ -257,6 +298,7 @@ const fillData = () => {
     entry.value.repeat = selectedEntry.repeat
     entry.value.comments = selectedEntry.comments || ''
     entry.value.date = selectedEntry.date
+    entry.value.budgetCategoryId = selectedEntry.budgetCategoryId || null
 
     // Aplicar modificaciones del mes actual a entry también
     if (modification) {
@@ -378,25 +420,22 @@ const onInputNumber = (val: string) => {
 }
 
 const onChangeDate = (newDate: Date) => {
-  const year = newDate.getUTCFullYear()
-  const month = String(newDate.getUTCMonth() + 1).padStart(2, '0')
-  const day = String(newDate.getUTCDate()).padStart(2, '0')
+  const year = newDate.getFullYear()
+  const month = String(newDate.getMonth() + 1).padStart(2, '0')
+  const day = String(newDate.getDate()).padStart(2, '0')
   entry.value.date = `${year}-${month}-${day}`
 }
 
 const dateForDateSelector = computed({
   get: () => {
     if (!entry.value.date) return new Date()
-    // Crear fecha en UTC para evitar problemas de zona horaria
     const [year, month, day] = entry.value.date.split('-')
-    return new Date(
-      Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day))
-    )
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
   },
   set: (newDate: Date) => {
-    const year = newDate.getUTCFullYear()
-    const month = String(newDate.getUTCMonth() + 1).padStart(2, '0')
-    const day = String(newDate.getUTCDate()).padStart(2, '0')
+    const year = newDate.getFullYear()
+    const month = String(newDate.getMonth() + 1).padStart(2, '0')
+    const day = String(newDate.getDate()).padStart(2, '0')
     entry.value.date = `${year}-${month}-${day}`
   }
 })
@@ -406,7 +445,8 @@ const saveEntry = async () => {
   try {
     const budgetEntry: BudgetEntry = {
       ...entry.value,
-      category: entry.value.category || null
+      category: entry.value.category || null,
+      budgetCategoryId: entry.value.budgetCategoryId || null
     }
 
     // Independientemente de lo demás, si cambió isPaid, guardarlo solo para este mes
@@ -464,7 +504,8 @@ const saveEntryWithChoice = (choice: 'this' | 'all' | 'future') => {
   }
   const budgetEntry: BudgetEntry = {
     ...entry.value,
-    category: entry.value.category || null
+    category: entry.value.category || null,
+    budgetCategoryId: entry.value.budgetCategoryId || null
   }
   budgetStore.updateEntryWithModification(budgetEntry, choice)
   toast.success('Presupuesto editado')
@@ -512,6 +553,7 @@ const close = () => {
     repeat: undefined,
     comments: '',
     date: dayjs(budgetStore.selectedDate).format('YYYY-MM-DD'),
+    budgetCategoryId: null,
     category: null as any
   }
   originalEntry.value = null
@@ -541,7 +583,7 @@ const close = () => {
   &__pill {
     padding: 4px 12px;
     border-radius: 16px;
-    background-color: #e0e0e0;
+    background-color: #E0E0E0;
     cursor: pointer;
     user-select: none;
     font-size: 0.85rem;

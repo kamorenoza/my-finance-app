@@ -7,63 +7,74 @@
         <div class="home__selector">
           <MonthYearSelector v-model="currentDate" />
         </div>
-        <div class="home__toggle">
+        <div class="home__toggle" v-if="!isBudgetByCategoryMode">
           <BudgetToggle v-model="budgetToggle" />
         </div>
 
+        <!-- Resumen normal (modo general) -->
         <BudgetSummary
+          v-if="!isBudgetByCategoryMode"
           :budget-toggle="budgetToggle"
           :filtered-entries="filteredAndSortedEntries"
           :selected-date="currentDate"
         />
+
+        <!-- Resumen simplificado (modo por categorías) -->
+        <BudgetSummaryByCategory v-else />
       </div>
 
       <div class="home__body">
-        <div class="home__filter">
-          <SearchOrderFilter
-            search-label="Buscar"
-            :initial-group-by="currentFilter.groupBy"
-            :initial-order-by="currentFilter.orderBy"
-            :initial-collapse-all="currentFilter.collapseAll"
-            @filterChange="onFilterChange"
-            hide-date-filter
-          />
-          <AddBudgetComplete v-if="!mdAndUp" />
-          <div class="home__add-btn" v-if="mdAndUp">
-            <v-tooltip text="Agregar presupuesto" location="left">
-              <template v-slot:activator="{ props }">
-                <v-btn
-                  :color="colorMdPrimary"
-                  class="btn-fab fab-button"
-                  @click="openAddBudgetDrawer"
-                  v-bind="props"
-                >
-                  <AddIcon class="icon" />
-                </v-btn>
-              </template>
-            </v-tooltip>
+        <!-- Vista modo general -->
+        <template v-if="!isBudgetByCategoryMode">
+          <div class="home__filter">
+            <SearchOrderFilter
+              search-label="Buscar"
+              :initial-group-by="currentFilter.groupBy"
+              :initial-order-by="currentFilter.orderBy"
+              :initial-collapse-all="currentFilter.collapseAll"
+              @filterChange="onFilterChange"
+              hide-date-filter
+            />
+            <AddBudgetComplete v-if="!mdAndUp" />
+            <div class="home__add-btn" v-if="mdAndUp">
+              <v-tooltip text="Agregar presupuesto" location="left">
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    :color="colorMdPrimary"
+                    class="btn-fab fab-button"
+                    @click="openAddBudgetDrawer"
+                    v-bind="props"
+                  >
+                    <AddIcon class="icon" />
+                  </v-btn>
+                </template>
+              </v-tooltip>
+            </div>
           </div>
-        </div>
-        <div>
-          <button
-            v-if="canReorder"
-            class="home__reorder-btn"
-            :class="{ 'home__reorder-btn--active': reorderMode }"
-            @click="reorderMode = !reorderMode"
-          >
-            <v-icon size="16">mdi-swap-vertical</v-icon>
-            {{ reorderMode ? 'Listo' : 'Reorganizar' }}
-          </button>
-        </div>
-        <BudgetList
-          :selected-date="currentDate"
-          :filters="currentFilter"
-          :reorder-mode="reorderMode"
-        />
+          <div>
+            <button
+              v-if="canReorder"
+              class="home__reorder-btn"
+              :class="{ 'home__reorder-btn--active': reorderMode }"
+              @click="reorderMode = !reorderMode"
+            >
+              <v-icon size="16">mdi-swap-vertical</v-icon>
+              {{ reorderMode ? 'Listo' : 'Reorganizar' }}
+            </button>
+          </div>
+          <BudgetList
+            :selected-date="currentDate"
+            :filters="currentFilter"
+            :reorder-mode="reorderMode"
+          />
+        </template>
+
+        <!-- Vista modo por categorías -->
+        <BudgetByCategory v-else :selected-date="currentDate" />
       </div>
     </div>
 
-    <AddBudgetSide v-if="mdAndUp" ref="addBudgetSideRef" />
+    <AddBudgetSide v-if="mdAndUp && !isBudgetByCategoryMode" ref="addBudgetSideRef" />
   </div>
 
   <CategoryManager />
@@ -75,8 +86,10 @@ import { useDisplay } from 'vuetify'
 import MonthYearSelector from '@/modules/shared/components/MonthYearSelector.vue'
 import CategoryManager from '@/modules/categories/CategoryManager.vue'
 import BudgetSummary from '@/modules/budget/components/BudgetSummary.vue'
+import BudgetSummaryByCategory from '@/modules/budget/components/BudgetSummaryByCategory.vue'
 import BudgetToggle from '../shared/components/BudgetToggle.vue'
 import BudgetList from './components/BudgetList.vue'
+import BudgetByCategory from './components/BudgetByCategory.vue'
 import SearchOrderFilter from '@/modules/shared/components/SearchOrderFilter.vue'
 import PageHeader from '@/modules/shared/components/PageHeader.vue'
 import { configService } from '@/modules/shared/services/config.service'
@@ -94,6 +107,11 @@ const currentDate = ref(new Date())
 const budgetToggle = ref('budget')
 const addBudgetSideRef = ref()
 const budgetStore = useBudgetStore()
+
+// Detectar modo de presupuesto
+const isBudgetByCategoryMode = computed(() => {
+  return configService.getBudgetCalculationMode() === 'byCategory'
+})
 
 const openAddBudgetDrawer = () => {
   budgetStore.setSelectedEntry(null)
@@ -249,7 +267,7 @@ const onFilterChange = (filter: {
     font-family: $font-medium;
     color: $text-gray-md;
     background: transparent;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #E0E0E0;
     border-radius: 20px;
     padding: 4px 12px;
     cursor: pointer;

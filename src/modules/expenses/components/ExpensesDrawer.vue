@@ -142,14 +142,12 @@ const dateForDateSelector = computed({
   get: () => {
     if (!entry.value.date) return new Date()
     const [year, month, day] = entry.value.date.split('-')
-    return new Date(
-      Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day))
-    )
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
   },
   set: (newDate: Date) => {
-    const year = newDate.getUTCFullYear()
-    const month = String(newDate.getUTCMonth() + 1).padStart(2, '0')
-    const day = String(newDate.getUTCDate()).padStart(2, '0')
+    const year = newDate.getFullYear()
+    const month = String(newDate.getMonth() + 1).padStart(2, '0')
+    const day = String(newDate.getDate()).padStart(2, '0')
     entry.value.date = `${year}-${month}-${day}`
   }
 })
@@ -228,7 +226,7 @@ const saveEntry = () => {
       name: entry.value.name,
       value: entry.value.value,
       account: entry.value.selectedAccount,
-      date: new Date(entry.value.date),
+      date: entry.value.date,
       isPending: entry.value.isPending
     })
     toast.success('Gasto actualizado')
@@ -238,7 +236,7 @@ const saveEntry = () => {
       name: entry.value.name,
       value: entry.value.value,
       account: entry.value.selectedAccount,
-      date: new Date(entry.value.date),
+      date: entry.value.date,
       isPending: entry.value.isPending
     })
     toast.success('Gasto guardado')

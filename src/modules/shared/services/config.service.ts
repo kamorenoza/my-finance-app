@@ -30,6 +30,7 @@ export interface UserConfig {
   budget?: BudgetConfig
   expenses?: ExpensesConfig
   lastPage?: string
+  budgetCalculationMode?: 'general' | 'byCategory'
 }
 
 export const configService = {
@@ -115,5 +116,20 @@ export const configService = {
     if (!userConfig.lastPage) return '/'
 
     return userConfig.lastPage
+  },
+
+  setBudgetCalculationMode: (mode: 'general' | 'byCategory') => {
+    const userEmail = getUserEmail()
+    if (!userEmail) return
+
+    const userConfig = configService.loadConfig()
+    userConfig.budgetCalculationMode = mode
+
+    localStorage.setItem(`config_${userEmail}`, JSON.stringify(userConfig))
+  },
+
+  getBudgetCalculationMode: (): 'general' | 'byCategory' => {
+    const userConfig = configService.loadConfig()
+    return userConfig?.budgetCalculationMode || 'general'
   }
 }

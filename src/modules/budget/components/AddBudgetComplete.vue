@@ -2,11 +2,15 @@
   <div
     class="add-expense__container"
     ref="formContainer"
-    :class="{ 'add-expense--focused': isFocused }"
+    :class="{
+      'add-expense--focused': isFocused,
+      'add-expense--by-category': isBudgetByCategoryMode
+    }"
   >
     <div v-if="isFocused" class="add-expense__overlay" @click="close"></div>
 
     <v-tooltip
+      v-if="!hideButton"
       v-model="tooltipVisible"
       text="Agregar presupuesto"
       location="left"
@@ -33,8 +37,11 @@
 
     <div class="add-expense">
       <div class="add-expense__header">
-        <div class="subtitle">Agregar presupuesto</div>
+        <div class="subtitle">
+          {{ isBudgetByCategoryMode ? 'Agregar gasto' : 'Agregar presupuesto' }}
+        </div>
         <div
+          v-if="!isBudgetByCategoryMode"
           class="add-expense__pill"
           :class="entry.type"
           @click="onTypeChange"
@@ -83,6 +90,7 @@
       <div class="add-expense__more">
         <div>
           <v-select
+            v-if="!isBudgetByCategoryMode"
             class="general-input mt-3 mb-2"
             v-model="entry.category"
             :items="categories"
@@ -132,6 +140,29 @@
                 </div>
                 {{ (item.raw as any).name }}
               </div>
+            </template>
+          </v-select>
+        </div>
+
+        <div v-if="isBudgetByCategoryMode">
+          <v-select
+            class="general-input mt-3 mb-2"
+            v-model="entry.budgetCategoryId"
+            :items="budgetCategoryOptions"
+            item-title="name"
+            item-value="id"
+            label="Categoría de presupuesto"
+            density="comfortable"
+            hide-details
+            clearable
+          >
+            <template v-slot:prepend-item>
+              <v-list-item
+                title="Otros (sin categoría)"
+                :value="null"
+                @click="entry.budgetCategoryId = null"
+              />
+              <v-divider />
             </template>
           </v-select>
         </div>
@@ -216,7 +247,7 @@
       </div>
 
       <div class="add-expense__delete" v-if="budgetStore.selectedEntry">
-        <p @click="deleteExpense">Eliminar Presupuesto</p>
+        <p @click="deleteExpense">{{ isBudgetByCategoryMode ? 'Eliminar gasto' : 'Eliminar Presupuesto' }}</p>
       </div>
     </div>
 
@@ -244,11 +275,22 @@ import { useConfirm } from '@/modules/shared/composables/useConfirm'
 import { getIcon } from '@/modules/categories/categories.constants'
 import { useBudgetStore } from '@/modules/budget/budget.store'
 import { generateId } from '@/modules/shared/utils'
+import { configService } from '@/modules/shared/services/config.service'
+
+withDefaults(defineProps<{ hideButton?: boolean }>(), {
+  hideButton: false
+})
 
 const toast = useToastStore()
 const budgetStore = useBudgetStore()
 const categoryStore = useCategoryStore()
 const confirm = useConfirm()
+
+const isBudgetByCategoryMode = computed(() => {
+  return configService.getBudgetCalculationMode() === 'byCategory'
+})
+
+const budgetCategoryOptions = computed(() => budgetStore.budgetCategories)
 
 const valueInput = ref()
 const descriptionInput = ref()
@@ -274,7 +316,8 @@ const entry = ref({
   repeat: undefined as number | undefined,
   comments: '',
   date: dayjs(budgetStore.selectedDate).format('YYYY-MM-DD'),
-  category: null as any
+  category: null as any,
+  budgetCategoryId: null as string | null | undefined
 })
 
 const onTypeChange = () => {
@@ -354,7 +397,8 @@ const close = () => {
     repeat: undefined,
     comments: '',
     date: dayjs(budgetStore.selectedDate).format('YYYY-MM-DD'),
-    category: null as any
+    category: null as any,
+    budgetCategoryId: null
   }
   originalEntry.value = null
   budgetStore.setSelectedEntry(null)
@@ -368,25 +412,22 @@ const goToValue = () => {
 }
 
 const onChangeDate = (newDate: Date) => {
-  const year = newDate.getUTCFullYear()
-  const month = String(newDate.getUTCMonth() + 1).padStart(2, '0')
-  const day = String(newDate.getUTCDate()).padStart(2, '0')
+  const year = newDate.getFullYear()
+  const month = String(newDate.getMonth() + 1).padStart(2, '0')
+  const day = String(newDate.getDate()).padStart(2, '0')
   entry.value.date = `${year}-${month}-${day}`
 }
 
 const dateForDateSelector = computed({
   get: () => {
     if (!entry.value.date) return new Date()
-    // Crear fecha en UTC para evitar problemas de zona horaria
     const [year, month, day] = entry.value.date.split('-')
-    return new Date(
-      Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day))
-    )
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
   },
   set: (newDate: Date) => {
-    const year = newDate.getUTCFullYear()
-    const month = String(newDate.getUTCMonth() + 1).padStart(2, '0')
-    const day = String(newDate.getUTCDate()).padStart(2, '0')
+    const year = newDate.getFullYear()
+    const month = String(newDate.getMonth() + 1).padStart(2, '0')
+    const day = String(newDate.getDate()).padStart(2, '0')
     entry.value.date = `${year}-${month}-${day}`
   }
 })
@@ -546,6 +587,7 @@ const fillData = () => {
       entry.value.value = selectedEntry.value
       entry.value.type = selectedEntry.type
       entry.value.category = selectedEntry.category || null
+      entry.value.budgetCategoryId = selectedEntry.budgetCategoryId || null
       entry.value.date = selectedEntry.date
       entry.value.isFixed = selectedEntry.isFixed
       entry.value.isPaid = selectedEntry.isPaid
@@ -653,6 +695,13 @@ const handlePress = () => {
   isFocused.value = true
 }
 
+const open = () => {
+  entry.value.date = dayjs(budgetStore.selectedDate).format('YYYY-MM-DD')
+  isFocused.value = true
+}
+
+defineExpose({ open })
+
 watch(
   () => budgetStore.selectedEntry,
   newFilter => {
@@ -686,6 +735,15 @@ watch(
 
   .add-expense__container.add-expense--focused & {
     display: block;
+  }
+
+  // En modo por categorías el panel se monta dentro de otro contenedor,
+  // por eso lo anclamos al viewport para que coincida con el menú inferior.
+  .add-expense__container.add-expense--by-category.add-expense--focused & {
+    position: fixed;
+    bottom: 90px;
+    left: 0;
+    width: 100%;
   }
 
   &--focused {
@@ -726,7 +784,7 @@ watch(
   &__pill {
     padding: 4px 12px;
     border-radius: 16px;
-    background-color: #e0e0e0;
+    background-color: #E0E0E0;
     cursor: pointer;
     user-select: none;
     font-size: 0.85rem;

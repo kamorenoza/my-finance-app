@@ -54,6 +54,7 @@
 
         <div class="mt-3">
           <v-select
+            v-if="!isBudgetByCategoryMode"
             class="general-input"
             v-model="entry.selectedAccount"
             :items="accountOptions"
@@ -62,6 +63,18 @@
             label="Cuenta"
             density="comfortable"
             hide-details
+          />
+          <v-select
+            v-else
+            class="general-input"
+            v-model="entry.budgetCategoryId"
+            :items="budgetCategoryOptions"
+            item-title="name"
+            item-value="id"
+            label="Categoría del presupuesto"
+            density="comfortable"
+            hide-details
+            clearable
           />
         </div>
       </div>
@@ -91,6 +104,8 @@ import type { Expense, AccountReference } from '../expenses.interface'
 import dayjs from 'dayjs'
 import DateSelector from '@/modules/shared/components/DateSelector.vue'
 import { useAccountsStore } from '@/modules/accounts/accounts.store'
+import { useBudgetStore } from '@/modules/budget/budget.store'
+import { configService } from '@/modules/shared/services/config.service'
 import { useConfirm } from '@/modules/shared/composables/useConfirm'
 import { AccountTypes } from '@/modules/accounts/accounts.constants'
 
@@ -111,7 +126,16 @@ const emit = defineEmits<{
 }>()
 
 const accountsStore = useAccountsStore()
+const budgetStore = useBudgetStore()
 const confirm = useConfirm()
+
+const isBudgetByCategoryMode = computed(
+  () => configService.getBudgetCalculationMode() === 'byCategory'
+)
+
+const budgetCategoryOptions = computed(() =>
+  budgetStore.budgetCategories.map(c => ({ id: c.id, name: c.name }))
+)
 
 const descriptionInput = ref()
 const valueInput = ref()
@@ -122,6 +146,7 @@ const entry = ref({
   name: '',
   value: 0,
   selectedAccount: null as AccountReference | null,
+  budgetCategoryId: null as string | null,
   date: dayjs().format('YYYY-MM-DD'),
   isPending: false
 })
@@ -168,14 +193,12 @@ const dateForDateSelector = computed({
   get: () => {
     if (!entry.value.date) return new Date()
     const [year, month, day] = entry.value.date.split('-')
-    return new Date(
-      Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day))
-    )
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
   },
   set: (newDate: Date) => {
-    const year = newDate.getUTCFullYear()
-    const month = String(newDate.getUTCMonth() + 1).padStart(2, '0')
-    const day = String(newDate.getUTCDate()).padStart(2, '0')
+    const year = newDate.getFullYear()
+    const month = String(newDate.getMonth() + 1).padStart(2, '0')
+    const day = String(newDate.getDate()).padStart(2, '0')
     entry.value.date = `${year}-${month}-${day}`
   }
 })
@@ -186,9 +209,9 @@ const onInput = (val: string) => {
 }
 
 const onChangeDate = (newDate: Date) => {
-  const year = newDate.getUTCFullYear()
-  const month = String(newDate.getUTCMonth() + 1).padStart(2, '0')
-  const day = String(newDate.getUTCDate()).padStart(2, '0')
+  const year = newDate.getFullYear()
+  const month = String(newDate.getMonth() + 1).padStart(2, '0')
+  const day = String(newDate.getDate()).padStart(2, '0')
   entry.value.date = `${year}-${month}-${day}`
 }
 
@@ -207,6 +230,7 @@ const close = () => {
     name: '',
     value: 0,
     selectedAccount: null,
+    budgetCategoryId: null,
     date: dayjs().format('YYYY-MM-DD'),
     isPending: false
   }
@@ -222,7 +246,10 @@ const saveEntry = () => {
     ...props.expense,
     name: entry.value.name,
     value: entry.value.value,
-    account: entry.value.selectedAccount || null,
+    account: isBudgetByCategoryMode.value
+      ? null
+      : entry.value.selectedAccount || null,
+    budgetCategoryId: entry.value.budgetCategoryId ?? null,
     date: entry.value.date,
     isPending: entry.value.isPending
   }
@@ -253,6 +280,7 @@ const fillData = () => {
       name: props.expense.name,
       value: props.expense.value,
       selectedAccount: props.expense.account || null,
+      budgetCategoryId: props.expense.budgetCategoryId ?? null,
       date: dayjs(props.expense.date).format('YYYY-MM-DD'),
       isPending: props.expense.isPending ?? false
     }

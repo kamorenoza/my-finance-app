@@ -1,12 +1,12 @@
 <template>
   <div class="budget-item" :class="{ paid: displayIsPaid }">
-    <div>
+    <div v-if="!hideIcon">
       <div
         v-bind="props"
         icon
         class="budget-item__category"
         :style="{
-          backgroundColor: entry?.category?.backgroundColor || '#9e9e9e'
+          backgroundColor: entry?.category?.backgroundColor || '#9E9E9E'
         }"
       >
         <component
@@ -27,7 +27,12 @@
             >Pendiente</span
           >
         </div>
-        <p class="budget-item__date">{{ displayDate }}</p>
+        <div class="budget-item__date-row">
+          <p class="budget-item__date">{{ displayDate }}</p>
+          <span v-if="recurrenceLabel" class="budget-item__tag">{{
+            recurrenceLabel
+          }}</span>
+        </div>
         <p class="budget-item__comments">{{ entry.comments }}</p>
       </div>
       <div>
@@ -58,6 +63,7 @@
 import { computed } from 'vue'
 import type { BudgetEntry } from '../budget.interface'
 import dayjs from 'dayjs'
+import 'dayjs/locale/es'
 import { colorWhite } from '@/styles/variables.styles'
 import { getIcon } from '@/modules/categories/categories.constants'
 import { useConfirm } from '@/modules/shared/composables/useConfirm'
@@ -66,10 +72,12 @@ import { useBudgetStore } from '../budget.store'
 interface Props {
   entry: BudgetEntry
   referenceDate?: Date
+  hideIcon?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  referenceDate: () => new Date()
+  referenceDate: () => new Date(),
+  hideIcon: false
 })
 
 const emit = defineEmits<{
@@ -131,6 +139,19 @@ const displayDate = computed(() => {
   return dateInReferenceMonth.format('D MMM YYYY')
 })
 
+// Tag de recurrencia: "Fijo" o "Hasta {mes año}"
+const recurrenceLabel = computed(() => {
+  if (props.entry.isFixed) return 'Fijo'
+  if (props.entry.repeat && props.entry.repeat > 1) {
+    const lastMonth = dayjs(props.entry.date)
+      .add(props.entry.repeat - 1, 'month')
+      .locale('es')
+      .format('MMMM YYYY')
+    return `Hasta ${lastMonth.charAt(0).toUpperCase()}${lastMonth.slice(1)}`
+  }
+  return ''
+})
+
 const editEntry = () => {
   emit('edit', props.entry)
 }
@@ -162,7 +183,7 @@ const currency = (value: number): string =>
   justify-content: space-between;
   align-items: center;
   padding: 12px 30px 12px 12px;
-  background-color: #f8f8f8;
+  background-color: #F8F8F8;
   border-radius: 12px;
   margin-bottom: 8px;
   position: relative;
@@ -224,12 +245,12 @@ const currency = (value: number): string =>
   &__amount {
     font-family: $font-medium;
     font-size: 0.9rem;
-    color: #388e3c;
+    color: #388E3C;
     white-space: nowrap;
     flex-shrink: 0;
 
     &.gasto {
-      color: #d32f2f;
+      color: #D32F2F;
     }
   }
 
@@ -246,6 +267,24 @@ const currency = (value: number): string =>
     line-height: 0.8rem;
     color: $text-gray-md;
     margin: 0;
+  }
+
+  &__date-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  &__tag {
+    font-family: $font-medium;
+    font-size: 0.6rem;
+    line-height: 1;
+    padding: 3px 7px;
+    border-radius: 8px;
+    background-color: $color-md-primary;
+    color: $color-primary;
+    white-space: nowrap;
   }
 
   &__comments {
@@ -267,20 +306,20 @@ const currency = (value: number): string =>
   transition: all 0.2s ease;
 
   &.paid {
-    background-color: #e8f5e9;
-    color: #388e3c;
+    background-color: #E8F5E9;
+    color: #388E3C;
 
     &:hover {
-      background-color: #c8e6c9;
+      background-color: #C8E6C9;
     }
   }
 
   &.pending {
-    background-color: #fff3e0;
-    color: #f57c00;
+    background-color: #FFF3E0;
+    color: #F57C00;
 
     &:hover {
-      background-color: #ffe0b2;
+      background-color: #FFE0B2;
     }
   }
 }

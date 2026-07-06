@@ -10,4 +10,5 @@ export interface Expense {
   account: AccountReference | null
   date?: string | Date
   isPending?: boolean
+  budgetCategoryId?: string | null
 }
