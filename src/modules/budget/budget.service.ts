@@ -12,7 +12,8 @@ export const budgetService = {
     const userEmail = getUserEmail()
     if (!userEmail) return []
     const data = localStorage.getItem(`budget_${userEmail}`)
-    const entries = data ? JSON.parse(data) : []
+    const parsed = data ? JSON.parse(data) : []
+    const entries = Array.isArray(parsed) ? parsed : []
 
     // Ensure all entries have IDs (migrate legacy data)
     let modified = false
@@ -64,7 +65,8 @@ export const budgetService = {
     const userEmail = getUserEmail()
     if (!userEmail) return []
     const data = localStorage.getItem(`budget_categories_${userEmail}`)
-    return data ? JSON.parse(data) : []
+    const parsed = data ? JSON.parse(data) : []
+    return Array.isArray(parsed) ? parsed : []
   },
 
   addBudgetCategory: (category: BudgetCategory) => {
@@ -96,7 +98,8 @@ export const budgetService = {
     const userEmail = getUserEmail()
     if (!userEmail) return []
     const data = localStorage.getItem(`general_income_${userEmail}`)
-    return data ? JSON.parse(data) : []
+    const parsed = data ? JSON.parse(data) : []
+    return Array.isArray(parsed) ? parsed : []
   },
 
   addGeneralIncome: (income: GeneralIncome) => {

@@ -103,14 +103,14 @@ const setLocalStorageFromBackup = (
   if (backupData.budget_categories_email !== undefined) {
     localStorage.setItem(
       `budget_categories_${email}`,
-      JSON.stringify(backupData.budget_categories_email)
+      JSON.stringify(backupData.budget_categories_email ?? [])
     )
   }
 
   if (backupData.general_income_email !== undefined) {
     localStorage.setItem(
       `general_income_${email}`,
-      JSON.stringify(backupData.general_income_email)
+      JSON.stringify(backupData.general_income_email ?? [])
     )
   }
 

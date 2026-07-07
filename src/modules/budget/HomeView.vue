@@ -7,17 +7,19 @@
         <div class="home__selector">
           <MonthYearSelector v-model="currentDate" />
         </div>
-        <div class="home__toggle" v-if="!isBudgetByCategoryMode">
-          <BudgetToggle v-model="budgetToggle" />
-        </div>
 
-        <!-- Resumen normal (modo general) -->
-        <BudgetSummary
-          v-if="!isBudgetByCategoryMode"
-          :budget-toggle="budgetToggle"
-          :filtered-entries="filteredAndSortedEntries"
-          :selected-date="currentDate"
-        />
+        <template v-if="!isBudgetByCategoryMode">
+          <div class="home__toggle">
+            <BudgetToggle v-model="budgetToggle" />
+          </div>
+
+          <!-- Resumen normal (modo general) -->
+          <BudgetSummary
+            :budget-toggle="budgetToggle"
+            :filtered-entries="filteredAndSortedEntries"
+            :selected-date="currentDate"
+          />
+        </template>
 
         <!-- Resumen simplificado (modo por categorías) -->
         <BudgetSummaryByCategory v-else />
