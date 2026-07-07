@@ -215,8 +215,11 @@ const totalBudget = computed(() => {
 const availableBudget = computed(() => totalIncome.value - totalBudget.value)
 
 const uncategorizedEntries = computed(() => {
+  const validIds = new Set(budgetCategories.value.map(c => c.id))
   return budgetStore.filteredEntries.filter(
-    e => e.type === 'gasto' && !e.budgetCategoryId
+    e =>
+      e.type === 'gasto' &&
+      (!e.budgetCategoryId || !validIds.has(e.budgetCategoryId))
   )
 })
 
