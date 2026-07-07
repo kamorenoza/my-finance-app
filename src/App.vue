@@ -77,6 +77,9 @@ const initStoresAndSync = async (email?: string | null) => {
     accountsStore?.loadAccounts()
     categoryStore?.loadCategories()
     budgetStore?.loadEntries()
+    budgetStore?.loadBudgetCategories()
+    budgetStore?.loadGeneralIncome()
+    budgetStore?.loadConfig()
     expensesStore?.loadExpenses()
     shoppingStore?.loadShoppingLists()
   }

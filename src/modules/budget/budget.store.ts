@@ -19,6 +19,12 @@ export const useBudgetStore = defineStore('budget', () => {
   const selectedEntry = ref<BudgetEntry | null>(null)
   const addExpensesToBudget = ref(false)
 
+  // Modo de cálculo reactivo (se sincroniza con configService)
+  const calculationMode = ref<'general' | 'byCategory'>(
+    configService.getBudgetCalculationMode()
+  )
+  const isByCategoryMode = computed(() => calculationMode.value === 'byCategory')
+
   // Nuevos estados para presupuesto por categorías
   const budgetCategories = ref<BudgetCategory[]>(budgetService.loadBudgetCategories())
   const generalIncomes = ref<GeneralIncome[]>(budgetService.loadGeneralIncome())
@@ -29,8 +35,15 @@ export const useBudgetStore = defineStore('budget', () => {
     if (savedConfig.addExpensesToBudget !== undefined) {
       addExpensesToBudget.value = savedConfig.addExpensesToBudget
     }
+    calculationMode.value = configService.getBudgetCalculationMode()
   }
   loadConfig()
+
+  const setCalculationMode = (mode: 'general' | 'byCategory') => {
+    calculationMode.value = mode
+    configService.setBudgetCalculationMode(mode)
+    backupService.queueBackup()
+  }
 
   const loadEntries = () => {
     entries.value = budgetService.loadEntries()
@@ -539,6 +552,10 @@ export const useBudgetStore = defineStore('budget', () => {
     selectedDate,
     selectedEntry,
     addExpensesToBudget,
+    calculationMode,
+    isByCategoryMode,
+    setCalculationMode,
+    loadConfig,
     budgetCategories,
     generalIncomes,
     loadEntries,

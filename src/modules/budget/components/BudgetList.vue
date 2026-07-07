@@ -319,13 +319,15 @@ const totalMonthExpenses = computed(() => {
 
 <style scoped lang="scss">
 .budget-list {
-  height: calc(100vh - 400px);
+  flex: 1;
+  min-height: 0;
   overflow-y: scroll;
   padding-bottom: 40px;
   margin-top: 5px;
   padding-right: 12px;
 
   @media (min-width: 960px) {
+    flex: none;
     height: calc(100vh - 220px);
   }
 }

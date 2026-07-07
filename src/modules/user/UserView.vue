@@ -37,7 +37,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/modules/auth/auth.store'
 import { useConfirm } from '../shared/composables/useConfirm'
 import { backupService } from '../shared/services/backup.service'
-import { configService } from '../shared/services/config.service'
+import { useBudgetStore } from '@/modules/budget/budget.store'
 import { signOut } from 'firebase/auth'
 import { auth } from '@/database/firebase'
 import { ref, computed } from 'vue'
@@ -45,9 +45,10 @@ import { ref, computed } from 'vue'
 const router = useRouter()
 const authStore = useAuthStore()
 const confirm = useConfirm()
+const budgetStore = useBudgetStore()
 
 // Cargar configuración inicial
-const isBudgetByCategory = ref(configService.getBudgetCalculationMode() === 'byCategory')
+const isBudgetByCategory = ref(budgetStore.isByCategoryMode)
 
 // Descripción dinámica según el estado del toggle
 const budgetModeDescription = computed(() => {
@@ -71,8 +72,7 @@ const handleBudgetModeChange = async () => {
     return
   }
 
-  configService.setBudgetCalculationMode(targetMode)
-  backupService.queueBackup()
+  budgetStore.setCalculationMode(targetMode)
 }
 
 const handleLogout = async () => {

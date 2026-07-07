@@ -222,7 +222,6 @@ import { generateId } from '@/modules/shared/utils'
 import { useToastStore } from '@/modules/shared/toast/toast.store'
 import { getIcon } from '@/modules/categories/categories.constants'
 import { useConfirm } from '@/modules/shared/composables/useConfirm'
-import { configService } from '@/modules/shared/services/config.service'
 
 const emit = defineEmits(['closeEditExpense'])
 
@@ -232,9 +231,7 @@ const toast = useToastStore()
 const confirm = useConfirm()
 
 // Detectar si estamos en modo por categorías
-const isBudgetByCategoryMode = computed(() => {
-  return configService.getBudgetCalculationMode() === 'byCategory'
-})
+const isBudgetByCategoryMode = computed(() => budgetStore.isByCategoryMode)
 
 const budgetCategoryOptions = computed(() => budgetStore.budgetCategories)
 

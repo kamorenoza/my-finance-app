@@ -270,12 +270,14 @@ const openAddBudgetDrawer = () => {
 <style scoped lang="scss">
 .budget-by-category {
   padding: 5px 12px 80px 0;
-  height: calc(100vh - 320px);
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   margin-top: 0;
 
   @media (min-width: 960px) {
     padding: 5px 12px 80px 0;
+    flex: none;
     height: calc(100vh - 220px);
   }
 

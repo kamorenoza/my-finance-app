@@ -109,9 +109,7 @@ const addBudgetSideRef = ref()
 const budgetStore = useBudgetStore()
 
 // Detectar modo de presupuesto
-const isBudgetByCategoryMode = computed(() => {
-  return configService.getBudgetCalculationMode() === 'byCategory'
-})
+const isBudgetByCategoryMode = computed(() => budgetStore.isByCategoryMode)
 
 const openAddBudgetDrawer = () => {
   budgetStore.setSelectedEntry(null)
@@ -212,8 +210,12 @@ const onFilterChange = (filter: {
 
   &__content {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
     @media (min-width: 960px) {
-      display: flex;
+      flex-direction: row;
       gap: 20px;
       padding-right: 20px;
     }
@@ -227,7 +229,10 @@ const onFilterChange = (filter: {
   }
 
   &__body {
-    height: calc(100dvh - 335px);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
     padding: 12px;
     padding-bottom: 20px;
     padding-right: 0;

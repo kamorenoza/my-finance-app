@@ -275,7 +275,6 @@ import { useConfirm } from '@/modules/shared/composables/useConfirm'
 import { getIcon } from '@/modules/categories/categories.constants'
 import { useBudgetStore } from '@/modules/budget/budget.store'
 import { generateId } from '@/modules/shared/utils'
-import { configService } from '@/modules/shared/services/config.service'
 
 withDefaults(defineProps<{ hideButton?: boolean }>(), {
   hideButton: false
@@ -286,9 +285,7 @@ const budgetStore = useBudgetStore()
 const categoryStore = useCategoryStore()
 const confirm = useConfirm()
 
-const isBudgetByCategoryMode = computed(() => {
-  return configService.getBudgetCalculationMode() === 'byCategory'
-})
+const isBudgetByCategoryMode = computed(() => budgetStore.isByCategoryMode)
 
 const budgetCategoryOptions = computed(() => budgetStore.budgetCategories)
 
