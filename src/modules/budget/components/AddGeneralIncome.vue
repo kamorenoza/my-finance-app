@@ -179,7 +179,7 @@ const resetForm = () => {
     id: '',
     name: '',
     value: 0,
-    date: dayjs().startOf('month').toDate(),
+    date: dayjs(budgetStore.selectedDate).startOf('month').toDate(),
     isFixed: false,
     repeat: 1
   }
